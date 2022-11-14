@@ -12,7 +12,6 @@ classifiers = [
     "Development Status :: 2 - Pre-Alpha",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
@@ -27,7 +26,7 @@ documentation = "https://github.com/neuroinformatics-unit/load-suite2p"
 source_code = "https://github.com/neuroinformatics-unit/load-suite2p"
 user_support = "https://github.com/neuroinformatics-unit/load-suite2p/issues"
 
-[options.extras_require]
+[project.optional-dependencies]
 dev = [
 	"black",
 	"pytest",
@@ -36,6 +35,7 @@ dev = [
 	"pre-commit",
 	"flake8",
 	"coverage",
+  "setuptools_scm"
 ]
 
 
@@ -77,3 +77,5 @@ exclude = '''
   )/
 )
 '''
+
+[tool.setuptools_scm]
