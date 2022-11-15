@@ -1,6 +1,6 @@
 import logging
 
-from read_config import read
+from .read_config import read
 
 logging.basicConfig(
     level=logging.DEBUG,
