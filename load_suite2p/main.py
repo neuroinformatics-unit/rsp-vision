@@ -11,10 +11,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main():
+def read_configurations():
+    logger.info("Reading configurations")
     config = read()
-    print(config)
-
-
-if __name__ == "__main__":
-    main()
+    logger.info(f"Configurations read: {config}")
