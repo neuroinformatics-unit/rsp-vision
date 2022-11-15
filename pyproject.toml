@@ -31,11 +31,12 @@ dev = [
 	"black",
 	"pytest",
 	"pytest-cov",
+	"tox",
 	"bump2version",
 	"pre-commit",
 	"flake8",
 	"coverage",
-  "setuptools_scm"
+ 	"setuptools_scm"
 ]
 
 
@@ -48,10 +49,12 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["load_suite2p"]
-exclude = ["load-suite2p.test*"]
+include = ["load_suite2p*"]
+exclude = ["tests*"]
 
 [tool.pytest.ini_options]
 addopts = "--cov=load-suite2p"
