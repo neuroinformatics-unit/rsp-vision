@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 def read_configurations():
+    """Read configurations regarding experiment and analysis."""
     logger.info("Reading configurations")
     config = read()
     logger.info(f"Configurations read: {config}")
