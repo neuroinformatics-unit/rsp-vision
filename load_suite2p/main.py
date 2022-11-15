@@ -12,7 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 def read_configurations():
-    """Read configurations regarding experiment and analysis."""
+    """Read configurations regarding experiment and analysis.
+
+    :return: dictionary with configurations
+    :rtype: dict
+    """
     logger.info("Reading configurations")
     config = read()
     logger.info(f"Configurations read: {config}")
+
+    return config

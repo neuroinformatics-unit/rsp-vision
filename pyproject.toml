@@ -33,9 +33,9 @@ dev = [
 	"coverage",
 	"tox",
 	"black",
-    "isort",
-    "mypy",
-    "bump2version",
+  "isort",
+  "mypy",
+  "bump2version",
 	"pre-commit",
 	"flake8",
  	"setuptools_scm",
@@ -59,7 +59,7 @@ include = ["load_suite2p*"]
 exclude = ["tests*"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=load-suite2p"
+addopts = "--cov=load_suite2p"
 
 [tool.black]
 target-version = ['py39']
