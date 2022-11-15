@@ -28,15 +28,17 @@ user_support = "https://github.com/neuroinformatics-unit/load-suite2p/issues"
 
 [project.optional-dependencies]
 dev = [
-	"black",
 	"pytest",
 	"pytest-cov",
+	"coverage",
 	"tox",
-	"bump2version",
+	"black",
+    "isort",
+    "mypy",
+    "bump2version",
 	"pre-commit",
 	"flake8",
-	"coverage",
- 	"setuptools_scm"
+ 	"setuptools_scm",
 ]
 
 
@@ -80,5 +82,8 @@ exclude = '''
   )/
 )
 '''
+
+[tool.isort]
+profile = "black"
 
 [tool.setuptools_scm]
