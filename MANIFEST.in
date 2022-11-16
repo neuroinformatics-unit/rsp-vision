@@ -3,3 +3,10 @@ include README.md
 
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
+
+include *.yaml
+include .bumpversion.cfg
+include tox.ini
+recursive-include load_suite2p *.yml
+recursive-include tests *.py
+include .flake8
