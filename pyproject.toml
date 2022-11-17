@@ -39,8 +39,6 @@ dev = [
  	"setuptools_scm"
 ]
 
-
-
 [build-system]
 requires = [
     "setuptools>=45",
@@ -82,3 +80,13 @@ exclude = '''
 '''
 
 [tool.setuptools_scm]
+
+
+[tool.check-manifest]
+ignore = [
+  "*.yaml",
+  ".bumpversion.cfg",
+  "tox.ini",
+  "tests/*",
+  ".flake8"
+]
