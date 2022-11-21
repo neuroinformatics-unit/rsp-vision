@@ -1,3 +1,4 @@
+import logging
 import os
 
 from path import Path
@@ -18,12 +19,15 @@ class FileNamingSpecs:
         folder_name: str,
     ):
         self.folder_name = folder_name
+
+        logging.info("Reading configurations")
         self.config = read()
+
+        logging.info("Parsing folder name")
         self.parse_name()
 
         if not self.check_if_file_exists():
-            # log error
-            print(self.get_path())
+            logging.error(f"File {self.get_path()} does not exist")
             raise FileNotFoundError(
                 f"File {self.folder_name} not found. "
                 + "Please check the file name and try again."
@@ -31,7 +35,7 @@ class FileNamingSpecs:
 
     def parse_name(self) -> None:
         if self.config["scientist"] == "Chryssanthi":
-            # log
+            logging.info("Parsing folder name using Chryssanthi's parser")
             parser = ChryssanthiParser(self.folder_name)
 
             self.mouse_line = parser.mouse_line

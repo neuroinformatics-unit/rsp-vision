@@ -1,3 +1,5 @@
+import logging
+
 from .parser import Parser
 
 
@@ -20,16 +22,13 @@ class ChryssanthiParser(Parser):
         else:
             self.mouse_id = splitted[1] + "_" + splitted[2]
 
-            if self.mouse_line == "AS" and self.mouse_id == "95_2":
+            if (self.mouse_line == "AS" and self.mouse_id == "95_2") or (
+                self.mouse_line == "CX" and int(splitted[1]) < 61
+            ):
                 self.subfolder_exists = True
-                # log
-                raise NotImplementedError(
-                    "Unclear data structure, contains subfolder"
+                logging.warning(
+                    "Experimental data without parsing implementation"
                 )
-
-            if self.mouse_line == "CX" and int(splitted[1]) < 61:
-                self.subfolder_exists = True
-                # log
                 raise NotImplementedError(
                     "Unclear data structure, contains subfolder"
                 )
