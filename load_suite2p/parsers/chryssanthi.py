@@ -27,7 +27,8 @@ class ChryssanthiParser(Parser):
             ):
                 self.subfolder_exists = True
                 logging.warning(
-                    "Experimental data without parsing implementation"
+                    f"Experimental data without parsing implementation: \
+                    {self.folder_name}"
                 )
                 raise NotImplementedError(
                     "Unclear data structure, contains subfolder"
@@ -47,6 +48,9 @@ class ChryssanthiParser(Parser):
                 self.monitor_position += item
 
         if "monitor" not in self.monitor_position:
-            print(self.folder_name)
-            print(self.monitor_position)
+            logging.error(
+                "Monitor position not found in folder name",
+                extra={"ChryssanthiParser": self},
+            )
+            logging.debug(self.monitor_position)
             raise RuntimeError("Monitor position not found in folder name")
