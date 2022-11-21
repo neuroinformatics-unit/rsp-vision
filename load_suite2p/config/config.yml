@@ -1,3 +1,9 @@
-analysis-type: retinotopy
-region-id: AS_1111877_hL_V1_monitor_front
-fluorescence_type: df
+scientist: Chryssanthi
+
+analysis-specific-configs:
+  analysis-type: ['retinotopy', 'sftf', 'sparse_noise']
+  region-id: AS_1111877_hL_V1_monitor_front # there are very many combinations - ask chrissanthy
+  fluorescence_type: ['df', 'allen_df']
+
+paths:
+  imaging: '/Volumes/margrie/Chryssanthi/imaging/'
