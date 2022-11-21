@@ -18,7 +18,11 @@ def test_FileNamingSpecs_constructor():
 
 
 def test_FileNamingSpecs_constructor_fails():
+    control_exception = False
     try:
         data_objects.FileNamingSpecs("AS_1111877_hL_V1_monitor_front_wrong")
     except FileNotFoundError:
+        control_exception = True
         pass
+    if control_exception is False:
+        raise AssertionError("FileNotFoundError not raised, filters failed")

@@ -1,14 +1,20 @@
 import logging
 
-from .read_config import read
+import rich
+from fancylog import fancylog
+from rich.prompt import Prompt
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    filename="app.log",
-    filemode="w",
-    format="%(asctime)s|%(process)d|%(name)s|%(levelname)s|%(message)s",
-)
-logger = logging.getLogger(__name__)
+from .data_objects import FileNamingSpecs
+from .read_config import read
+from .utils import get_module_for_logging
+
+
+def start_logging():
+    module = get_module_for_logging()
+
+    fancylog.start_logging(
+        output_dir="./", package=module, filename="load_suite2p"
+    )
 
 
 def read_configurations():
@@ -17,8 +23,18 @@ def read_configurations():
     :return: dictionary with configurations
     :rtype: dict
     """
-    logger.info("Reading configurations")
+
+    logging.info("Reading configurations")
     config = read()
-    logger.info(f"Configurations read: {config}")
+    logging.info(f"Configurations read: {config}")
 
     return config
+
+
+def main():
+    start_logging()
+    folder_name = Prompt.ask("Please provide the folder name")
+
+    file_naming_specs = FileNamingSpecs(folder_name)
+    path = file_naming_specs.get_path()
+    rich.print(path)
