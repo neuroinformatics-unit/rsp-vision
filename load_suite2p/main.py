@@ -13,7 +13,7 @@ def start_logging():
     module = get_module_for_logging()
 
     fancylog.start_logging(
-        output_dir="./", package=module, filename="load_suite2p"
+        output_dir="./", package=module, filename="load_suite2p", verbose=False
     )
 
 
@@ -24,17 +24,22 @@ def read_configurations():
     :rtype: dict
     """
 
-    logging.info("Reading configurations")
+    logging.debug("Reading configurations")
     config = read()
-    logging.info(f"Configurations read: {config}")
+    logging.debug(f"Configurations read: {config}")
 
     return config
 
 
 def main():
     start_logging()
-    folder_name = Prompt.ask("Please provide the folder name")
 
-    file_naming_specs = FileNamingSpecs(folder_name)
+    folder_name = Prompt.ask("Please provide the folder name")
+    try:
+        file_naming_specs = FileNamingSpecs(folder_name)
+    except FileNotFoundError as e:
+        rich.print(e)
+        exit()
+
     path = file_naming_specs.get_path()
     rich.print(path)
