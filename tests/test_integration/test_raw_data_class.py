@@ -1,4 +1,4 @@
-from load_suite2p import data_objects
+from load_suite2p import folder_naming_specs
 
 folder_test_list = [
     "AS_1111877_hL_V1_monitor_front",
@@ -14,13 +14,15 @@ folder_test_list = [
 
 def test_FileNamingSpecs_constructor():
     for folder in folder_test_list:
-        data_objects.FolderNamingSpecs(folder)
+        folder_naming_specs.FolderNamingSpecs(folder)
 
 
 def test_FileNamingSpecs_constructor_fails():
     control_exception = False
     try:
-        data_objects.FolderNamingSpecs("AS_1111877_hL_V1_monitor_front_wrong")
+        folder_naming_specs.FolderNamingSpecs(
+            "AS_1111877_hL_V1_monitor_front_wrong"
+        )
     except FileNotFoundError:
         control_exception = True
         pass
