@@ -5,7 +5,8 @@ analysis-specific-configs:
   region-id: AS_1111877_hL_V1_monitor_front # there are very many combinations - ask chrissanthy
   fluorescence_type: ['df', 'allen_df']
 
-server: 'ssh.swc.ucl.ac.uk`'
+server: 'ssh.swc.ucl.ac.uk'
 
 paths:
+  winstor: '/Volumes/winstor/'
   imaging: '/Volumes/margrie/Chryssanthi/imaging/'
