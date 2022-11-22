@@ -47,4 +47,5 @@ def main():
     file_naming_specs = FolderNamingSpecs(folder_name)
 
     path = file_naming_specs.get_path()
+    rich.print("Success! 🎉")
     rich.print(path)

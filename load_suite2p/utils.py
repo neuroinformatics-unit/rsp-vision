@@ -18,10 +18,21 @@ def get_module_for_logging() -> object:
 def can_ping_swc_server() -> bool:
     """Checks if the machine is connected to the VPN.
 
-    :return: True if Winstor server is connected, False otherwise
+    :return: True if the machine is connected to the VPN, False otherwise
     """
     config = read()
-    return True if os.system("ping -c 1 " + config["server"]) == 0 else False
+    return (
+        True if int(os.system("ping -c 1 " + config["server"])) == 0 else False
+    )
+
+
+def is_winstor_mounted() -> bool:
+    """Checks if the winstor folder is mounted.
+
+    :return: True if the winstor folder is mounted, False otherwise
+    """
+    config = read()
+    return True if os.path.ismount(config["paths"]["winstor"]) else False
 
 
 def exception_handler(func):

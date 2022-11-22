@@ -5,7 +5,7 @@ from path import Path
 
 from .parsers.chryssanthi import ChryssanthiParser
 from .read_config import read
-from .utils import can_ping_swc_server
+from .utils import can_ping_swc_server, is_winstor_mounted
 
 
 class FolderNamingSpecs:
@@ -50,14 +50,11 @@ class FolderNamingSpecs:
         :raises FileNotFoundError: if the experiment folder does not exist
         """
         if not can_ping_swc_server():
-            logging.debug(
-                "Winstor server not connected. \
-                Please connect to the VPN."
-            )
-            raise FileNotFoundError(
-                "Winstor server not connected. \
-                Please connect to the VPN."
-            )
+            logging.debug("Please connect to the VPN.")
+            raise RuntimeError("Please connect to the VPN.")
+        if not is_winstor_mounted():
+            logging.debug("Please mount Winstor.")
+            raise RuntimeError("Please mount Winstor.")
 
         self.folder_name = folder_name
 
