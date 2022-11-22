@@ -4,7 +4,7 @@ import rich
 from fancylog import fancylog
 from rich.prompt import Prompt
 
-from .data_objects import FolderNamingSpecs
+from .folder_naming_specs import FolderNamingSpecs
 from .read_config import read
 from .utils import exception_handler, get_module_for_logging
 

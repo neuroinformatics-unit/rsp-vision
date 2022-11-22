@@ -7,9 +7,9 @@ config_path = Path(__file__).parent / "config/config.yml"
 def read(config_path: Path = config_path):
     """Reads the configuration file and returns the content as a dictionary.
 
-    :param config_path: path to the configuration file
+    :param config_path:     path to the configuration file
     :type config_path: Path
-    :return: content of the configuration file
+    :return:                content of the configuration file
     :rtype: dict
     """
 
