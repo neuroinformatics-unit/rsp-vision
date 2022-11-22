@@ -1,5 +1,9 @@
 from abc import ABC, abstractmethod
 
+from path import Path
+
+from load_suite2p.read_config import read
+
 
 class Parser(ABC):
     """Abstract base class for parsers. Child classes must be project
@@ -13,14 +17,56 @@ class Parser(ABC):
 
     def __init__(self, folder_name: str) -> None:
         """Constructor method"""
-        self.folder_name = folder_name
+        self._folder_name = folder_name
         self.parse()
+        self._config = read()
 
-    @abstractmethod
     def parse(self) -> None:
         """Parses the folder name and evaluates the parameters `mouse_line`,
-        `mouse_id`, `hemisphere`, `brain_region`, `monitor_position, `fov`
-        and `cre`. To be implemented by the child classes taking into account
+        `mouse_id`, `hemisphere`, `brain_region`, `monitor_position`.
+        It may parse more parameters depending on the project.
+        To be implemented by the child classes taking into account
+        the folder structure of each project.
+
+        :raises ValueError: if there is not the minimum number of parameters
+        set by the parser in the child class.
+        """
+        self._parse()
+        if not self._minimum_params_required():
+            raise ValueError(
+                "The minimum parameters required are not present. "
+                + "Please check the parser implementation."
+            )
+
+    @abstractmethod
+    def _parse(self) -> None:
+        """Parses the folder name and evaluates the parameters `mouse_line`,
+        `mouse_id`, `hemisphere`, `brain_region` and `monitor_position`.
+        To be implemented by the child classes taking into account
         the folder structure of each project.
         """
         pass
+
+    @abstractmethod
+    def get_path(self) -> Path:
+        """Returns the path to the file containing the suite2p output. To be
+        implemented by the child classes taking into account the folder
+        structure of each project.
+        """
+        pass
+
+    def _minimum_params_required(self) -> bool:
+        """Checks if the minimum parameters have been evaluated by the parser.
+
+        :return: True if the minimum parameters are present, False otherwise
+        :rtype: bool
+        """
+        return all(
+            [
+                hasattr(self, "mouse_line"),
+                hasattr(self, "mouse_id"),
+                hasattr(self, "hemisphere"),
+                hasattr(self, "brain_region"),
+                hasattr(self, "monitor_position"),
+            ]
+        )

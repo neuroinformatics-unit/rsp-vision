@@ -5,12 +5,7 @@ from path import Path
 
 from .parsers.chryssanthi import ChryssanthiParser
 from .read_config import read
-
-
-class FormattedData:
-    def __init__(self, raw_data, formatted_data):
-        self.raw_data = raw_data
-        self.formatted_data = formatted_data
+from .utils import can_ping_swc_server
 
 
 class FolderNamingSpecs:
@@ -54,6 +49,16 @@ class FolderNamingSpecs:
         :type folder_name: str
         :raises FileNotFoundError: if the experiment folder does not exist
         """
+        if not can_ping_swc_server():
+            logging.debug(
+                "Winstor server not connected. \
+                Please connect to the VPN."
+            )
+            raise FileNotFoundError(
+                "Winstor server not connected. \
+                Please connect to the VPN."
+            )
+
         self.folder_name = folder_name
 
         logging.info("Reading configurations")
@@ -63,7 +68,7 @@ class FolderNamingSpecs:
         self.parse_name()
 
         if not self.check_if_file_exists():
-            logging.error(f"File {self.get_path()} does not exist")
+            logging.debug(f"File {self.get_path()} does not exist")
             raise FileNotFoundError(
                 f"File {self.folder_name} not found. "
                 + "Please check the file name and try again."
@@ -71,18 +76,18 @@ class FolderNamingSpecs:
 
     def parse_name(self) -> None:
         """Parses the folder name and evaluates the parameters `mouse_line`,
-        `mouse_id`, `hemisphere`, `brain_region`, `monitor_position, `fov`
-        and `cre`.
+        `mouse_id`, `hemisphere`, `brain_region`, `monitor_position.
+        Other parameters might be parsed depending on the project.
 
         :raises ValueError: if the parser specified in the config file is
         not implemented
         """
         if self.config["scientist"] == "Chryssanthi":
             logging.debug("Parsing folder name using Chryssanthi's parser")
-            parser = ChryssanthiParser(self.folder_name)
+            self._parser = ChryssanthiParser(self.folder_name)
 
-        if "parser" not in locals():
-            logging.error(
+        if not hasattr(self, "_parser"):
+            logging.debug(
                 f"Scientist's parser {self.config['scientist']} \
                 not supported"
             )
@@ -91,37 +96,20 @@ class FolderNamingSpecs:
                 not supported"
             )
 
-        self.mouse_line = parser.mouse_line
-        self.mouse_id = parser.mouse_id
-        self.hemisphere = parser.hemisphere
-        self.brain_region = parser.brain_region
-        self.monitor_position = parser.monitor_position
-
-        if hasattr(parser, "fov"):
-            self.fov = parser.fov
-        if hasattr(parser, "cre"):
-            self.cre = parser.cre
-
-    def get_parent_folder_name(self) -> str:
-        """Returns the name of the parent folder which combines the name of
-        the mouse line and the mouse id.
-
-        :return: name of the parent folder
-        :rtype: str
-        """
-        return f"{self.mouse_line}_{self.mouse_id}"
+        for attribute in self._parser.__dict__:
+            if not attribute.startswith("_"):
+                logging.debug(
+                    f"Setting attribute {attribute} in the class \
+                    FolderNamingSpecs"
+                )
+                setattr(self, attribute, getattr(self._parser, attribute))
 
     def get_path(self) -> Path:
         """Returns the path to the folder containing the experimental data.
         Reads the server location from the config file and appends the
         parent folder and the given folder name.
         """
-        # could contain other subfolders
-        return (
-            Path(self.config["paths"]["imaging"])
-            / Path(self.get_parent_folder_name())
-            / Path(self.folder_name)
-        )
+        return self._parser.get_path()
 
     def check_if_file_exists(self) -> bool:
         """Checks if the folder containing the experimental data exists.
@@ -130,7 +118,9 @@ class FolderNamingSpecs:
         return os.path.exists(self.get_path())
 
 
-class RawData:
+class FormattedData:
+    """Class to load the formatted data from suite2p and registers2p."""
+
     def __init__(
         self,
         file_name: str,
