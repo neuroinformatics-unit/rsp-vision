@@ -1,5 +1,7 @@
 import logging
 
+from path import Path
+
 from .parser import Parser
 
 
@@ -32,6 +34,9 @@ class ChryssanthiParser(Parser):
         super().__init__(folder_name)
 
     def parse(self) -> None:
+        return super().parse()
+
+    def _parse(self) -> None:
         """Parses the folder name and evaluates the parameters `mouse_line`,
         `mouse_id`, `hemisphere`, `brain_region`, `monitor_position, `fov`
         and `cre`. It is specific to Chrissanthi's data.
@@ -42,9 +47,9 @@ class ChryssanthiParser(Parser):
         parameter `monitor_position`
         """
 
-        splitted = self.folder_name.split("_")
+        splitted = self._folder_name.split("_")
         self.mouse_line = splitted[0]
-        self.subfolder_exists = False
+        self._subfolder_exists = False
 
         if splitted[1].startswith("111"):
             self.mouse_id = splitted[1]
@@ -57,10 +62,10 @@ class ChryssanthiParser(Parser):
             if (self.mouse_line == "AS" and self.mouse_id == "95_2") or (
                 self.mouse_line == "CX" and int(splitted[1]) < 61
             ):
-                self.subfolder_exists = True
-                logging.warning(
+                self._subfolder_exists = True
+                logging.debug(
                     f"Experimental data without parsing implementation: \
-                    {self.folder_name}"
+                    {self._folder_name}"
                 )
                 raise NotImplementedError(
                     "Unclear data structure, contains subfolder"
@@ -80,9 +85,30 @@ class ChryssanthiParser(Parser):
                 self.monitor_position += item
 
         if "monitor" not in self.monitor_position:
-            logging.error(
+            logging.debug(
                 "Monitor position not found in folder name",
                 extra={"ChryssanthiParser": self},
             )
             logging.debug(self.monitor_position)
             raise RuntimeError("Monitor position not found in folder name")
+
+    def _get_parent_folder_name(self) -> str:
+        """Returns the name of the parent folder which combines the name of
+        the mouse line and the mouse id.
+
+        :return: name of the parent folder
+        :rtype: str
+        """
+        return f"{self.mouse_line}_{self.mouse_id}"
+
+    def get_path(self) -> Path:
+        """Returns the path to the folder containing the experimental data.
+        Reads the server location from the config file and appends the
+        parent folder and the given folder name.
+        """
+
+        return (
+            Path(self._config["paths"]["imaging"])
+            / Path(self._get_parent_folder_name())
+            / Path(self._folder_name)
+        )

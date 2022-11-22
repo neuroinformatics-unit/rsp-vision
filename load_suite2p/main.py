@@ -6,7 +6,7 @@ from rich.prompt import Prompt
 
 from .data_objects import FolderNamingSpecs
 from .read_config import read
-from .utils import get_module_for_logging
+from .utils import exception_handler, get_module_for_logging
 
 
 def start_logging():
@@ -35,6 +35,7 @@ def read_configurations():
     return config
 
 
+@exception_handler
 def main():
     """Main function of the package. It starts logging, reads the
     configurations, asks the user to input the folder name and then
@@ -43,11 +44,7 @@ def main():
     start_logging()
 
     folder_name = Prompt.ask("Please provide the folder name")
-    try:
-        file_naming_specs = FolderNamingSpecs(folder_name)
-    except FileNotFoundError as e:
-        rich.print(e)
-        exit()
+    file_naming_specs = FolderNamingSpecs(folder_name)
 
     path = file_naming_specs.get_path()
     rich.print(path)
