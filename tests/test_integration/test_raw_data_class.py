@@ -14,13 +14,13 @@ folder_test_list = [
 
 def test_FileNamingSpecs_constructor():
     for folder in folder_test_list:
-        data_objects.FileNamingSpecs(folder)
+        data_objects.FolderNamingSpecs(folder)
 
 
 def test_FileNamingSpecs_constructor_fails():
     control_exception = False
     try:
-        data_objects.FileNamingSpecs("AS_1111877_hL_V1_monitor_front_wrong")
+        data_objects.FolderNamingSpecs("AS_1111877_hL_V1_monitor_front_wrong")
     except FileNotFoundError:
         control_exception = True
         pass
