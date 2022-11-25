@@ -29,9 +29,9 @@ class ChryssanthiParser(Parser):
     :type cre: str
     """
 
-    def __init__(self, folder_name: str) -> None:
+    def __init__(self, folder_name: str, config: dict) -> None:
         """Constructor method"""
-        super().__init__(folder_name)
+        super().__init__(folder_name, config)
 
     def parse(self) -> None:
         return super().parse()
