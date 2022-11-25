@@ -3,6 +3,10 @@ import logging
 import rich
 from fancylog import fancylog
 from rich.prompt import Prompt
+from vpn_server_connections.connections import (
+    can_ping_swc_server,
+    is_winstor_mounted,
+)
 
 from .folder_naming_specs import FolderNamingSpecs
 from .read_config import read
@@ -35,6 +39,19 @@ def read_configurations():
     return config
 
 
+def check_connection(config: dict) -> None:
+    """Check if the connection to the server is established and if Winstor
+    is mounted.
+    """
+
+    if not can_ping_swc_server(config["server"]):
+        logging.debug("Please connect to the VPN.")
+        raise RuntimeError("Please connect to the VPN.")
+    if not is_winstor_mounted(config["paths"]["winstor"]):
+        logging.debug("Please mount Winstor.")
+        raise RuntimeError("Please mount Winstor.")
+
+
 @exception_handler
 def main():
     """Main function of the package. It starts logging, reads the
@@ -42,7 +59,9 @@ def main():
     instantiates a :class:`FolderNamingSpecs` object.
     """
     start_logging()
+
     config = read()
+    check_connection(config)
     folder_name = Prompt.ask("Please provide the folder name")
     file_naming_specs = FolderNamingSpecs(folder_name, config)
 
