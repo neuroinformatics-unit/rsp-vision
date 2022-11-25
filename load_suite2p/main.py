@@ -42,9 +42,9 @@ def main():
     instantiates a :class:`FolderNamingSpecs` object.
     """
     start_logging()
-
+    config = read()
     folder_name = Prompt.ask("Please provide the folder name")
-    file_naming_specs = FolderNamingSpecs(folder_name)
+    file_naming_specs = FolderNamingSpecs(folder_name, config)
 
     path = file_naming_specs.get_path()
     rich.print("Success! 🎉")

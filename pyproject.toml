@@ -58,7 +58,7 @@ include = ["load_suite2p*"]
 exclude = ["tests*"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=load_suite2p"
+addopts = "-s --cov=load_suite2p"
 
 [tool.black]
 target-version = ['py39']
