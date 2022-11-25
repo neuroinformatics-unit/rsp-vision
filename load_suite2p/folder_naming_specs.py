@@ -56,7 +56,7 @@ class FolderNamingSpecs:
         self.parse_name()
 
         if not self.check_if_file_exists():
-            logging.debug(f"File {self.get_path()} does not exist")
+            logging.error(f"File {self.get_path()} does not exist")
             raise FileNotFoundError(
                 f"File {self.folder_name} not found. "
                 + "Please check the file name and try again."
