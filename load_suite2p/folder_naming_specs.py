@@ -72,7 +72,7 @@ class FolderNamingSpecs:
         """
         if self.config["scientist"] == "Chryssanthi":
             logging.debug("Parsing folder name using Chryssanthi's parser")
-            self._parser = ChryssanthiParser(self.folder_name)
+            self._parser = ChryssanthiParser(self.folder_name, self.config)
 
         if not hasattr(self, "_parser"):
             logging.debug(

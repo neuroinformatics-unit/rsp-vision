@@ -24,7 +24,7 @@ folder_test_list = [
 
 config = {
     "scientist": "Chryssanthi",
-    "path": {"imaging": "test_data/"},
+    "paths": {"imaging": "test_data/"},
 }
 
 for fs in folder_test_list:

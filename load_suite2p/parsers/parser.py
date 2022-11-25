@@ -2,8 +2,6 @@ from abc import ABC, abstractmethod
 
 from path import Path
 
-from load_suite2p.read_config import read
-
 
 class Parser(ABC):
     """Abstract base class for parsers. Child classes must be project
@@ -15,11 +13,11 @@ class Parser(ABC):
     :type folder_name: str
     """
 
-    def __init__(self, folder_name: str) -> None:
+    def __init__(self, folder_name: str, config: dict) -> None:
         """Constructor method"""
         self._folder_name = folder_name
         self.parse()
-        self._config = read()
+        self._config = config
 
     def parse(self) -> None:
         """Parses the folder name and evaluates the parameters `mouse_line`,
