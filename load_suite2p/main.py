@@ -8,7 +8,7 @@ from vpn_server_connections.connections import (
     is_winstor_mounted,
 )
 
-from .folder_naming_specs import FolderNamingSpecs
+from .load.folder_naming_specs import FolderNamingSpecs
 from .read_config import read
 from .utils import exception_handler, get_module_for_logging
 
