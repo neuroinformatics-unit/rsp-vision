@@ -1,6 +1,5 @@
 import logging
 import os
-
 from pathlib import Path
 
 from .parsers.parser01 import Parser01
