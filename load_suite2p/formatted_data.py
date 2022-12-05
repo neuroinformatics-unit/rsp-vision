@@ -6,7 +6,7 @@ class FormattedData:
 
     def __init__(self, file_name: str, config: dict):
         self.file_name = file_name
-        self.file_specs = self.get_FileNamingSpecs(config)
+        self.file_specs = self.get_FolderNamingSpecs(config)
 
-    def get_FileNamingSpecs(self, config) -> FolderNamingSpecs:
+    def get_FolderNamingSpecs(self, config) -> FolderNamingSpecs:
         return FolderNamingSpecs(self.file_name, config)

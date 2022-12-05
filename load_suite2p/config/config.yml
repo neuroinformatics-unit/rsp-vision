@@ -1,12 +1,7 @@
-scientist: Chryssanthi
-
-analysis-specific-configs:
-  analysis-type: ['retinotopy', 'sftf', 'sparse_noise']
-  region-id: AS_1111877_hL_V1_monitor_front # there are very many combinations - ask chrissanthy
-  fluorescence_type: ['df', 'allen_df']
+parser: Parser01
 
 server: 'ssh.swc.ucl.ac.uk'
 
 paths:
-  winstor: '/Volumes/winstor/'
-  imaging: '/Volumes/margrie/Chryssanthi/imaging/'
+  winstor: '/Volumes/your_server/'
+  imaging: '/Volumes/path/to/imaging/data/'
