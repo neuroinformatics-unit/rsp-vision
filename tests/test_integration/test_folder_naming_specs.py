@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 from load_suite2p import folder_naming_specs
 
 # Mocks
@@ -23,7 +25,7 @@ folder_test_list = [
 ]
 
 config = {
-    "scientist": "Chryssanthi",
+    "parser": "Parser01",
     "paths": {"imaging": "test_data/"},
 }
 
@@ -34,19 +36,11 @@ for fs in folder_test_list:
 
 
 # Tests
-def test_FileNamingSpecs_constructor():
+def test_FolderNamingSpecs_constructor():
     for fs in folder_test_list:
         folder_naming_specs.FolderNamingSpecs(fs.folder, config)
 
 
-def test_FileNamingSpecs_constructor_fails():
-    control_exception = False
-    try:
-        folder_naming_specs.FolderNamingSpecs(
-            "AS_1111877_hL_V1_monitor_front_wrong", config
-        )
-    except FileNotFoundError:
-        control_exception = True
-        pass
-    if control_exception is False:
-        raise AssertionError("FileNotFoundError not raised, filters failed")
+def test_FolderNamingSpecs_constructor_fails():
+    with pytest.raises(Exception):
+        folder_naming_specs.FolderNamingSpecs("AS_1111877", config)

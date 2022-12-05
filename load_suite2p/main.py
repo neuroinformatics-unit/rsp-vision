@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 import rich
 from fancylog import fancylog
@@ -11,6 +12,8 @@ from vpn_server_connections.connections import (
 from .folder_naming_specs import FolderNamingSpecs
 from .read_config import read
 from .utils import exception_handler, get_module_for_logging
+
+config_path = Path(__file__).parent / "config/config.yml"
 
 
 def start_logging():
@@ -25,24 +28,49 @@ def start_logging():
     )
 
 
-def read_configurations():
+def read_configurations() -> dict:
     """Read configurations regarding experiment and analysis.
 
-    :return: dictionary with configurations
-    :rtype: dict
+    Returns
+    -------
+    dict
+        dictionary with configurations
     """
 
     logging.debug("Reading configurations")
-    config = read()
+    config = read(config_path)
     logging.debug(f"Configurations read: {config}")
 
     return config
 
 
-def check_connection(config: dict) -> None:
+def check_connection(config: dict):
     """Check if the connection to the server is established and if Winstor
     is mounted.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration file to load the data
+
+    Raises
+    ------
+    RuntimeError
+        If the connection to the VPN is not established
+    RuntimeError
+        If Winstor is not mounted
+    RuntimeError
+        If the configuration file is not correct
     """
+    if not (
+        ("server" in config)
+        and ("paths" in config)
+        and ("winstor" in config["paths"])
+    ):
+        raise RuntimeError(
+            "The configuration file is not complete."
+            + "Please check the documentation."
+        )
 
     if not can_ping_swc_server(config["server"]):
         logging.debug("Please connect to the VPN.")
@@ -60,11 +88,11 @@ def main():
     """
     start_logging()
 
-    config = read()
+    config = read(config_path)
     check_connection(config)
     folder_name = Prompt.ask("Please provide the folder name")
-    file_naming_specs = FolderNamingSpecs(folder_name, config)
+    folder_naming_specs = FolderNamingSpecs(folder_name, config)
 
-    path = file_naming_specs.get_path()
+    path = folder_naming_specs.get_path()
     rich.print("Success! 🎉")
     rich.print(path)

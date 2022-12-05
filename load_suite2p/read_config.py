@@ -1,18 +1,24 @@
+import logging
+
 import yaml
 from path import Path
 
-config_path = Path(__file__).parent / "config/config.yml"
 
-
-def read(config_path: Path = config_path):
+def read(config_path: Path) -> dict:
     """Reads the configuration file and returns the content as a dictionary.
 
-    :param config_path:     path to the configuration file
-    :type config_path: Path
-    :return:                content of the configuration file
-    :rtype: dict
+    Parameters
+    ----------
+    config_path : Path
+        Path to the configuration file
+    Returns
+    -------
+    dict
+        content of the configuration file
     """
 
     with open(config_path, "r") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
+        logging.debug(f"Config file read from {config_path}")
+        logging.debug(f"Config file content: {config}")
     return config
