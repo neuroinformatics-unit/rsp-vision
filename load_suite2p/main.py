@@ -2,8 +2,12 @@ import logging
 from pathlib import Path
 
 import rich
+from analysis.spatial_freq_temporal_freq import (
+    SpatialFrequencyTemporalFrequency,
+)
 from fancylog import fancylog
 from load.folder_naming_specs import FolderNamingSpecs
+from load.photon_data import PhotonData
 from rich.prompt import Prompt
 from vpn_server_connections.connections import (
     can_ping_swc_server,
@@ -86,13 +90,22 @@ def main():
     configurations, asks the user to input the folder name and then
     instantiates a :class:`FolderNamingSpecs` object.
     """
+    # pipeline draft
     start_logging()
 
     config = read(config_path)
     check_connection(config)
+
+    #  load data
     folder_name = Prompt.ask("Please provide the folder name")
     folder_naming_specs = FolderNamingSpecs(folder_name, config)
+    photon_data = PhotonData(folder_naming_specs)
 
-    path = folder_naming_specs.get_path()
+    #  analyze data
+    sftf = SpatialFrequencyTemporalFrequency(photon_data)
+    sftf.analyze()
+
+    #  plot data
+    #  save data
+
     rich.print("Success! 🎉")
-    rich.print(path)
