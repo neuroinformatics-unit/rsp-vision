@@ -1,0 +1,7 @@
+parser: Parser01
+
+server: 'ssh.swc.ucl.ac.uk'
+
+paths:
+  winstor: '/Volumes/your_server/'
+  imaging: '/Volumes/path/to/imaging/data/'
