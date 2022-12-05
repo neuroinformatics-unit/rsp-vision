@@ -1,4 +1,4 @@
-from ..load.formatted_data import PhotonData, PhotonOptions
+from ..load.photon_data import PhotonData, PhotonOptions
 
 
 class Retinotopy:

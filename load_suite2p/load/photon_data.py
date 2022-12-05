@@ -4,9 +4,8 @@ from .folder_naming_specs import FolderNamingSpecs
 class PhotonData:
     """Class to load the formatted data from suite2p and registers2p."""
 
-    def __init__(self, file_name: str, config: dict):
-        self.file_name = file_name
-        self.file_specs = self.get_FileNamingSpecs(config)
+    def __init__(self, specs: FolderNamingSpecs):
+        self.specs = specs
         self.response_matrix = self.get_response_matrix()
 
         # Attributes to evaluate:
@@ -17,9 +16,6 @@ class PhotonData:
         # self.dim_value
         # self.day_roi
         # self.n_roi
-
-    def get_FileNamingSpecs(self, config) -> FolderNamingSpecs:
-        return FolderNamingSpecs(self.file_name, config)
 
     def get_response_matrix(self):
         raise NotImplementedError("This method is not implemented yet")
