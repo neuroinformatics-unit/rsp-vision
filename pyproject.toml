@@ -58,7 +58,7 @@ include = ["load_suite2p*"]
 exclude = ["tests*"]
 
 [tool.pytest.ini_options]
-addopts = "--cov=load_suite2p"
+addopts = "-s --cov=load_suite2p"
 
 [tool.black]
 target-version = ['py39']
@@ -89,12 +89,3 @@ line_length = 79
 [tool.setuptools_scm]
 
 [tool.check-manifest]
-ignore = [
-  "*.yaml",
-  ".bumpversion.cfg",
-  "tox.ini",
-  "tests/*",
-  "tests/test_unit/*",
-  "tests/test_integration/*",
-  ".flake8"
-]
