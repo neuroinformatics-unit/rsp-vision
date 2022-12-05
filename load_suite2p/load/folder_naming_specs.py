@@ -1,7 +1,7 @@
 import logging
 import os
 
-from path import Path
+from pathlib import Path
 
 from .parsers.parser01 import Parser01
 
