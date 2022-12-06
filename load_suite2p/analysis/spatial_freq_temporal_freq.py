@@ -23,11 +23,22 @@ class SpatialFrequencyTemporalFrequency:
         # calls _get_response_map
         raise NotImplementedError("This method is not implemented yet")
 
-    def _2d_gaussian(self):
+
+class Gaussian2D:
+    # a 2D gaussian function
+    # also used by plotting functions
+    def __init__(self):
+        # different kinds of 2D gaussians:
+        # - 2D gaussian
+        # - 2D gaussian Andermann
+        # - 2D gaussian Priebe
         raise NotImplementedError("This method is not implemented yet")
 
+
+class ResponseMap:
+    # also used by plotting functions
     def _get_response_map(self):
-        # calls _get_response_map
+        # calls _get_preferred_direction
         raise NotImplementedError("This method is not implemented yet")
 
     def _get_preferred_direction(self):
