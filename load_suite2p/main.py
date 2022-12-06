@@ -3,13 +3,13 @@ from pathlib import Path
 
 import rich
 from fancylog import fancylog
+from load.folder_naming_specs import FolderNamingSpecs
 from rich.prompt import Prompt
 from vpn_server_connections.connections import (
     can_ping_swc_server,
     is_winstor_mounted,
 )
 
-from .folder_naming_specs import FolderNamingSpecs
 from .read_config import read
 from .utils import exception_handler, get_module_for_logging
 
