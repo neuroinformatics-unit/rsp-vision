@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from load_suite2p import folder_naming_specs
+from load_suite2p.load import folder_naming_specs
 
 # Mocks
 
