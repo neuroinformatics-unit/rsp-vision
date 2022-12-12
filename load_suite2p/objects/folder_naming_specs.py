@@ -127,4 +127,7 @@ class FolderNamingSpecs:
         # search for files called 'suite2p', 'plane0', 'Fall.mat'
         # get session names to get name of stim files
         # corrects for exceptions
+
+        # implement this method in this PR
+
         raise NotImplementedError("This method is not implemented yet")
