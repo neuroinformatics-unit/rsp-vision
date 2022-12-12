@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from load_suite2p import read_config
+from load_suite2p.load import read_config
 
 
 def test_read_config():
