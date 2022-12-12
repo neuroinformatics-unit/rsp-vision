@@ -1,5 +1,6 @@
 class Options:
-    """Class with the options to analize data from suite2p and registers2p."""
+    """Class with the options to analize data from suite2p and registers2p.
+    Based on original Options class in the MATLAB project."""
 
     def __init__(self, config: dict):
         self.response = self.ResponseOptions()
