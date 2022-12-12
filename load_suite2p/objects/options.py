@@ -1,30 +1,7 @@
-from .folder_naming_specs import FolderNamingSpecs
-
-
-class PhotonData:
-    """Class to load the formatted data from suite2p and registers2p."""
-
-    def __init__(self, specs: FolderNamingSpecs):
-        self.specs = specs
-        self.response_matrix = self.get_response_matrix()
-
-        # Attributes to evaluate:
-        # self.F
-        # self.type
-        # self.stim_idx
-        # self.dim_size
-        # self.dim_value
-        # self.day_roi
-        # self.n_roi
-
-    def get_response_matrix(self):
-        raise NotImplementedError("This method is not implemented yet")
-
-
-class PhotonOptions:
+class Options:
     """Class with the options to analize data from suite2p and registers2p."""
 
-    def __init__(self):
+    def __init__(self, config: dict):
         self.response = self.ResponseOptions()
         self.fitting = self.FittingOptions()
         # Attributes to evaluate:

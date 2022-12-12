@@ -1,9 +1,8 @@
 import logging
 import os
+from pathlib import Path
 
-from path import Path
-
-from .parsers.parser01 import Parser01
+from .parsers.parser2pRSP import Parser2pRSP
 
 
 class FolderNamingSpecs:
@@ -46,7 +45,7 @@ class FolderNamingSpecs:
         folder_name: str,
         config: dict,
     ):
-        self.config = config
+        self.original_config = config
 
         self.folder_name = folder_name
 
@@ -87,16 +86,16 @@ class FolderNamingSpecs:
         not implemented
         """
 
-        if self.config["parser"] == "Parser01":
-            logging.debug("Parsing folder name using Parser01")
-            self._parser = Parser01(self.folder_name, self.config)
+        if self.original_config["parser"] == "Parser2pRSP":
+            logging.debug("Parsing folder name using Parser2pRSP")
+            self._parser = Parser2pRSP(self.folder_name, self.original_config)
         else:
             logging.debug(
-                f"Scientist's parser {self.config['scientist']} \
+                f"Parser {self.original_config['parser']} \
                 not supported"
             )
             raise ValueError(
-                f"Scientist's parser {self.config['scientist']} \
+                f"Parser {self.original_config['parser']} \
                 not supported"
             )
 
@@ -122,3 +121,10 @@ class FolderNamingSpecs:
             True if folder exists, False otherwise
         """
         return os.path.exists(self.get_path())
+
+    def extract_all_file_names(self) -> list:
+        # get filenames by day
+        # search for files called 'suite2p', 'plane0', 'Fall.mat'
+        # get session names to get name of stim files
+        # corrects for exceptions
+        raise NotImplementedError("This method is not implemented yet")

@@ -1,11 +1,10 @@
 import logging
-
-from path import Path
+from pathlib import Path
 
 from .parser import Parser
 
 
-class Parser01(Parser):
+class Parser2pRSP(Parser):
     """Parses the folder name and evaluates the parameters `mouse_line`,
     `mouse_id`, `hemisphere`, `brain_region`, `monitor_position, `fov`
     and `cre`.

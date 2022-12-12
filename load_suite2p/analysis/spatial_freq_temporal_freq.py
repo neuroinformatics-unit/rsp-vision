@@ -1,13 +1,17 @@
-from ..load.photon_data import PhotonData, PhotonOptions
+from ..objects.configurations import Config
+from ..objects.photon_data import PhotonData
 
 
 class SpatialFrequencyTemporalFrequency:
-    def __init__(self, data: PhotonData, options: PhotonOptions):
+    def __init__(self, data: PhotonData, config: Config):
         self.data = data
-        self.options = options
+        self.config = config
 
     def get_fit_parameters(self):
         # calls _fit_two_dimensional_elliptical_gaussian
+        raise NotImplementedError("This method is not implemented yet")
+
+    def responsiveness(self):
         raise NotImplementedError("This method is not implemented yet")
 
     def responsiveness_anova_window(self):

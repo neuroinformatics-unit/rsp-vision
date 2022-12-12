@@ -1,7 +1,7 @@
 import logging
+from pathlib import Path
 
 import yaml
-from path import Path
 
 
 def read(config_path: Path) -> dict:
