@@ -11,10 +11,7 @@ from .utils import exception_handler, start_logging
 
 @exception_handler
 def main():
-    """Main function of the package. It starts logging, reads the
-    configurations, asks the user to input the folder name and then
-    instantiates a :class:`FolderNamingSpecs` object.
-    """
+    """Entry point of the program. CLI or GUI functionality is added here."""
     # pipeline draft
     start_logging()
 
@@ -24,8 +21,10 @@ def main():
     # load data
     config, data = load_data(folder_name)
 
-    # make analysis object
+    # preprocess and make PhotonData object
     photon_data = PhotonData(data, config)
+
+    # make analysis object
     analysis = SpatialFrequencyTemporalFrequency(photon_data, config)
 
     # calculate responsiveness and display it in a nice way

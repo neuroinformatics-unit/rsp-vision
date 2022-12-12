@@ -3,6 +3,9 @@ from .options import Options
 
 
 class Config:
+    """The class :class:`Config` represents the configuration of the
+    experiment and the analysis."""
+
     def __init__(self, config: dict, folder_name: str):
         self.base_paths: dict = config["paths"]
         self.folder_name = folder_name
