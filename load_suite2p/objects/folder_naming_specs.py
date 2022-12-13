@@ -49,7 +49,7 @@ class FolderNamingSpecs:
 
         self.folder_name = folder_name
 
-        logging.info("Parsing folder name")
+        logging.info(f"Parsing folder name: {folder_name}")
         self.parse_name()
         self.mouse_line = self._parser.info["mouse_line"]
         self.mouse_id = self._parser.info["mouse_id"]
@@ -111,6 +111,30 @@ class FolderNamingSpecs:
         """
         return self._parser.get_path()
 
+    def get_path_to_allen_dff_file(self) -> Path:
+        """Returns the path to the folder containing the allen dff files.
+        Reads the server location from the config file and appends the
+        parent folder and the given folder name.
+
+        Returns
+        -------
+        Path
+            path to the folder containing the allen dff files
+        """
+        return self._parser.get_path_to_allen_dff_file()
+
+    def get_path_to_serial2p(self) -> Path:
+        """Returns the path to the folder containing the allen roi files.
+        Reads the server location from the config file and appends the
+        parent folder and the given folder name.
+
+        Returns
+        -------
+        Path
+            path to the folder containing the allen roi files
+        """
+        return self._parser.get_path_to_serial2p()
+
     def check_if_file_exists(self) -> bool:
         """Checks if the folder containing the experimental data exists.
         The folder path is obtained by calling the method :meth:`get_path`.
@@ -123,11 +147,79 @@ class FolderNamingSpecs:
         return os.path.exists(self.get_path())
 
     def extract_all_file_names(self) -> list:
-        # get filenames by day
-        # search for files called 'suite2p', 'plane0', 'Fall.mat'
-        # get session names to get name of stim files
-        # corrects for exceptions
+        """Recursively searches files in the given folder.
+        It also locates the allen_dff file and the serial2p files.
 
-        # implement this method in this PR
+        Raises:
+            FileNotFoundError: if the allen_dff is not present
+            FileNotFoundError: if the serial2p folder is not present
 
-        raise NotImplementedError("This method is not implemented yet")
+        Returns:
+            list: of :class:`File` containing all read files with
+            their path and extension.
+        """
+        logging.info("Extracting all file names")
+
+        all_files = []
+
+        def walk(path):
+            for dirpath, _, filenames in os.walk(path):
+                all_files.extend(
+                    File(name, Path(os.path.join(dirpath, name)))
+                    for name in filenames
+                )
+
+        walk(self.get_path())
+
+        if os.path.exists(self.get_path_to_allen_dff_file()):
+            all_files.append(
+                File(
+                    name=str(self.get_path_to_allen_dff_file()).split("/")[-1],
+                    path=self.get_path_to_allen_dff_file(),
+                )
+            )
+        else:
+            logging.info("No allen dff file found")
+            raise FileNotFoundError(
+                "No allen dff file found. Is this path correct: "
+                + f"{self.get_path_to_allen_dff_file()}?"
+            )
+
+        if os.path.exists(self.get_path_to_serial2p()):
+            walk(self.get_path_to_serial2p())
+        else:
+            logging.info("No serial2p folder found")
+            raise FileNotFoundError(
+                "No serial2p folder found. Is this path correct: "
+                + f"{self.get_path_to_serial2p()}?"
+            )
+
+        for file in all_files:
+            logging.info(
+                f"Filename found and stored: {file.name}, "
+                + f"its path is {file.path}"
+            )
+
+        return all_files
+
+
+class File:
+    """Class containing the name of the file, its path and its
+        extension.
+
+    Attributes
+    ----------
+    name: str
+        file name
+
+    path: Path
+        complete file path
+
+    extension: str
+        file extension
+    """
+
+    def __init__(self, name: str, path: Path):
+        self.name = name
+        self.path = path
+        self.extension = name.split(".")[-1]

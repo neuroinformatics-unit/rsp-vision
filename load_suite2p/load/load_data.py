@@ -2,11 +2,10 @@ import logging
 from pathlib import Path
 from typing import Tuple
 
-from read_config import read
-
 from ..objects.configurations import Config
+from .read_config import read
 
-config_path = Path(__file__).parent / "config/config.yml"
+config_path = Path(__file__).parents[1] / "config/config.yml"
 
 
 def load_data(folder_name: str) -> Tuple[Config, list]:
