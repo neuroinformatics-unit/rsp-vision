@@ -1,11 +1,11 @@
-from analysis.spatial_freq_temporal_freq import (
-    SpatialFrequencyTemporalFrequency,
-)
-from load.load_data import load_data
-from objects.photon_data import PhotonData
-from plots.plotter import Plotter
 from rich.prompt import Prompt
 
+from .analysis.spatial_freq_temporal_freq import (
+    SpatialFrequencyTemporalFrequency,
+)
+from .load.load_data import load_data
+from .objects.photon_data import PhotonData
+from .plots.plotter import Plotter
 from .utils import exception_handler, start_logging
 
 

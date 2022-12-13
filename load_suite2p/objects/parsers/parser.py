@@ -58,6 +58,22 @@ class Parser(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_path_to_allen_dff_file(self) -> Path:
+        """Returns the path to the file containing the allen dff. To be
+        implemented by the child classes taking into account the folder
+        structure of each project.
+        """
+        pass
+
+    @abstractmethod
+    def get_path_to_serial2p(self) -> Path:
+        """Returns the path to the file containing the serial2p output. To be
+        implemented by the child classes taking into account the folder
+        structure of each project.
+        """
+        pass
+
     def _minimum_params_required(self) -> bool:
         """Checks if the minimum parameters have been evaluated by the parser.
 

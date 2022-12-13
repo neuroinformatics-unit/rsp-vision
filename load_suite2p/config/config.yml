@@ -1,7 +1,9 @@
-parser: Parser01
+parser: Parser2pRSP
 
 server: 'ssh.swc.ucl.ac.uk'
 
 paths:
-  winstor: '/Volumes/your_server/'
-  imaging: '/Volumes/path/to/imaging/data/'
+  winstor: '/Volumes/winstor/'
+  imaging: '/Volumes/winstor/swc/margrie/Chryssanthi/imaging'
+  allen-dff: '/Volumes/winstor/swc/margrie/Chryssanthi/imaging/allen_dff'
+  serial2p: '/Volumes/winstor/swc/margrie/Chryssanthi/imaging/serial2p'
