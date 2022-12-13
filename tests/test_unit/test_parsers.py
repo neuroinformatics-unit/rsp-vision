@@ -36,8 +36,8 @@ def test_get_path():
 def test_get_path_to_allen_dff_file():
     parser = Parser2pRSP("CX_1111783_hR_RSPg_monitor_front", config)
     assert parser.get_path_to_allen_dff_file() == Path(
-        "test_data/allen_dff/\
-            CX_1111783_hR_RSPg_monitor_front_sf_tf_allen_dff.mat"
+        "test_data/allen_dff/"
+        + "CX_1111783_hR_RSPg_monitor_front_sf_tf_allen_dff.mat"
     )
 
 
