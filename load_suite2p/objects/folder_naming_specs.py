@@ -5,6 +5,28 @@ from pathlib import Path
 from .parsers.parser2pRSP import Parser2pRSP
 
 
+class File:
+    """Class containing the name of the file, its path and its
+        extension.
+
+    Attributes
+    ----------
+    name: str
+        file name
+
+    path: Path
+        complete file path
+
+    extension: str
+        file extension
+    """
+
+    def __init__(self, name: str, path: Path):
+        self.name = name
+        self.path = path
+        self.extension = name.split(".")[-1]
+
+
 class FolderNamingSpecs:
     """The class :class:`FolderNamingSpecs` represents the naming convention
     of the files and folders in which the experimental data is stored.
@@ -135,6 +157,19 @@ class FolderNamingSpecs:
         """
         return self._parser.get_path_to_serial2p()
 
+    def get_path_to_stimulus_AI_schedule_files(self) -> Path:
+        """Returns the path to the folder containing the stimulus
+        AI schedule files.
+        Reads the server location from the config file and appends the
+        parent folder and the given folder name.
+
+        Returns
+        -------
+        Path
+            path to the folder containing the stimulus AI schedule files
+        """
+        return self._parser.get_path_to_stimulus_AI_schedule_files()
+
     def check_if_file_exists(self) -> bool:
         """Checks if the folder containing the experimental data exists.
         The folder path is obtained by calling the method :meth:`get_path`.
@@ -194,6 +229,15 @@ class FolderNamingSpecs:
                 + f"{self.get_path_to_serial2p()}?"
             )
 
+        if os.path.exists(self.get_path_to_stimulus_AI_schedule_files()):
+            walk(self.get_path_to_stimulus_AI_schedule_files())
+        else:
+            logging.info("No stimulus AI schedule files found")
+            raise FileNotFoundError(
+                "No stimulus AI schedule files found. Is this path correct: "
+                + f"{self.get_path_to_stimulus_AI_schedule_files()}?"
+            )
+
         for file in all_files:
             logging.info(
                 f"Filename found and stored: {file.name}, "
@@ -202,24 +246,36 @@ class FolderNamingSpecs:
 
         return all_files
 
+    def categorize(
+        self, all_files: list[File]
+    ) -> tuple[list[File], list[File], list[File], list[File]]:
+        signal = []
+        stimulus_info = []
+        trigger_info = []
+        registers2p = []
+        logging.info("----------------------------------")
+        logging.info("Categorizing files....")
 
-class File:
-    """Class containing the name of the file, its path and its
-        extension.
+        for file in all_files:
+            if (
+                "suite2p" in file.name
+                or "plane0" in file.name
+                or "Fall.mat" in file.name
+            ):
+                signal.append(file)
+                logging.info(f"Signal file found: {file.path}")
 
-    Attributes
-    ----------
-    name: str
-        file name
+            if "stimulus_info.mat" in file.name:
+                stimulus_info.append(file)
+                logging.info(f"Stimulus info file found: {file.path}")
 
-    path: Path
-        complete file path
+            if "registers2p.mat" in file.name:
+                registers2p.append(file)
+                logging.info(f"Registers2p file found: {file.path}")
 
-    extension: str
-        file extension
-    """
+            if "sf_tf" in str(file.path):
+                if "trigger_info.mat" in file.name:
+                    trigger_info.append(file)
+                    logging.info(f"Trigger info file found: {file.path}")
 
-    def __init__(self, name: str, path: Path):
-        self.name = name
-        self.path = path
-        self.extension = name.split(".")[-1]
+        return signal, stimulus_info, trigger_info, registers2p
