@@ -74,6 +74,14 @@ class Parser(ABC):
         """
         pass
 
+    @abstractmethod
+    def get_path_to_stimulus_AI_schedule_files(self) -> Path:
+        """Returns the path to the file containing the stimulus AI schedule
+        files. To be implemented by the child classes taking into account the
+        folder structure of each project.
+        """
+        pass
+
     def _minimum_params_required(self) -> bool:
         """Checks if the minimum parameters have been evaluated by the parser.
 

@@ -147,3 +147,14 @@ class Parser2pRSP(Parser):
         return Path(self._config["paths"]["serial2p"]) / Path(
             "CT_" + self._get_parent_folder_name()
         )
+
+    def get_path_to_stimulus_AI_schedule_files(self) -> Path:
+        """Returns the path to the folder containing the stimulus
+        AI schedule files.
+        Reads the server location from the config file and appends the
+        parent folder and the given folder name.
+        """
+
+        return Path(self._config["paths"]["stimulus-ai-schedule"]) / Path(
+            self._folder_name
+        )

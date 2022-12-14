@@ -7,3 +7,4 @@ paths:
   imaging: '/Volumes/winstor/swc/margrie/Chryssanthi/imaging'
   allen-dff: '/Volumes/winstor/swc/margrie/Chryssanthi/imaging/allen_dff'
   serial2p: '/Volumes/winstor/swc/margrie/Chryssanthi/imaging/serial2p'
+  stimulus: '/Volumes/winstor/swc/margrie/Chryssanthi/imaging/stimulus_AI_schedule_files'
