@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from load_suite2p.load import folder_naming_specs
+from load_suite2p.objects import folder_naming_specs
 
 # Mocks
 
@@ -25,7 +25,7 @@ folder_test_list = [
 ]
 
 config = {
-    "parser": "Parser01",
+    "parser": "Parser2pRSP",
     "paths": {"imaging": "test_data/"},
 }
 
