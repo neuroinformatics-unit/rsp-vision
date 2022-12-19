@@ -1,11 +1,11 @@
-from ..objects.configurations import Config
 from ..objects.photon_data import PhotonData
+from ..objects.specifications import Specifications
 
 
-class SpatialFrequencyTemporalFrequency:
-    def __init__(self, data: PhotonData, config: Config):
+class SF_TF:
+    def __init__(self, data: PhotonData, specs: Specifications):
         self.data = data
-        self.config = config
+        self.config = specs
 
     def get_fit_parameters(self):
         # calls _fit_two_dimensional_elliptical_gaussian

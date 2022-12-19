@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 
-class Parser(ABC):
+class Parser2p(ABC):
     """Abstract base class for parsers. Child classes must be project
     specific and tailor made to the folder structure in Winstor.
     When inheriting from this class, the method parse() must be implemented.

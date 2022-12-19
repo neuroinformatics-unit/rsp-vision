@@ -23,6 +23,7 @@ dependencies = [
     "rich",
     "fancylog",
     "PyYAML",
+    "types-PyYAML",
 ]
 
 [project.urls]

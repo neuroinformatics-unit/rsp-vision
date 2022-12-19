@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 
 from .file import File
-from .parsers.parser2pRSP import Parser2pRSP
+from .parsers2p.parser2pRSP import Parser2pRSP
 
 
 class FolderNamingSpecs:
@@ -84,7 +84,7 @@ class FolderNamingSpecs:
             logging.debug("Parsing folder name using Parser2pRSP")
             self._parser = Parser2pRSP(self.folder_name, self.original_config)
         else:
-            logging.debug(
+            logging.error(
                 f"Parser {self.original_config['parser']} \
                 not supported"
             )
@@ -112,7 +112,7 @@ class FolderNamingSpecs:
         if self.original_config["use-allen-dff"]:
             logging.info("Using allen dff file")
             allen_dff_file_path = self._parser.get_path_to_allen_dff_file()
-            if os.path.exists(allen_dff_file_path):
+            if allen_dff_file_path.exists():
                 self.all_files.append(
                     File(
                         name=str(allen_dff_file_path).split("/")[-1],
