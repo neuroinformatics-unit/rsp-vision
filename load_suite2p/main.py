@@ -17,13 +17,13 @@ def main():
     folder_name = Prompt.ask("Please provide the folder name")
 
     # load data
-    data, config = load_data(folder_name)
+    data, specs = load_data(folder_name)
 
     # preprocess and make PhotonData object
-    photon_data = PhotonData(data, config)
+    photon_data = PhotonData(data, specs)
 
     # make analysis object
-    analysis = SF_TF(photon_data, config)
+    analysis = SF_TF(photon_data, specs)
 
     # calculate responsiveness and display it in a nice way
     responsiveness = analysis.responsiveness(photon_data)
