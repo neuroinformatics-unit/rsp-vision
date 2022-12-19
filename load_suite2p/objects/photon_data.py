@@ -20,7 +20,7 @@ class PhotonData:
     def get_response_matrix(self):
         raise NotImplementedError("This method is not implemented yet")
 
-    def preprocess(self, data_raw: list, config: Specifications):
+    def preprocess(self, data_raw: list, specs: Specifications):
         raise NotImplementedError("This method is not implemented yet")
 
     def reorder(self):
