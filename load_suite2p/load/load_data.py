@@ -51,7 +51,7 @@ def get_specifications(folder_name: str) -> Specifications:
     return specs
 
 
-def load(config: Specifications) -> list:
+def load(specs: Specifications) -> list:
     raise NotImplementedError("TODO")
 
 
