@@ -1,5 +1,4 @@
 import logging
-import os
 from pathlib import Path
 
 from .file import File
@@ -68,6 +67,13 @@ class FolderNamingSpecs:
         except KeyError:
             self.cre = None
 
+        self.paths = [
+            self._parser.get_path_to_experimental_folder(),
+            self._parser.get_path_to_stimulus_AI_schedule_files(),
+            self._parser.get_path_to_serial2p(),
+        ]
+        self.allen_dff_file_path = self._parser.get_path_to_allen_dff_file()
+
     def parse_name(self) -> None:
         """Parses the folder name and evaluates the parameters `mouse_line`,
         `mouse_id`, `hemisphere`, `brain_region`, `monitor_position.
@@ -111,47 +117,27 @@ class FolderNamingSpecs:
 
         if self.original_config["use-allen-dff"]:
             logging.info("Using allen dff file")
-            allen_dff_file_path = self._parser.get_path_to_allen_dff_file()
-            if allen_dff_file_path.exists():
+
+            if self.allen_dff_file_path.exists():
                 self.all_files.append(
                     File(
-                        name=str(allen_dff_file_path).split("/")[-1],
-                        path=allen_dff_file_path,
+                        name=self.allen_dff_file_path.name,
+                        path=self.allen_dff_file_path,
                     )
                 )
+
             else:
                 logging.info("No allen dff file found")
                 raise FileNotFoundError(
                     "No allen dff file found. Is this path correct: "
-                    + f"{allen_dff_file_path}?"
+                    + f"{self.allen_dff_file_path}?"
                 )
         else:
             logging.info("Not using allen dff file")
 
-            def walk(path):
-                not_saved_file_paths = 0
-                for dirpath, _, filenames in os.walk(path):
-                    try:
-                        self.all_files.extend(
-                            File(name, Path(os.path.join(dirpath, name)))
-                            for name in filenames
-                        )
-                    except ValueError:
-                        not_saved_file_paths += 1
-                        pass
-                logging.info(
-                    f"Discarded {not_saved_file_paths} file paths from {path}"
-                )
-
-            paths = [
-                self._parser.get_path_to_experimental_folder(),
-                self._parser.get_path_to_stimulus_AI_schedule_files(),
-                self._parser.get_path_to_serial2p(),
-            ]
-
-            for path in paths:
-                if os.path.exists(path):
-                    walk(path)
+            for path in self.paths:
+                if path.exists():
+                    self.search_file_paths(path)
                 else:
                     logging.info(f"No files found in {path}")
                     raise FileNotFoundError(
@@ -163,3 +149,15 @@ class FolderNamingSpecs:
                 f"Filename found and stored: {file.name}, "
                 + f"its path is {file.path}"
             )
+
+    def search_file_paths(self, path: Path) -> None:
+        not_saved_file_paths = 0
+        for i in path.glob("**/*"):
+            try:
+                self.all_files.append(File(i.name, i))
+            except ValueError:
+                not_saved_file_paths += 1
+                pass
+        logging.info(
+            f"Discarded {not_saved_file_paths} file paths from {path}"
+        )
