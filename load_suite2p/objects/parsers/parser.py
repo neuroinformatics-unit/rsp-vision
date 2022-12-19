@@ -51,7 +51,7 @@ class Parser(ABC):
         pass
 
     @abstractmethod
-    def get_path(self) -> Path:
+    def get_path_to_experimental_folder(self) -> Path:
         """Returns the path to the file containing the suite2p output. To be
         implemented by the child classes taking into account the folder
         structure of each project.

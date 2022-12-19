@@ -8,6 +8,7 @@ config = {
         "imaging": "test_data/",
         "allen-dff": "test_data/allen_dff/",
         "serial2p": "test_data/serial2p/",
+        "stimulus-ai-schedule": "test_data/stimulus_ai_schedule/",
     },
 }
 
@@ -28,7 +29,7 @@ def test_get_parent_folder_name():
 
 def test_get_path():
     parser = Parser2pRSP("CX_1111783_hR_RSPg_monitor_front", config)
-    assert parser.get_path() == Path(
+    assert parser.get_path_to_experimental_folder() == Path(
         "test_data/CX_1111783/CX_1111783_hR_RSPg_monitor_front"
     )
 
