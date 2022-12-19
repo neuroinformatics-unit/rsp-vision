@@ -1,13 +1,13 @@
-from .configurations import Config
+from .specifications import Specifications
 
 
 class PhotonData:
     """Class to load the formatted data from suite2p and registers2p."""
 
-    def __init__(self, data_raw: list, config: Config):
+    def __init__(self, data_raw: list, specs: Specifications):
 
         self.response_matrix = self.get_response_matrix()
-        self.preprocess(data_raw, config)
+        self.preprocess(data_raw, specs)
         self.reorder()
 
         self.f = None
@@ -20,7 +20,7 @@ class PhotonData:
     def get_response_matrix(self):
         raise NotImplementedError("This method is not implemented yet")
 
-    def preprocess(self, data_raw: list, config: Config):
+    def preprocess(self, data_raw: list, config: Specifications):
         raise NotImplementedError("This method is not implemented yet")
 
     def reorder(self):

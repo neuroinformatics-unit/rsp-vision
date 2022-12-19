@@ -1,8 +1,7 @@
 import logging
-import os
 from pathlib import Path
 
-from .parsers.parser2pRSP import Parser2pRSP
+from .parsers2p.parser2pRSP import Parser2pRSP
 
 
 class FolderNamingSpecs:
@@ -67,7 +66,7 @@ class FolderNamingSpecs:
         except KeyError:
             self.cre = None
 
-        if not self.check_if_file_exists():
+        if not self.check_if_folder_exists():
             logging.error(f"File {self.get_path()} does not exist")
             raise FileNotFoundError(
                 f"File {self.folder_name} not found. "
@@ -90,7 +89,7 @@ class FolderNamingSpecs:
             logging.debug("Parsing folder name using Parser2pRSP")
             self._parser = Parser2pRSP(self.folder_name, self.original_config)
         else:
-            logging.debug(
+            logging.error(
                 f"Parser {self.original_config['parser']} \
                 not supported"
             )
@@ -111,7 +110,7 @@ class FolderNamingSpecs:
         """
         return self._parser.get_path()
 
-    def check_if_file_exists(self) -> bool:
+    def check_if_folder_exists(self) -> bool:
         """Checks if the folder containing the experimental data exists.
         The folder path is obtained by calling the method :meth:`get_path`.
 
@@ -120,7 +119,7 @@ class FolderNamingSpecs:
         bool
             True if folder exists, False otherwise
         """
-        return os.path.exists(self.get_path())
+        return self.get_path().exists()
 
     def extract_all_file_names(self) -> list:
         # get filenames by day

@@ -2,7 +2,7 @@ from .folder_naming_specs import FolderNamingSpecs
 from .options import Options
 
 
-class Config:
+class Specifications:
     """The class :class:`Config` represents the configuration of the
     experiment and the analysis."""
 

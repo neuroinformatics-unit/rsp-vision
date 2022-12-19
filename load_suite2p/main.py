@@ -1,6 +1,4 @@
-from analysis.spatial_freq_temporal_freq import (
-    SpatialFrequencyTemporalFrequency,
-)
+from analysis.spatial_freq_temporal_freq import SF_TF
 from load.load_data import load_data
 from objects.photon_data import PhotonData
 from plots.plotter import Plotter
@@ -19,13 +17,13 @@ def main():
     folder_name = Prompt.ask("Please provide the folder name")
 
     # load data
-    config, data = load_data(folder_name)
+    data, config = load_data(folder_name)
 
     # preprocess and make PhotonData object
     photon_data = PhotonData(data, config)
 
     # make analysis object
-    analysis = SpatialFrequencyTemporalFrequency(photon_data, config)
+    analysis = SF_TF(photon_data, config)
 
     # calculate responsiveness and display it in a nice way
     responsiveness = analysis.responsiveness(photon_data)
