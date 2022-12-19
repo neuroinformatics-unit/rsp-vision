@@ -3,8 +3,9 @@ from .options import Options
 
 
 class Specifications:
-    """The class :class:`Config` represents the configuration of the
-    experiment and the analysis."""
+    """The class :class:`Specifications` holds the configuration of the
+    experiment, the analysis options, and the paths to the files
+    to be loaded."""
 
     def __init__(self, config: dict, folder_name: str):
         self.base_paths: dict = config["paths"]
