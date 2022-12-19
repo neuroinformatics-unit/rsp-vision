@@ -117,7 +117,7 @@ class Parser2pRSP(Parser):
         """
         return f'{self.info["mouse_line"]}_{self.info["mouse_id"]}'
 
-    def get_path(self) -> Path:
+    def get_path_to_experimental_folder(self) -> Path:
         """Returns the path to the folder containing the experimental data.
         Reads the server location from the config file and appends the
         parent folder and the given folder name.

@@ -2,29 +2,8 @@ import logging
 import os
 from pathlib import Path
 
+from .file import File
 from .parsers.parser2pRSP import Parser2pRSP
-
-
-class File:
-    """Class containing the name of the file, its path and its
-        extension.
-
-    Attributes
-    ----------
-    name: str
-        file name
-
-    path: Path
-        complete file path
-
-    extension: str
-        file extension
-    """
-
-    def __init__(self, name: str, path: Path):
-        self.name = name
-        self.path = path
-        self.extension = name.split(".")[-1]
 
 
 class FolderNamingSpecs:
@@ -89,13 +68,6 @@ class FolderNamingSpecs:
         except KeyError:
             self.cre = None
 
-        if not self.check_if_file_exists():
-            logging.error(f"File {self.get_path()} does not exist")
-            raise FileNotFoundError(
-                f"File {self.folder_name} not found. "
-                + "Please check the file name and try again."
-            )
-
     def parse_name(self) -> None:
         """Parses the folder name and evaluates the parameters `mouse_line`,
         `mouse_id`, `hemisphere`, `brain_region`, `monitor_position.
@@ -121,67 +93,7 @@ class FolderNamingSpecs:
                 not supported"
             )
 
-    def get_path(self) -> Path:
-        """Returns the path to the folder containing the experimental data.
-        Reads the server location from the config file and appends the
-        parent folder and the given folder name.
-
-        Returns
-        -------
-        Path
-            path to the folder containing the experimental data
-        """
-        return self._parser.get_path()
-
-    def get_path_to_allen_dff_file(self) -> Path:
-        """Returns the path to the folder containing the allen dff files.
-        Reads the server location from the config file and appends the
-        parent folder and the given folder name.
-
-        Returns
-        -------
-        Path
-            path to the folder containing the allen dff files
-        """
-        return self._parser.get_path_to_allen_dff_file()
-
-    def get_path_to_serial2p(self) -> Path:
-        """Returns the path to the folder containing the allen roi files.
-        Reads the server location from the config file and appends the
-        parent folder and the given folder name.
-
-        Returns
-        -------
-        Path
-            path to the folder containing the allen roi files
-        """
-        return self._parser.get_path_to_serial2p()
-
-    def get_path_to_stimulus_AI_schedule_files(self) -> Path:
-        """Returns the path to the folder containing the stimulus
-        AI schedule files.
-        Reads the server location from the config file and appends the
-        parent folder and the given folder name.
-
-        Returns
-        -------
-        Path
-            path to the folder containing the stimulus AI schedule files
-        """
-        return self._parser.get_path_to_stimulus_AI_schedule_files()
-
-    def check_if_file_exists(self) -> bool:
-        """Checks if the folder containing the experimental data exists.
-        The folder path is obtained by calling the method :meth:`get_path`.
-
-        Returns
-        -------
-        bool
-            True if folder exists, False otherwise
-        """
-        return os.path.exists(self.get_path())
-
-    def extract_all_file_names(self) -> list:
+    def extract_all_file_names(self) -> None:
         """Recursively searches files in the given folder.
         It also locates the allen_dff file and the serial2p files.
 
@@ -195,87 +107,59 @@ class FolderNamingSpecs:
         """
         logging.info("Extracting all file names")
 
-        all_files = []
+        self.all_files = []
 
-        def walk(path):
-            for dirpath, _, filenames in os.walk(path):
-                all_files.extend(
-                    File(name, Path(os.path.join(dirpath, name)))
-                    for name in filenames
+        if self.original_config["use-allen-dff"]:
+            logging.info("Using allen dff file")
+            allen_dff_file_path = self._parser.get_path_to_allen_dff_file()
+            if os.path.exists(allen_dff_file_path):
+                self.all_files.append(
+                    File(
+                        name=str(allen_dff_file_path).split("/")[-1],
+                        path=allen_dff_file_path,
+                    )
+                )
+            else:
+                logging.info("No allen dff file found")
+                raise FileNotFoundError(
+                    "No allen dff file found. Is this path correct: "
+                    + f"{allen_dff_file_path}?"
+                )
+        else:
+            logging.info("Not using allen dff file")
+
+            def walk(path):
+                not_saved_file_paths = 0
+                for dirpath, _, filenames in os.walk(path):
+                    try:
+                        self.all_files.extend(
+                            File(name, Path(os.path.join(dirpath, name)))
+                            for name in filenames
+                        )
+                    except ValueError:
+                        not_saved_file_paths += 1
+                        pass
+                logging.info(
+                    f"Discarded {not_saved_file_paths} file paths from {path}"
                 )
 
-        walk(self.get_path())
+            paths = [
+                self._parser.get_path_to_experimental_folder(),
+                self._parser.get_path_to_stimulus_AI_schedule_files(),
+                self._parser.get_path_to_serial2p(),
+            ]
 
-        if os.path.exists(self.get_path_to_allen_dff_file()):
-            all_files.append(
-                File(
-                    name=str(self.get_path_to_allen_dff_file()).split("/")[-1],
-                    path=self.get_path_to_allen_dff_file(),
-                )
-            )
-        else:
-            logging.info("No allen dff file found")
-            raise FileNotFoundError(
-                "No allen dff file found. Is this path correct: "
-                + f"{self.get_path_to_allen_dff_file()}?"
-            )
+            for path in paths:
+                if os.path.exists(path):
+                    walk(path)
+                else:
+                    logging.info(f"No files found in {path}")
+                    raise FileNotFoundError(
+                        f"No files found in {path}. Is it correct?"
+                    )
 
-        if os.path.exists(self.get_path_to_serial2p()):
-            walk(self.get_path_to_serial2p())
-        else:
-            logging.info("No serial2p folder found")
-            raise FileNotFoundError(
-                "No serial2p folder found. Is this path correct: "
-                + f"{self.get_path_to_serial2p()}?"
-            )
-
-        if os.path.exists(self.get_path_to_stimulus_AI_schedule_files()):
-            walk(self.get_path_to_stimulus_AI_schedule_files())
-        else:
-            logging.info("No stimulus AI schedule files found")
-            raise FileNotFoundError(
-                "No stimulus AI schedule files found. Is this path correct: "
-                + f"{self.get_path_to_stimulus_AI_schedule_files()}?"
-            )
-
-        for file in all_files:
+        for file in self.all_files:
             logging.info(
                 f"Filename found and stored: {file.name}, "
                 + f"its path is {file.path}"
             )
-
-        return all_files
-
-    def categorize(
-        self, all_files: list[File]
-    ) -> tuple[list[File], list[File], list[File], list[File]]:
-        signal = []
-        stimulus_info = []
-        trigger_info = []
-        registers2p = []
-        logging.info("----------------------------------")
-        logging.info("Categorizing files....")
-
-        for file in all_files:
-            if (
-                "suite2p" in file.name
-                or "plane0" in file.name
-                or "Fall.mat" in file.name
-            ):
-                signal.append(file)
-                logging.info(f"Signal file found: {file.path}")
-
-            if "stimulus_info.mat" in file.name:
-                stimulus_info.append(file)
-                logging.info(f"Stimulus info file found: {file.path}")
-
-            if "registers2p.mat" in file.name:
-                registers2p.append(file)
-                logging.info(f"Registers2p file found: {file.path}")
-
-            if "sf_tf" in str(file.path):
-                if "trigger_info.mat" in file.name:
-                    trigger_info.append(file)
-                    logging.info(f"Trigger info file found: {file.path}")
-
-        return signal, stimulus_info, trigger_info, registers2p
