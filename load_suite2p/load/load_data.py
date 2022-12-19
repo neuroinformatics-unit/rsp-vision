@@ -2,13 +2,13 @@ import logging
 from pathlib import Path
 from typing import Tuple
 
-from ..objects.configurations import Config
+from ..objects.specifications import Specifications
 from .read_config import read
 
 config_path = Path(__file__).parents[1] / "config/config.yml"
 
 
-def load_data(folder_name: str) -> Tuple[Config, list]:
+def load_data(folder_name: str) -> Tuple[list, Specifications]:
     """Creates the configuration object and loads the data.
 
     Parameters
@@ -23,13 +23,13 @@ def load_data(folder_name: str) -> Tuple[Config, list]:
         data_raw: list containing all raw data
     """
 
-    config = configure(folder_name)
-    data_raw = load(config)
+    specs = get_specifications(folder_name)
+    data_raw = load(specs)
 
-    return config, data_raw
+    return data_raw, specs
 
 
-def configure(folder_name: str) -> Config:
+def get_specifications(folder_name: str) -> Specifications:
     """Create configuration object. It reads the configuration
     file and adds the folder name and experimental details
     derived from it.
@@ -46,11 +46,11 @@ def configure(folder_name: str) -> Config:
     """
     """"""
 
-    config = Config(read_configurations(), folder_name)
-    return config
+    specs = Specifications(read_configurations(), folder_name)
+    return specs
 
 
-def load(config: Config) -> list:
+def load(specs: Specifications) -> list:
     raise NotImplementedError("TODO")
 
 
