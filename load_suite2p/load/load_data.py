@@ -24,10 +24,10 @@ def load_data(folder_name: str) -> Tuple[list, Specifications]:
         data_raw: list containing all raw data
     """
 
-    config = get_specifications(folder_name)
-    data_raw = load(config)
+    specs = get_specifications(folder_name)
+    data_raw = load(specs)
 
-    return data_raw, config
+    return data_raw, specs
 
 
 def get_specifications(folder_name: str) -> Specifications:
@@ -47,8 +47,8 @@ def get_specifications(folder_name: str) -> Specifications:
     """
     """"""
 
-    config = Specifications(read_configurations(), folder_name)
-    return config
+    specs = Specifications(read_configurations(), folder_name)
+    return specs
 
 
 def load(config: Specifications) -> list:
