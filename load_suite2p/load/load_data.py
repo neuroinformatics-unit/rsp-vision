@@ -19,8 +19,8 @@ def load_data(folder_name: str) -> Tuple[list, Specifications]:
 
     Returns
     -------
-    Tuple(Config, list)
-        config: configuration object
+    Tuple(list, Specifications)
+        specs: specs object
         data_raw: list containing all raw data
     """
 
@@ -31,9 +31,9 @@ def load_data(folder_name: str) -> Tuple[list, Specifications]:
 
 
 def get_specifications(folder_name: str) -> Specifications:
-    """Create configuration object. It reads the configuration
+    """Create specifications object. It reads the configuration
     file and adds the folder name and experimental details
-    derived from it.
+    derived from it (analysis options and file paths).
 
     Parameters
     ----------
@@ -42,8 +42,8 @@ def get_specifications(folder_name: str) -> Specifications:
 
     Returns
     -------
-    Config
-        Configuration object
+    specs
+        Specifications object
     """
     """"""
 
