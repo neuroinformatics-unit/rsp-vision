@@ -2,13 +2,17 @@ import logging
 from pathlib import Path
 from typing import Tuple
 
+import mat73
+
+from ..objects.data_raw import DataRaw
+from ..objects.enums import AnalysisType, DataType
 from ..objects.specifications import Specifications
 from .read_config import read
 
 config_path = Path(__file__).parents[1] / "config/config.yml"
 
 
-def load_data(folder_name: str) -> Tuple[list, Specifications]:
+def load_data(folder_name: str) -> Tuple[DataRaw, Specifications]:
     """Creates the configuration object and loads the data.
 
     Parameters
@@ -50,8 +54,31 @@ def get_specifications(folder_name: str) -> Specifications:
     return specs
 
 
-def load(specs: Specifications) -> list:
-    raise NotImplementedError("TODO")
+def load(specs: Specifications) -> DataRaw:
+    if specs.config["use-allen-dff"]:
+        if specs.config["analysis-type"] == "sf_tf":
+            allen_data_files = [
+                s
+                for s in specs.folder_naming.all_files
+                if s.datatype == DataType.ALLEN_DFF
+                and s.analysistype == AnalysisType.SF_TF
+            ]
+            if len(allen_data_files) == 1:
+                data_raw = DataRaw(
+                    mat73.loadmat(allen_data_files[0].path), is_allen=True
+                )
+                logging.info("Allen data loaded")
+                return data_raw
+            else:
+                raise ValueError(
+                    "There is more than one Allen file for sf_tf analysis"
+                )
+        else:
+            raise NotImplementedError(
+                "Only sf_tf analysis is implemented for Allen data"
+            )
+    else:
+        raise NotImplementedError("Only loading for Allen data is implemented")
 
 
 def read_configurations() -> dict:
