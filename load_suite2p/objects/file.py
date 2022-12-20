@@ -1,5 +1,6 @@
-from enum import Enum
 from pathlib import Path
+
+from .enums import AnalysisType, DataType
 
 
 class File:
@@ -18,25 +19,12 @@ class File:
         file extension
     """
 
-    class DataType(Enum):
-        SIGNAL = 1
-        STIMULUS_INFO = 2
-        TRIGGER_INFO = 3
-        REGISTERS2P = 4
-        ALLEN_DFF = 5
-
-    class AnalysisType(Enum):
-        SF_TF = 1
-        SPARSE_NOISE = 2
-        RETINOTOPY = 3
-        UNCLASSIFIED = 4
-
     def __init__(self, name: str, path: Path):
         self.name = name
         self.path: Path = path
         self._path_str = str(path)
-        self.datatype = self._get_data_type()
-        self.analysistype = self._get_analysis_type()
+        self.datatype: DataType = self._get_data_type()
+        self.analysistype: AnalysisType = self._get_analysis_type()
 
     def _get_data_type(self) -> DataType:
         if (
@@ -44,24 +32,24 @@ class File:
             or "plane0" in self._path_str
             or "Fall.mat" in self._path_str
         ):
-            return self.DataType.SIGNAL
+            return DataType.SIGNAL
         elif "stimulus_info.mat" in self._path_str:
-            return self.DataType.STIMULUS_INFO
+            return DataType.STIMULUS_INFO
         elif "trigger_info.mat" in self._path_str:
-            return self.DataType.TRIGGER_INFO
+            return DataType.TRIGGER_INFO
         elif "rocro_reg.mat" in self._path_str:
-            return self.DataType.REGISTERS2P
+            return DataType.REGISTERS2P
         elif "allen_dff.mat" in self._path_str:
-            return self.DataType.ALLEN_DFF
+            return DataType.ALLEN_DFF
         else:
             raise ValueError("File not to be used")
 
     def _get_analysis_type(self) -> AnalysisType:
         if "sf_tf" in str(self._path_str):
-            return self.AnalysisType.SF_TF
+            return AnalysisType.SF_TF
         elif "sparse_noise" in str(self._path_str):
-            return self.AnalysisType.SPARSE_NOISE
+            return AnalysisType.SPARSE_NOISE
         elif "retinotopy" in str(self._path_str):
-            return self.AnalysisType.RETINOTOPY
+            return AnalysisType.RETINOTOPY
         else:
-            return self.AnalysisType.UNCLASSIFIED
+            return AnalysisType.UNCLASSIFIED
