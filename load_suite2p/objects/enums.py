@@ -8,6 +8,7 @@ class DataType(Enum):
     REGISTERS2P = 4
     ALLEN_DFF = 5
 
+
 class AnalysisType(Enum):
     SF_TF = 1
     SPARSE_NOISE = 2

@@ -9,4 +9,6 @@ class DataRaw:
             self.stim = data["stim"]
             self.trig = data["trig"]
         else:
-            raise NotImplementedError("Only loading for Allen data is implemented")
+            raise NotImplementedError(
+                "Only loading for Allen data is implemented"
+            )
