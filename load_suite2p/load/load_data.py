@@ -65,7 +65,7 @@ def load(specs: Specifications) -> DataRaw:
             ]
             if len(allen_data_files) == 1:
                 data_raw = DataRaw(
-                    h5py.File(allen_data_files[0].path, 'r'), is_allen=True
+                    h5py.File(allen_data_files[0].path, "r"), is_allen=True
                 )
                 logging.info("Allen data loaded")
                 return data_raw
