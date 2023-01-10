@@ -60,10 +60,10 @@ def load(specs: Specifications) -> DataRaw:
     if specs.config["use-allen-dff"]:
         if specs.config["analysis-type"] == "sf_tf":
             allen_data_files = [
-                s
-                for s in specs.folder_naming.all_files
-                if s.datatype == DataType.ALLEN_DFF
-                and s.analysistype == AnalysisType.SF_TF
+                file
+                for file in specs.folder_naming.all_files
+                if file.datatype == DataType.ALLEN_DFF
+                and file.analysistype == AnalysisType.SF_TF
             ]
             if len(allen_data_files) == 1:
                 data_raw = DataRaw(

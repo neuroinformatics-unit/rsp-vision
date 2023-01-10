@@ -46,31 +46,6 @@ class DataRaw:
             trig={self.trig})"
 
     @classmethod
-    def ref_dataset_to_dict(
-        cls,
-        dataset: h5py._hl.dataset.Dataset,
-        parent: h5py._hl.group.Group,
-    ) -> dict:
-        """Takes a Dataset that contains references to Groups and
-        resolves its content.
-
-        Args:
-            dataset (h5py._hl.dataset.Dataset):
-                HDF5 Dataset containing references
-            parent_container (h5py._hl.group.Group):
-                is the object that contains the element.
-                It is used to resolve references.
-
-        Returns:
-            dict: the resolved dictionary
-        """
-        dict = {}
-        for i in range(dataset.shape[1]):
-            ref = dataset[0][i]
-            dict = cls.group_to_dict_recursive(parent[ref])
-        return dict
-
-    @classmethod
     def group_to_dict_recursive(cls, group: h5py._hl.group.Group) -> dict:
         """Takes a Group and resolves its content. If the Group contains
         other Groups, it calls itself recursively.
@@ -91,8 +66,9 @@ class DataRaw:
                 dict[key] = group[key][:]
         return dict
 
-    @staticmethod
+    @classmethod
     def ref_dataset_to_array(
+        cls,
         dataset: h5py._hl.dataset.Dataset,
         parent: Union[h5py._hl.group.Group, h5py.File],
     ) -> np.ndarray:
@@ -114,7 +90,10 @@ class DataRaw:
         for i in range(dataset.shape[0]):
             for j in range(dataset.shape[1]):
                 ref = dataset[i][j]
-                array[i, j] = parent[ref][:]
+                if isinstance(parent[ref], h5py._hl.group.Group):
+                    array[i, j] = cls.group_to_dict_recursive(parent[ref])
+                else:
+                    array[i, j] = parent[ref][:]
 
         return array
 
@@ -151,11 +130,7 @@ class DataRaw:
         """
         if isinstance(element, h5py._hl.dataset.Dataset):
             if element.dtype == h5py.special_dtype(ref=h5py.Reference):
-                test_ref = element[0][0]
-                if isinstance(parent[test_ref], h5py._hl.group.Group):
-                    return cls.ref_dataset_to_dict(element, parent)
-                else:
-                    return cls.ref_dataset_to_array(element, parent)
+                return cls.ref_dataset_to_array(element, parent)
             else:
                 return element[:]
         elif isinstance(element, h5py._hl.group.Group):
