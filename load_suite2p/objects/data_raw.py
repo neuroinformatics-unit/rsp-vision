@@ -139,3 +139,5 @@ class DataRaw:
             for key in element:
                 dict[key] = self.unpack_data(element[key], element)
             return dict
+        else:
+            return None

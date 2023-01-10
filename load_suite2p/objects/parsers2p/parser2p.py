@@ -75,7 +75,7 @@ class Parser2p(ABC):
         pass
 
     @abstractmethod
-    def get_path_to_stimulus_AI_schedule_files(self) -> Path:
+    def get_path_to_stimulus_analog_input_schedule_files(self) -> Path:
         """Returns the path to the file containing the stimulus AI schedule
         files. To be implemented by the child classes taking into account the
         folder structure of each project.

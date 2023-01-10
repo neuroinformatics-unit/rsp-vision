@@ -1,15 +1,15 @@
 import logging
-from pathlib import Path
 from typing import Tuple
 
 import h5py
+from decouple import config
 
 from ..objects.data_raw import DataRaw
 from ..objects.enums import AnalysisType, DataType
 from ..objects.specifications import Specifications
 from .read_config import read
 
-config_path = Path(__file__).parents[1] / "config/config.yml"
+CONFIG_PATH = config("CONFIG_PATH")
 
 
 def load_data(folder_name: str) -> Tuple[DataRaw, Specifications]:
@@ -91,7 +91,7 @@ def read_configurations() -> dict:
     """
 
     logging.debug("Reading configurations")
-    config = read(config_path)
+    config = read(CONFIG_PATH)
     logging.debug(f"Configurations read: {config}")
 
     return config

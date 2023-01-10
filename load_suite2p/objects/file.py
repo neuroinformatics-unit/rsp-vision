@@ -42,7 +42,7 @@ class File:
         elif "allen_dff.mat" in self._path_str:
             return DataType.ALLEN_DFF
         else:
-            raise ValueError("File not to be used")
+            return DataType.NOT_FOUND
 
     def _get_analysis_type(self) -> AnalysisType:
         if "sf_tf" in str(self._path_str):

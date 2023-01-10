@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 
+from .enums import DataType
 from .file import File
 from .parsers2p.parser2pRSP import Parser2pRSP
 
@@ -69,7 +70,7 @@ class FolderNamingSpecs:
 
         self.paths = [
             self._parser.get_path_to_experimental_folder(),
-            self._parser.get_path_to_stimulus_AI_schedule_files(),
+            self._parser.get_path_to_stimulus_analog_input_schedule_files(),
             self._parser.get_path_to_serial2p(),
         ]
         self.allen_dff_file_path = self._parser.get_path_to_allen_dff_file()
@@ -141,7 +142,7 @@ class FolderNamingSpecs:
                 else:
                     logging.info(f"No files found in {path}")
                     raise FileNotFoundError(
-                        f"No files found in {path}. Is it correct?"
+                        f"Folder not found: {path}. Is it correct?"
                     )
 
         for file in self.all_files:
@@ -151,13 +152,18 @@ class FolderNamingSpecs:
             )
 
     def search_file_paths(self, path: Path) -> None:
-        not_saved_file_paths = 0
+        """Recursively searches files in the given folder.
+        Saves file path in self.all_files only if the DataType is found.
+
+        Parameters
+        ----------
+        path : Path
+            Path to the folder to be searched
+        """
         for i in path.glob("**/*"):
-            try:
-                self.all_files.append(File(i.name, i))
-            except ValueError:
-                not_saved_file_paths += 1
-                pass
-        logging.info(
-            f"Discarded {not_saved_file_paths} file paths from {path}"
-        )
+            file = File(i.name, i)
+            if not file.datatype == DataType.NOT_FOUND:
+                logging.info(f"File path stored: {file}")
+                self.all_files.append(file)
+            else:
+                logging.info(f"File path NOT stored: {file}")
