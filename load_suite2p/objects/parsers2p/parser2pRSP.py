@@ -91,13 +91,13 @@ class Parser2pRSP(Parser2p):
                 info["cre"] = item
             elif "monitor" == item:
                 info["monitor_position"] = item
-            if hasattr(self, "monitor_position"):
-                info["monitor_position"] += item
+            if "monitor_position" in info and item != "monitor":
+                info["monitor_position"] += "_" + item
 
         if "monitor" not in info["monitor_position"]:
             logging.debug(
                 "Monitor position not found in folder name",
-                extra={"ChryssanthiParser": self},
+                extra={"Parser2pRSP": self},
             )
             logging.debug(info["monitor_position"])
             raise RuntimeError("Monitor position not found in folder name")
@@ -117,7 +117,7 @@ class Parser2pRSP(Parser2p):
         """
         return f'{self.info["mouse_line"]}_{self.info["mouse_id"]}'
 
-    def get_path(self) -> Path:
+    def get_path_to_experimental_folder(self) -> Path:
         """Returns the path to the folder containing the experimental data.
         Reads the server location from the config file and appends the
         parent folder and the given folder name.
@@ -127,4 +127,34 @@ class Parser2pRSP(Parser2p):
             Path(self._config["paths"]["imaging"])
             / Path(self._get_parent_folder_name())
             / Path(self._folder_name)
+        )
+
+    def get_path_to_allen_dff_file(self) -> Path:
+        """Returns the path to the folder containing the allen dff files.
+        Reads the server location from the config file and appends the
+        parent folder and the given folder name.
+        """
+        filename = self._folder_name + "_sf_tf_allen_dff.mat"
+
+        return Path(self._config["paths"]["allen-dff"]) / Path(filename)
+
+    def get_path_to_serial2p(self) -> Path:
+        """Returns the path to the folder containing the serial2p files.
+        Reads the server location from the config file and appends the
+        parent folder and the given folder name.
+        """
+
+        return Path(self._config["paths"]["serial2p"]) / Path(
+            "CT_" + self._get_parent_folder_name()
+        )
+
+    def get_path_to_stimulus_analog_input_schedule_files(self) -> Path:
+        """Returns the path to the folder containing the stimulus
+        AI schedule files.
+        Reads the server location from the config file and appends the
+        parent folder and the given folder name.
+        """
+
+        return Path(self._config["paths"]["stimulus-ai-schedule"]) / Path(
+            self._folder_name
         )

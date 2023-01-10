@@ -1,12 +1,12 @@
 import logging
-from pathlib import Path
 from typing import Tuple
 
-from read_config import read
+from decouple import config
 
 from ..objects.specifications import Specifications
+from .read_config import read
 
-config_path = Path(__file__).parent / "config/config.yml"
+CONFIG_PATH = config("CONFIG_PATH")
 
 
 def load_data(folder_name: str) -> Tuple[list, Specifications]:
@@ -65,7 +65,7 @@ def read_configurations() -> dict:
     """
 
     logging.debug("Reading configurations")
-    config = read(config_path)
+    config = read(CONFIG_PATH)
     logging.debug(f"Configurations read: {config}")
 
     return config
