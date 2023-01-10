@@ -1,3 +1,4 @@
+import logging
 from typing import Union
 
 import h5py
@@ -12,20 +13,41 @@ class DataRaw:
 
     def __init__(self, data, is_allen: bool = True):
         if is_allen:
+            logging.info("Loading Allen data, starting to unpack...")
+
             self.day = self.unpack_data(data["day"], data)
+            logging.info("Unpacked day")
+
             self.imaging = self.unpack_data(data["imaging"], data)
+            logging.info("Unpacked imaging")
+
             self.f = self.unpack_data(data["f"], data)
+            logging.info("Unpacked f")
+
             self.is_cell = self.unpack_data(data["is_cell"], data)
+            logging.info("Unpacked is_cell")
+
             self.r_neu = self.unpack_data(data["r_neu"], data)
+            logging.info("Unpacked r_neu")
+
             self.stim = self.unpack_data(data["stim"], data)
+            logging.info("Unpacked stim")
+
             self.trig = self.unpack_data(data["trig"], data)
+            logging.info("Unpacked trig")
         else:
             raise NotImplementedError(
                 "Only loading for Allen data is implemented"
             )
 
+    def __repr__(self) -> str:
+        return f"DataRaw(day={self.day}, imaging={self.imaging}, f={self.f}, \
+            is_cell={self.is_cell}, r_neu={self.r_neu}, stim={self.stim}, \
+            trig={self.trig})"
+
+    @classmethod
     def ref_dataset_to_dict(
-        self,
+        cls,
         dataset: h5py._hl.dataset.Dataset,
         parent: h5py._hl.group.Group,
     ) -> dict:
@@ -45,10 +67,11 @@ class DataRaw:
         dict = {}
         for i in range(dataset.shape[1]):
             ref = dataset[0][i]
-            dict = self.group_to_dict_recursive(parent[ref])
+            dict = cls.group_to_dict_recursive(parent[ref])
         return dict
 
-    def group_to_dict_recursive(self, group: h5py._hl.group.Group) -> dict:
+    @classmethod
+    def group_to_dict_recursive(cls, group: h5py._hl.group.Group) -> dict:
         """Takes a Group and resolves its content. If the Group contains
         other Groups, it calls itself recursively.
         It assumes there are no more References.
@@ -63,13 +86,13 @@ class DataRaw:
         dict = {}
         for key in group:
             if isinstance(group[key], h5py._hl.group.Group):
-                dict[key] = self.group_to_dict_recursive(group[key])
+                dict[key] = cls.group_to_dict_recursive(group[key])
             else:
                 dict[key] = group[key][:]
         return dict
 
+    @staticmethod
     def ref_dataset_to_array(
-        self,
         dataset: h5py._hl.dataset.Dataset,
         parent: Union[h5py._hl.group.Group, h5py.File],
     ) -> np.ndarray:
@@ -95,8 +118,9 @@ class DataRaw:
 
         return array
 
+    @classmethod
     def unpack_data(
-        self,
+        cls,
         element: Union[h5py._hl.dataset.Dataset, h5py._hl.group.Group],
         parent: Union[h5py.File, h5py._hl.group.Group],
     ) -> Union[np.ndarray, dict]:
@@ -129,15 +153,15 @@ class DataRaw:
             if element.dtype == h5py.special_dtype(ref=h5py.Reference):
                 test_ref = element[0][0]
                 if isinstance(parent[test_ref], h5py._hl.group.Group):
-                    return self.ref_dataset_to_dict(element, parent)
+                    return cls.ref_dataset_to_dict(element, parent)
                 else:
-                    return self.ref_dataset_to_array(element, parent)
+                    return cls.ref_dataset_to_array(element, parent)
             else:
                 return element[:]
         elif isinstance(element, h5py._hl.group.Group):
             dict = {}
             for key in element:
-                dict[key] = self.unpack_data(element[key], element)
+                dict[key] = cls.unpack_data(element[key], element)
             return dict
         else:
             return None
