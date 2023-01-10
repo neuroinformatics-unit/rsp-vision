@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Tuple
 
 import h5py
@@ -10,6 +11,7 @@ from ..objects.specifications import Specifications
 from .read_config import read
 
 CONFIG_PATH = config("CONFIG_PATH")
+config_path = Path(__file__).parents[1] / CONFIG_PATH
 
 
 def load_data(folder_name: str) -> Tuple[DataRaw, Specifications]:
@@ -91,7 +93,7 @@ def read_configurations() -> dict:
     """
 
     logging.debug("Reading configurations")
-    config = read(CONFIG_PATH)
+    config = read(config_path)
     logging.debug(f"Configurations read: {config}")
 
     return config
