@@ -72,8 +72,8 @@ class DataRaw:
         dataset: h5py._hl.dataset.Dataset,
         parent: Union[h5py._hl.group.Group, h5py.File],
     ) -> np.ndarray:
-        """Takes a Dataset that contains references to numbers
-        and resolves its content.
+        """Takes a Dataset that contains references to other Datasets or
+        Groups and resolves its content.
 
         Args:
             dataset (h5py._hl.dataset.Dataset):
@@ -83,7 +83,7 @@ class DataRaw:
                 It is used to resolve references.
 
         Returns:
-            np.ndarray: the resolved array
+            np.ndarray: an array of numbers or an array of dictionaries
         """
         array = np.zeros((dataset.shape[0], dataset.shape[1]), dtype=object)
 
@@ -113,7 +113,7 @@ class DataRaw:
         References are a HDF5 type that can point either to an array or
         to a group.
         They need to be resolved in order to get the data. They are resolved
-        by calling the methods ref_dataset_to_dict or ref_dataset_to_array.
+        by calling the methods ref_dataset_to_array.
         If element is a Group, its content is unpacked recursively.
 
         Args:
