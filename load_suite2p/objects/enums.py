@@ -7,6 +7,7 @@ class DataType(Enum):
     TRIGGER_INFO = 3
     REGISTERS2P = 4
     ALLEN_DFF = 5
+    NOT_FOUND = 6
 
 
 class AnalysisType(Enum):
