@@ -36,7 +36,7 @@ class File:
         self.path: Path = path
         self._path_str = str(path)
         self.datatype = self._get_data_type()
-        self.analysistype = self._get_analysis_type()
+        self.analysis_type = self._get_analysis_type()
 
     def _get_data_type(self) -> DataType:
         if (
