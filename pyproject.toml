@@ -24,6 +24,7 @@ dependencies = [
     "fancylog",
     "PyYAML",
     "types-PyYAML",
+    "h5py",
 ]
 
 [project.urls]
