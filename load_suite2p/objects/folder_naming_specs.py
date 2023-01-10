@@ -69,7 +69,7 @@ class FolderNamingSpecs:
 
         self.paths = [
             self._parser.get_path_to_experimental_folder(),
-            self._parser.get_path_to_stimulus_AI_schedule_files(),
+            self._parser.get_path_to_stimulus_analog_input_schedule_files(),
             self._parser.get_path_to_serial2p(),
         ]
         self.allen_dff_file_path = self._parser.get_path_to_allen_dff_file()
