@@ -1,3 +1,4 @@
+import logging
 import sys
 
 import rich
@@ -34,7 +35,7 @@ def exception_handler(func: object) -> object:
             func(*args, **kwargs)
         except Exception as e:
             rich.print("Something went wrong 😱")
-            rich.print(e)
+            logging.exception(e)
 
     return inner_function
 

@@ -51,10 +51,34 @@ class Parser2p(ABC):
         pass
 
     @abstractmethod
-    def get_path(self) -> Path:
+    def get_path_to_experimental_folder(self) -> Path:
         """Returns the path to the file containing the suite2p output. To be
         implemented by the child classes taking into account the folder
         structure of each project.
+        """
+        pass
+
+    @abstractmethod
+    def get_path_to_allen_dff_file(self) -> Path:
+        """Returns the path to the file containing the allen dff. To be
+        implemented by the child classes taking into account the folder
+        structure of each project.
+        """
+        pass
+
+    @abstractmethod
+    def get_path_to_serial2p(self) -> Path:
+        """Returns the path to the file containing the serial2p output. To be
+        implemented by the child classes taking into account the folder
+        structure of each project.
+        """
+        pass
+
+    @abstractmethod
+    def get_path_to_stimulus_analog_input_schedule_files(self) -> Path:
+        """Returns the path to the file containing the stimulus AI schedule
+        files. To be implemented by the child classes taking into account the
+        folder structure of each project.
         """
         pass
 

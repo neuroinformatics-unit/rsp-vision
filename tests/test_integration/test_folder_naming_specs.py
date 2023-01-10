@@ -26,7 +26,12 @@ folder_test_list = [
 
 config = {
     "parser": "Parser2pRSP",
-    "paths": {"imaging": "test_data/"},
+    "paths": {
+        "imaging": "test_data/",
+        "allen-dff": "test_data/allen_dff/",
+        "serial2p": "test_data/serial2p/",
+        "stimulus-ai-schedule": "test_data/stimulus_ai_schedule/",
+    },
 }
 
 for fs in folder_test_list:

@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+from .enums import DataType
+from .file import File
 from .parsers2p.parser2pRSP import Parser2pRSP
 
 
@@ -48,7 +50,7 @@ class FolderNamingSpecs:
 
         self.folder_name = folder_name
 
-        logging.info("Parsing folder name")
+        logging.info(f"Parsing folder name: {folder_name}")
         self.parse_name()
         self.mouse_line = self._parser.info["mouse_line"]
         self.mouse_id = self._parser.info["mouse_id"]
@@ -66,12 +68,12 @@ class FolderNamingSpecs:
         except KeyError:
             self.cre = None
 
-        if not self.check_if_folder_exists():
-            logging.error(f"File {self.get_path()} does not exist")
-            raise FileNotFoundError(
-                f"File {self.folder_name} not found. "
-                + "Please check the file name and try again."
-            )
+        self.paths = [
+            self._parser.get_path_to_experimental_folder(),
+            self._parser.get_path_to_stimulus_analog_input_schedule_files(),
+            self._parser.get_path_to_serial2p(),
+        ]
+        self.allen_dff_file_path = self._parser.get_path_to_allen_dff_file()
 
     def parse_name(self) -> None:
         """Parses the folder name and evaluates the parameters `mouse_line`,
@@ -98,32 +100,70 @@ class FolderNamingSpecs:
                 not supported"
             )
 
-    def get_path(self) -> Path:
-        """Returns the path to the folder containing the experimental data.
-        Reads the server location from the config file and appends the
-        parent folder and the given folder name.
+    def extract_all_file_names(self) -> None:
+        """Recursively searches files in the given folder.
+        It also locates the allen_dff file and the serial2p files.
 
-        Returns
-        -------
-        Path
-            path to the folder containing the experimental data
+        Raises:
+            FileNotFoundError: if the allen_dff is not present
+            FileNotFoundError: if the serial2p folder is not present
+
+        Returns:
+            list: of :class:`File` containing all read files with
+            their path and extension.
         """
-        return self._parser.get_path()
+        logging.info("Extracting all file names")
 
-    def check_if_folder_exists(self) -> bool:
-        """Checks if the folder containing the experimental data exists.
-        The folder path is obtained by calling the method :meth:`get_path`.
+        self.all_files = []
 
-        Returns
-        -------
-        bool
-            True if folder exists, False otherwise
+        if self.original_config["use-allen-dff"]:
+            logging.info("Using allen dff file")
+
+            if self.allen_dff_file_path.exists():
+                self.all_files.append(
+                    File(
+                        name=self.allen_dff_file_path.name,
+                        path=self.allen_dff_file_path,
+                    )
+                )
+
+            else:
+                logging.info("No allen dff file found")
+                raise FileNotFoundError(
+                    "No allen dff file found. Is this path correct: "
+                    + f"{self.allen_dff_file_path}?"
+                )
+        else:
+            logging.info("Not using allen dff file")
+
+            for path in self.paths:
+                if path.exists():
+                    self.search_file_paths(path)
+                else:
+                    logging.info(f"No files found in {path}")
+                    raise FileNotFoundError(
+                        f"Folder not found: {path}. Is it correct?"
+                    )
+
+        for file in self.all_files:
+            logging.info(
+                f"Filename found and stored: {file.name}, "
+                + f"its path is {file.path}"
+            )
+
+    def search_file_paths(self, path: Path) -> None:
+        """Recursively searches files in the given folder.
+        Saves file path in self.all_files only if the DataType is found.
+
+        Parameters
+        ----------
+        path : Path
+            Path to the folder to be searched
         """
-        return self.get_path().exists()
-
-    def extract_all_file_names(self) -> list:
-        # get filenames by day
-        # search for files called 'suite2p', 'plane0', 'Fall.mat'
-        # get session names to get name of stim files
-        # corrects for exceptions
-        raise NotImplementedError("This method is not implemented yet")
+        for i in path.glob("**/*"):
+            file = File(i.name, i)
+            if not file.datatype == DataType.NOT_FOUND:
+                logging.info(f"File path stored: {file}")
+                self.all_files.append(file)
+            else:
+                logging.info(f"File path NOT stored: {file}")
