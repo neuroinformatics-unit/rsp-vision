@@ -36,9 +36,13 @@ class DataRaw:
             self.trig = self.unpack_data(data["trig"], data)
             logging.info("Unpacked trig")
         else:
-            raise NotImplementedError(
-                "Only loading for Allen data is implemented"
-            )
+            self.day = data["day"]
+            self.imaging = data["imaging"]
+            self.f = data["f"]
+            self.is_cell = data["is_cell"]
+            self.r_neu = data["r_neu"]
+            self.stim = data["stim"]
+            self.trig = data["trig"]
 
     def __repr__(self) -> str:
         return f"DataRaw(day={self.day}, imaging={self.imaging}, f={self.f}, \
@@ -63,7 +67,7 @@ class DataRaw:
             if isinstance(group[key], h5py._hl.group.Group):
                 dict[key] = cls.group_to_dict_recursive(group[key])
             else:
-                dict[key] = group[key][:]
+                dict[key] = np.squeeze(group[key][:])
         return dict
 
     @classmethod
@@ -93,7 +97,7 @@ class DataRaw:
                 if isinstance(parent[ref], h5py._hl.group.Group):
                     array[i, j] = cls.group_to_dict_recursive(parent[ref])
                 else:
-                    array[i, j] = parent[ref][:]
+                    array[i, j] = np.squeeze(parent[ref][:])
 
         return array
 
@@ -132,7 +136,7 @@ class DataRaw:
             if element.dtype == h5py.special_dtype(ref=h5py.Reference):
                 return cls.ref_dataset_to_array(element, parent)
             else:
-                return element[:]
+                return np.squeeze(element[:])
         elif isinstance(element, h5py._hl.group.Group):
             dict = {}
             for key in element:
