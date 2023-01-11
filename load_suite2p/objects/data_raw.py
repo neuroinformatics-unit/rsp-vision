@@ -99,7 +99,7 @@ class DataRaw:
                 else:
                     array[i, j] = np.squeeze(parent[ref][:])
 
-        return array
+        return np.squeeze(array)
 
     @classmethod
     def unpack_data(
