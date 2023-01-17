@@ -20,7 +20,7 @@ def main():
     data, specs = load_data(folder_name)
 
     # preprocess and make PhotonData object
-    photon_data = PhotonData(data, specs)
+    photon_data = PhotonData(data)
 
     # make analysis object
     analysis = SF_TF(photon_data, specs)
