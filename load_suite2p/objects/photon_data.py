@@ -1,28 +1,34 @@
+from ..analysis.reorganize_data import ReorganizeData
 from .data_raw import DataRaw
-from .specifications import Specifications
 
 
 class PhotonData:
-    """Class to load the formatted data from suite2p and registers2p."""
+    def __init__(self, data_raw: DataRaw):
 
-    def __init__(self, data_raw: DataRaw, specs: Specifications):
+        # initialize valiable from data_raw that are straight forward
+        self.is_cell = data_raw.is_cell
+        self.day_roi = data_raw.day["roi"]
+        self.day_roi_label = data_raw.day["roi_label"]
 
-        self.response_matrix = self.get_response_matrix()
-        self.preprocess(data_raw, specs)
-        self.reorder()
+        # hard coded values
+        self.padding = [25, 50]
+        self.drift_order = 2
+        self.dim_name = [
+            "frame",
+            "trial",
+            "orientation",
+            "spatial_frequency",
+            "temporal_frequency",
+            "roi",
+        ]
+        self.screen_size = data_raw.stim[0]["screen_size"]
 
-        self.f = None
-        self.stim = None
-        self.trig = None
-        self.drift_order = None
-        self.day = None
-        self.is_cell = None
-
-    def get_response_matrix(self):
-        raise NotImplementedError("This method is not implemented yet")
-
-    def preprocess(self, data_raw: DataRaw, specs: Specifications):
-        raise NotImplementedError("This method is not implemented yet")
-
-    def reorder(self):
-        raise NotImplementedError("This method is not implemented yet")
+        # to be caluculated
+        organizer = ReorganizeData(self.padding)
+        (
+            self.F,
+            self.day_stim,
+            self.grey_idx,
+            self.drift_idx,
+            self.static_idx,
+        ) = organizer.extract_arrays_from_raw_data(data_raw)
