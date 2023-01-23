@@ -51,8 +51,10 @@ def get_specifications(folder_name: str) -> Specifications:
         Specifications object
     """
     """"""
-
-    specs = Specifications(read_configurations(), folder_name)
+    logging.debug("Reading configurations")
+    config = read(config_path)
+    logging.debug(f"Configurations read: {config}")
+    specs = Specifications(config, folder_name)
     return specs
 
 
@@ -66,9 +68,9 @@ def load(specs: Specifications) -> DataRaw:
                 and file.analysistype == AnalysisType.SF_TF
             ]
             if len(allen_data_files) == 1:
-                data_raw = DataRaw(
-                    h5py.File(allen_data_files[0].path, "r"), is_allen=True
-                )
+                with h5py.File(allen_data_files[0].path, "r") as h5py_file:
+                    data_raw = DataRaw(h5py_file, is_allen=True)
+
                 logging.info(f"Allen data loaded: {data_raw}")
                 return data_raw
             else:
@@ -81,19 +83,3 @@ def load(specs: Specifications) -> DataRaw:
             )
     else:
         raise NotImplementedError("Only loading for Allen data is implemented")
-
-
-def read_configurations() -> dict:
-    """Read configurations regarding experiment and analysis.
-
-    Returns
-    -------
-    dict
-        dictionary with configurations
-    """
-
-    logging.debug("Reading configurations")
-    config = read(config_path)
-    logging.debug(f"Configurations read: {config}")
-
-    return config
