@@ -113,27 +113,6 @@ class DataRaw:
             return None
 
     @classmethod
-    def _group_to_dict_recursive(cls, group: h5py._hl.group.Group) -> dict:
-        """Takes a Group and resolves its content. If the Group contains
-        other Groups, it calls itself recursively.
-        It assumes there are no more References.
-
-        Args:
-            group (h5py._hl.group.Group):
-                HDF5 Group containing references
-
-        Returns:
-            dict: the resolved dictionary
-        """
-        dict = {}
-        for key in group:
-            if isinstance(group[key], h5py._hl.group.Group):
-                dict[key] = cls._group_to_dict_recursive(group[key])
-            else:
-                dict[key] = np.squeeze(group[key][:])
-        return dict
-
-    @classmethod
     def _ref_dataset_to_array(
         cls,
         dataset: h5py._hl.dataset.Dataset,
@@ -163,3 +142,24 @@ class DataRaw:
                     array[i, j] = np.squeeze(parent[ref][:])
 
         return np.squeeze(array)
+
+    @classmethod
+    def _group_to_dict_recursive(cls, group: h5py._hl.group.Group) -> dict:
+        """Takes a Group and resolves its content. If the Group contains
+        other Groups, it calls itself recursively.
+        It assumes there are no more References.
+
+        Args:
+            group (h5py._hl.group.Group):
+                HDF5 Group containing references
+
+        Returns:
+            dict: the resolved dictionary
+        """
+        dict = {}
+        for key in group:
+            if isinstance(group[key], h5py._hl.group.Group):
+                dict[key] = cls._group_to_dict_recursive(group[key])
+            else:
+                dict[key] = np.squeeze(group[key][:])
+        return dict
