@@ -51,20 +51,22 @@ def create_mock_hdf5_data():
 def test_unpack_of_simple_dataset():
     create_mock_hdf5_data()
     with h5py.File("mytestfile.hdf5", "r") as f:
-        assert np.all(DataRaw.unpack_data(f["array0"], f) == array0)
+        assert np.all(DataRaw._unpack_data(f["array0"], f) == array0)
 
 
 def test_unpack_of_dataset_in_group():
     create_mock_hdf5_data()
     with h5py.File("mytestfile.hdf5", "r") as f:
-        assert np.all(DataRaw.unpack_data(f["mygroup"]["array1"], f) == array1)
+        assert np.all(
+            DataRaw._unpack_data(f["mygroup"]["array1"], f) == array1
+        )
 
 
 def test_unpack_of_dataset_in_subgroup():
     create_mock_hdf5_data()
     with h5py.File("mytestfile.hdf5", "r") as f:
         assert np.all(
-            DataRaw.unpack_data(f["mygroup"]["subgroup"]["array2"], f)
+            DataRaw._unpack_data(f["mygroup"]["subgroup"]["array2"], f)
             == array2
         )
 
@@ -72,14 +74,16 @@ def test_unpack_of_dataset_in_subgroup():
 def test_unpack_of_dataset_with_references_to_dataset():
     create_mock_hdf5_data()
     with h5py.File("mytestfile.hdf5", "r") as f:
-        assert np.all(DataRaw.unpack_data(f["ref_dataset"], f)[0][0] == array3)
+        assert np.all(
+            DataRaw._unpack_data(f["ref_dataset"], f)[0][0] == array3
+        )
 
 
 def test_unpack_of_dataset_with_references_to_group_with_subgroup():
     create_mock_hdf5_data()
     with h5py.File("mytestfile.hdf5", "r") as f:
         assert np.all(
-            DataRaw.unpack_data(f["ref_dataset2"], f)[0][0]["subgroup2"][
+            DataRaw._unpack_data(f["ref_dataset2"], f)[0][0]["subgroup2"][
                 "array4"
             ]
             == array4
