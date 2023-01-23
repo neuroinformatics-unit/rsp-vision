@@ -74,8 +74,9 @@ class DataRaw:
         . (root)
         ├── dataset_01 (contains numbers, -> array)
         ├── dataset_02 (contains references to datasets, -> array)
-        ├── dataset_03 (contains references to groups, -> dict)
-        ├── group_01 (contains datasets and groups, never references)
+        ├── dataset_03 (contains references to groups, -> array of dict)
+        ├── group_01 (contains datasets and groups, never references
+                    -> dict of arrays and dicts)
 
         A specific example:
         `data["day"]` is a group containing datasets or groups. It is
