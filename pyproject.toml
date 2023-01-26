@@ -24,6 +24,8 @@ dependencies = [
     "fancylog",
     "PyYAML",
     "types-PyYAML",
+    "h5py",
+    "python-decouple",
 ]
 
 [project.urls]

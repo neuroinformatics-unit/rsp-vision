@@ -85,3 +85,6 @@ venv/
 # config specific
 **/config.yml
 .env
+
+# used in testing
+*.hdf5
