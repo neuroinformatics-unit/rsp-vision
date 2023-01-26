@@ -18,7 +18,7 @@ def main():
         " \
         Please provide the experimental folder name.\n \
         Format: Mouse_Id_Hemisphere_BrainRegion_Monitor_position.\n \
-        Example: AK_1111739_hL_RSPd_monitor_front.\n \
+        Example: AK_1111739_hL_RSPd_monitor_front\n \
         📁"
     )
 
