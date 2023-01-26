@@ -8,8 +8,8 @@ class Specifications:
     to be loaded."""
 
     def __init__(self, config: dict, folder_name: str):
-        self.base_paths: dict = config["paths"]
+        self.config: dict = config
         self.folder_name = folder_name
-        self.folder_naming_specs = FolderNamingSpecs(folder_name, config)
-        self.folder_naming_specs.extract_all_file_names()
+        self.folder_naming = FolderNamingSpecs(folder_name, config)
+        self.folder_naming.extract_all_file_names()
         self.options = Options(config)
