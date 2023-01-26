@@ -34,12 +34,12 @@ class ReorganizeData:
         n_trigger = data_raw.stim[0]["n_triggers"]
 
         # define shape of f_store
-        n_roi = self.get_n_roi(data_raw.f)
-        n_sessions = self.get_n_sessions(data_raw.f)
+        n_roi = self.get_n_roi(data_raw.frames)
+        n_sessions = self.get_n_sessions(data_raw.frames)
         total_n_stimulus_triggers = self.get_total_n_stimulus_triggers(
             n_trigger, n_baseline_trigger, n_sessions
         )
-        n_frames_per_session = self.get_n_frames_per_session(data_raw.f)
+        n_frames_per_session = self.get_n_frames_per_session(data_raw.frames)
         n_frames_per_trigger = self.get_n_frames_per_trigger(
             n_frames_per_session, n_trigger
         )
@@ -83,7 +83,7 @@ class ReorganizeData:
             )
 
             f_reshape = self.get_f_reshape(
-                data_raw.f, k, frames_idx
+                data_raw.frames, k, frames_idx
             )  # To be improved
             f_store[k] = f_reshape  # Placeholder
 
