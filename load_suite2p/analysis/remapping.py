@@ -63,6 +63,7 @@ class Remapping:
         data_raw : DataRaw
             The raw data object from which the data will be extracted
         """
+        self.screen_size = data_raw.stim[0]["screen_size"]
         self.is_cell = data_raw.is_cell
         self.day_roi = data_raw.day["roi"]
         self.day_roi_label = data_raw.day["roi_label"]
