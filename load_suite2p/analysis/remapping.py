@@ -1,20 +1,53 @@
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import numpy as np
 import pandas as pd
 
-from ..analysis.utils import ascii_array_to_string
+from ..analysis.utils import ascii_array_to_string, get_fps
 from ..objects.data_raw import DataRaw
 from ..objects.enums import PhotonType
 
 
 class Remapping:
+    """Class to remap the data from the raw data to a more usable format,
+    such as a pandas dataframe.
+    Its main output is a dataframe called `signal`, which contains all
+    the information that would be useful for plotting.
+    It does not include padding calculations, which I would like it
+    to be done dynamically while browsing the data.
+    """
+
     def __init__(self, data_raw: DataRaw, photon_type: PhotonType):
         self.photon_type = photon_type
         self.set_general_variables(data_raw)
 
     def get_signal_df(self, data_raw: DataRaw):
+        """The main function of this class, which returns the final
+        `signal` dataframe. It will contain the following columns:
+        * day (int) - the day of the experiment (1, 2, 3 or 4)
+        * time from beginning (datetime) - the time from the beginning
+            of the experiment
+        * frames_id (int) - the frame id
+        * signal (float) - the signal value
+        * roi_id (int) - the roi id
+        * session_id (int) - the session id
+        * sf (float) - the spatial frequency of the stimulus
+        * tf (float) - the temporal frequency of the stimulus
+        * direction (float) - the direction of the stimulus
+        * stimulus_onset (bool) - whether the frame is a stimulus onset
+
+
+        Parameters
+        ----------
+        data_raw : DataRaw
+            The raw data object from which the data will be extracted
+
+        Returns
+        -------
+        signal : pd.DataFrame
+            The final dataframe
+        """
         signal = self.make_signal_dataframe(data_raw)
         stimuli = self.get_stimuli(data_raw)
         signal = self.fill_up_with_stim_info(signal, stimuli)
@@ -22,6 +55,17 @@ class Remapping:
         return signal
 
     def set_general_variables(self, data_raw):
+        """Set the general variables that will be used in the class,
+        mostly using the same calculations as in the matlab codebase.
+
+        Parameters
+        ----------
+        data_raw : DataRaw
+            The raw data object from which the data will be extracted
+        """
+        self.is_cell = data_raw.is_cell
+        self.day_roi = data_raw.day["roi"]
+        self.day_roi_label = data_raw.day["roi_label"]
         self.n_sessions = data_raw.frames.shape[0]
         self.n_roi = data_raw.frames[0].shape[0]
         self.n_frames_per_session = data_raw.frames[0].shape[1]
@@ -54,7 +98,9 @@ class Remapping:
         self.calculations_to_find_start_frames()
 
     def calculations_to_find_start_frames(self):
-        # calculations as in the matlab codebase
+        """Calculations to find the start frames of the stimuli,
+        as in the matlab codebase.
+        """
         self.n_frames_per_trigger = self.n_frames_per_session / self.n_trigger
         self.n_baseline_frames = (
             self.n_baseline_trigger * self.n_frames_per_trigger
@@ -83,11 +129,24 @@ class Remapping:
         )
 
     def make_signal_dataframe(self, data_raw):
+        """Make the signal dataframe, which will be filled up with
+        the stimulus information later on.
+
+        Parameters
+        ----------
+        data_raw : DataRaw
+            The raw data object from which the data will be extracted
+
+        Returns
+        -------
+        signal : pd.DataFrame
+            Initialized dataframe with only partial information
+        """
 
         signal = pd.DataFrame(
             columns=[
                 "day",
-                "timedelta from beginning",
+                "time from beginning",
                 "frames_id",
                 "signal",
                 "roi_id",
@@ -101,7 +160,7 @@ class Remapping:
         signal = signal.astype(
             {
                 "day": "int32",
-                "timedelta from beginning": "timedelta64[ns]",
+                "time from beginning": "datetime64[ns]",
                 "frames_id": "int32",
                 "signal": "float32",
                 "roi_id": "int32",
@@ -120,7 +179,7 @@ class Remapping:
                         "day": np.repeat(
                             self.day_stim[0], self.n_frames_per_session
                         ),
-                        "timedelta from beginning": self.get_timing_array(),
+                        "time from beginning": self.get_timing_array(),
                         "frames_id": np.arange(0, self.n_frames_per_session),
                         "signal": data_raw.frames[session][roi, :],
                         "roi_id": np.repeat(roi, self.n_frames_per_session),
@@ -145,20 +204,31 @@ class Remapping:
         return signal
 
     def get_timing_array(self):
-        td = timedelta(seconds=(1 / self.get_fps()))
-        return np.cumsum(np.repeat(td, self.n_frames_per_session))
+        """Get the timing array for the signal dataframe calculating it
+        from the number of frames per session given a photon type.
 
-    def get_fps(self):
-        if self.photon_type == PhotonType.TWO_PHOTON:
-            return 30
-        elif self.photon_type == PhotonType.THREE_PHOTON:
-            return 15
-        else:
-            raise NotImplementedError(
-                "Unknown number of frames per second for this photon type"
-            )
+        Returns
+        -------
+        np.array(datetime)
+            An array of datetime objects corresponding to the frames
+        """
+        td = timedelta(seconds=(1 / get_fps(self.photon_type)))
+        cumulative_sum = np.cumsum(np.repeat(td, self.n_frames_per_session))
+        return datetime.today() + cumulative_sum
 
     def get_stimuli(self, data_raw):
+        """Get the stimuli dataframe from the raw data object.
+
+        Parameters
+        ----------
+        data_raw : DataRaw
+            The raw data object from which the data will be extracted
+
+        Returns
+        -------
+        stimuli : pd.DataFrame
+            Dataframe with the stimuli information
+        """
         # dataframe of ordered stimuli to be mapped to signal table
         stimuli = pd.DataFrame(columns=["sf", "tf", "direction", "session"])
         for signal_idx in range(self.n_sessions):
@@ -182,12 +252,29 @@ class Remapping:
         return stimuli
 
     def fill_up_with_stim_info(self, signal, stimuli):
+        """Complete the signal dataframe with the stimulus information.
+
+        Parameters
+        ----------
+        signal : pd.DataFrame
+            Signal dataframe to be filled up with stimulus information
+        stimuli : _type_
+            Dataframe with the stimuli information
+
+        Returns
+        -------
+        signal : pd.DataFrame
+            Final signal dataframe with stimulus information
+        """
         # register only the stimulus onset
         for k, start_frame in enumerate(self.stimulus_start_frames):
             signal_idxs = signal.index[
                 signal["frames_id"] == start_frame
             ].tolist()
+
+            # starting frames and stimuli are alligned in source data
             stimulus = stimuli.iloc[k]
+
             # there would be the same start frame for each session for each roi
             for i, signal_idx in enumerate(signal_idxs):
                 signal.iloc[
