@@ -1,4 +1,5 @@
-from ..analysis.reorganize_data import ReorganizeData
+from ..analysis.remapping import Remapping
+from ..objects.enums import PhotonType
 from .data_raw import DataRaw
 
 
@@ -23,12 +24,5 @@ class PhotonData:
         ]
         self.screen_size = data_raw.stim[0]["screen_size"]
 
-        # to be caluculated
-        organizer = ReorganizeData(self.padding)
-        (
-            self.F,
-            self.day_stim,
-            self.grey_idx,
-            self.drift_idx,
-            self.static_idx,
-        ) = organizer.extract_arrays_from_raw_data(data_raw)
+        self.mapper = Remapping(data_raw, PhotonType.TWO_PHOTON)
+        self.signal = self.mapper.make_signal_dataframe(data_raw)
