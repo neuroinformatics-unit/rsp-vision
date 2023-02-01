@@ -23,7 +23,7 @@ class PhotonData:
         self.set_general_variables(data_raw)
         self.signal = self.get_signal_df(data_raw)
         logging.info(
-            "Some of the data extracted:"
+            "Some of the data extracted:\n"
             + f"{self.signal[self.signal['stimulus_onset'] == True].head()}"
         )
 

@@ -71,7 +71,7 @@ def load(specs: Specifications) -> DataRaw:
                 with h5py.File(allen_data_files[0].path, "r") as h5py_file:
                     data_raw = DataRaw(h5py_file, is_allen=True)
 
-                logging.info(f"Allen data loaded: {data_raw}")
+                logging.info("Allen data loaded")
                 return data_raw
             else:
                 raise ValueError(
