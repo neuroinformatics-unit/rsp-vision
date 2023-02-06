@@ -24,7 +24,7 @@ class PhotonData:
         self.signal = self.get_signal_df(data_raw)
         logging.info(
             "Some of the data extracted:\n"
-            + f"{self.signal[self.signal['stimulus_onset'] == True].head()}"
+            + f"{self.signal[self.signal['stimulus_onset']].head()}"
         )
 
     def get_signal_df(self, data_raw: DataRaw):
@@ -114,7 +114,7 @@ class PhotonData:
         self.n_stimulus_triggers = int(
             self.n_trigger - 2 * self.n_baseline_trigger
         )
-        self.inner_total_n_of_stimuli = (
+        self.inner_total_n_of_stimuli = int(
             self.n_stimulus_triggers / self.n_triggers_per_stimulus
         )
         self.stimulus_start_frames = self.get_stimulus_start_frames()
