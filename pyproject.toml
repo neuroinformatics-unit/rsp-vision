@@ -26,6 +26,7 @@ dependencies = [
     "types-PyYAML",
     "h5py",
     "python-decouple",
+    "virtualenv=20.0.33"
 ]
 
 [project.urls]
@@ -47,7 +48,6 @@ dev = [
 	"pre-commit",
 	"flake8",
  	"setuptools_scm",
-    "virtualenv=20.0.33"
 ]
 
 
