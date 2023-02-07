@@ -1,6 +1,6 @@
 from types import ModuleType
 
-from load_suite2p import utils
+from rsp_vision import utils
 
 
 def test_get_module_for_logging():

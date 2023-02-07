@@ -22,7 +22,7 @@ Then edit the config file with the correct paths to the data by overwriting `/pa
 
 Finally, run the following commands with IPython:
 ```python
-from load_suite2p.main import main
+from rsp_vision.main import main
 main()
 ```
 

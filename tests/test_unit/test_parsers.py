@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from load_suite2p.objects.parsers2p.parser2pRSP import Parser2pRSP
+from rsp_vision.objects.parsers2p.parser2pRSP import Parser2pRSP
 
 config = {
     "parser": "Parser2pRSP",

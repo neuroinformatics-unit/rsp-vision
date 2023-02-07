@@ -10,12 +10,12 @@ if __name__ == "__main__":
         f.write('CONFIG_PATH="config-test/config.yml"')
 
     # create config folder
-    Path("load_suite2p/config-test").mkdir(parents=True, exist_ok=True)
+    Path("rsp_vision/config-test").mkdir(parents=True, exist_ok=True)
 
     #  create config file and store it in config folder
-    f = open("load_suite2p/config-test/config.yml", "x")
+    f = open("rsp_vision/config-test/config.yml", "x")
 
-    with open("load_suite2p/config-test/config.yml", "w") as f:
+    with open("rsp_vision/config-test/config.yml", "w") as f:
         content = {
             "parser": "Parser2pRSP",
             "paths": {
