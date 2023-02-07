@@ -18,7 +18,6 @@ def get_variables():
 
 @pytest.fixture
 def get_data_raw_object(get_variables):
-
     n_sessions, n_roi, l_signal, n_stim = get_variables
 
     data = {
