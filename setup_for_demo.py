@@ -4,10 +4,10 @@ import yaml
 
 if __name__ == "__main__":
     # create .env file and add the path to config
-    f = open("test.env", "x")
+    f = open(".env", "x")
 
     with open("test.env", "w") as f:
-        f.write('CONFIG_PATH="config-test/config.yml"')
+        f.write('CONFIG_PATH="config/config.yml"')
 
     # create config folder
     Path("load_suite2p/config-test").mkdir(parents=True, exist_ok=True)
