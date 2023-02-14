@@ -6,7 +6,7 @@ if __name__ == "__main__":
     # create .env file and add the path to config
     f = open(".env", "x")
 
-    with open("test.env", "w") as f:
+    with open(".env", "w") as f:
         f.write('CONFIG_PATH="config/config.yml"')
 
     # create config folder
