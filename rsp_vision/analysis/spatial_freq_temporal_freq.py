@@ -1,11 +1,10 @@
 from ..objects.photon_data import PhotonData
-from ..objects.specifications import Specifications
 
 
 class SF_TF:
-    def __init__(self, data: PhotonData, specs: Specifications):
+    def __init__(self, data: PhotonData, config: dict):
         self.data = data
-        self.config = specs
+        self.config = config
 
     def get_fit_parameters(self):
         # calls _fit_two_dimensional_elliptical_gaussian
