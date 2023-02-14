@@ -22,15 +22,15 @@ def main():
         Example: AK_1111739_hL_RSPd_monitor_front\n \
         📁"
     )
-
+    photon_type = PhotonType.TWO_PHOTON
     # load data
     data, specs = load_data(folder_name)
 
     # preprocess and make PhotonData object
-    photon_data = PhotonData(data, PhotonType.TWO_PHOTON)
+    photon_data = PhotonData(data, photon_type)
 
     # make analysis object
-    analysis = SF_TF(photon_data, specs)
+    analysis = SF_TF(photon_data, specs, photon_type)
 
     # calculate responsiveness and display it in a nice way
     responsiveness = analysis.responsiveness(photon_data)

@@ -1,10 +1,44 @@
+import numpy as np
+from utils import get_fps
+
+from ..objects.enums import PhotonType
 from ..objects.photon_data import PhotonData
 
 
 class SF_TF:
-    def __init__(self, data: PhotonData, config: dict):
+    def __init__(
+        self, data: PhotonData, config: dict, photon_type: PhotonType
+    ):
         self.data = data
-        self.config = config
+        self.photon_type = photon_type
+
+        self.fps = get_fps(photon_type)
+
+        self.padding_start = int(config["padding"][0])
+        self.padding_end = int(config["padding"][1])
+
+    def get_response_matrix_from_padding(self, day_idx=0, roi_idx=0):
+        stimulus_idxs = self.data.signal[self.data.signal["stimulus_onset"]]
+        self.n_frames_for_dispalay = (
+            self.data.n_frames_per_trigger * self.data.n_triggers_per_stimulus
+            + self.padding_end
+        )
+        full_matrix = np.zeros(
+            (self.n_frames_for_dispalay, len(stimulus_idxs))
+        )
+
+        filtered_signal = self.data.signal[
+            (self.data.signal["day_idx"] == day_idx)
+            & (self.data.signal["roi_idx"] == roi_idx)
+        ]
+        for i, idx in enumerate(stimulus_idxs):
+            full_matrix[:, i] = filtered_signal[
+                idx - self.padding_start : idx + self.padding_end
+            ]["signal"]
+
+        response_matrix = np.mean(full_matrix[self.fps :, :], axis=0)
+        baseline_matrix = np.mean(full_matrix[-2 * self.fps :, :], axis=0)
+        return response_matrix - baseline_matrix
 
     def get_fit_parameters(self):
         # calls _fit_two_dimensional_elliptical_gaussian
