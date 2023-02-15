@@ -26,6 +26,10 @@ if __name__ == "__main__":
             },
             "use-allen-dff": "true",
             "analysis-type": "sf_tf",
+            "padding": [25, 50],
+            "drift_order": 2,
+            "fps_two_photon": 30,
+            "fps_tree_photon": 15,
         }
 
         yaml.dump(content, f)
