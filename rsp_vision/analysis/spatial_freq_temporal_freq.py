@@ -1,8 +1,10 @@
+import logging
+
 import numpy as np
-from utils import get_fps
 
 from ..objects.enums import PhotonType
 from ..objects.photon_data import PhotonData
+from .utils import get_fps
 
 
 class SF_TF:
@@ -17,37 +19,73 @@ class SF_TF:
         self.padding_start = int(config["padding"][0])
         self.padding_end = int(config["padding"][1])
 
-    def get_response_matrix_from_padding(self, day_idx=0, roi_idx=0):
-        stimulus_idxs = self.data.signal[self.data.signal["stimulus_onset"]]
-        self.n_frames_for_dispalay = (
+        self.get_response_matrix_from_padding()
+
+    def get_response_matrix_from_padding(
+        self,
+    ):
+        stimulus_idxs = self.data.signal[
+            self.data.signal["stimulus_onset"]
+        ].index
+        self.n_frames_for_dispalay = int(
             self.data.n_frames_per_trigger * self.data.n_triggers_per_stimulus
+            + self.padding_start
             + self.padding_end
         )
-        full_matrix = np.zeros(
-            (self.n_frames_for_dispalay, len(stimulus_idxs))
+
+        self.adapted_signal = self.data.signal
+        self.adapted_signal["mean_response"] = np.nan
+        self.adapted_signal["mean_baseline"] = np.nan
+
+        logging.info("Starting to edit the signal daataframe...")
+
+        for idx in stimulus_idxs:
+            id = idx - self.padding_start
+
+            self.adapted_signal.loc[
+                idx, "mean_response"
+            ] = self.adapted_signal[
+                (self.adapted_signal.index >= id + self.fps)
+                & (self.adapted_signal.index < id + self.n_frames_for_dispalay)
+            ][
+                "signal"
+            ].mean()
+
+            self.adapted_signal.loc[
+                idx, "mean_baseline"
+            ] = self.adapted_signal[
+                (
+                    self.adapted_signal.index
+                    >= id + self.n_frames_for_dispalay - (2 * self.fps)
+                )
+                & (self.adapted_signal.index < id + self.n_frames_for_dispalay)
+            ][
+                "signal"
+            ].mean()
+
+        self.adapted_signal["subtracted"] = (
+            self.adapted_signal["mean_response"]
+            - self.adapted_signal["mean_baseline"]
         )
 
-        filtered_signal = self.data.signal[
-            (self.data.signal["day_idx"] == day_idx)
-            & (self.data.signal["roi_idx"] == roi_idx)
-        ]
-        for i, idx in enumerate(stimulus_idxs):
-            full_matrix[:, i] = filtered_signal[
-                idx - self.padding_start : idx + self.padding_end
-            ]["signal"]
+        view = self.adapted_signal[self.adapted_signal["stimulus_onset"]]
+        logging.info(f"Adapted signal dataframe:{view.head()}")
 
-        response_matrix = np.mean(full_matrix[self.fps :, :], axis=0)
-        baseline_matrix = np.mean(full_matrix[-2 * self.fps :, :], axis=0)
-        return response_matrix - baseline_matrix
+        # in the last trigger baseline is not calculated
+        # because indexes go beyond the length of the dataframe
 
     def get_fit_parameters(self):
         # calls _fit_two_dimensional_elliptical_gaussian
         raise NotImplementedError("This method is not implemented yet")
 
-    def responsiveness(self):
+    def responsiveness(self, rois: list):
+
         raise NotImplementedError("This method is not implemented yet")
 
-    def responsiveness_anova_window(self):
+    def responsiveness_anova(self):
+        # perform non-parametric one way anova and
+        # return the p-value for all combos across sesssions
+
         raise NotImplementedError("This method is not implemented yet")
 
     def get_preferred_direction_all_rois(self):
