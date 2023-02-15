@@ -27,7 +27,7 @@ def get_data_raw_object(get_variables):
             "stimulus": "stimulus",
         },
         "imaging": "imaging",
-        # it should be some kinf of range
+        # it should be some kind of range
         "f": np.ones((n_sessions, n_roi, l_signal)),
         "is_cell": "is_cell",
         "r_neu": "r_neu",
