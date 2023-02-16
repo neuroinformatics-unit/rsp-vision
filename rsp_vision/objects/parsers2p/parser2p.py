@@ -31,7 +31,6 @@ class Parser2p(ABC):
     """
 
     def __init__(self, folder_name: str, config: dict) -> None:
-
         self._folder_name = folder_name
         self.info = self._parse()
         if not self._minimum_params_required():
