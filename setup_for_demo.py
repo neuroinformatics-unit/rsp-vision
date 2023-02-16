@@ -3,19 +3,16 @@ from pathlib import Path
 import yaml
 
 if __name__ == "__main__":
-    # create .env file and add the path to config
-    f = open(".env", "x")
-
-    with open(".env", "w") as f:
+    env_path = Path(".env")
+    with env_path.open("w", encoding="utf-8") as f:
         f.write('CONFIG_PATH="config/config.yml"')
 
     # create config folder
-    Path("load_suite2p/config").mkdir(parents=True, exist_ok=True)
+    config_folder_path = Path("load_suite2p/config")
+    config_folder_path.mkdir(parents=True, exist_ok=True)
+    config_path = config_folder_path / "config.yml"
 
-    #  create config file and store it in config folder
-    f = open("load_suite2p/config/config.yml", "x")
-
-    with open("load_suite2p/config/config.yml", "w") as f:
+    with config_path.open("w", encoding="utf-8") as f:
         content = {
             "parser": "Parser2pRSP",
             "paths": {
