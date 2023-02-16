@@ -2,6 +2,7 @@ from rich.prompt import Prompt
 
 from .analysis.spatial_freq_temporal_freq import SF_TF
 from .load.load_data import load_data
+from .objects.enums import PhotonType
 from .objects.photon_data import PhotonData
 from .plots.plotter import Plotter
 from .utils import exception_handler, start_logging
@@ -26,7 +27,7 @@ def main():
     data, specs = load_data(folder_name)
 
     # preprocess and make PhotonData object
-    photon_data = PhotonData(data, specs)
+    photon_data = PhotonData(data, PhotonType.TWO_PHOTON, specs.config)
 
     # make analysis object
     analysis = SF_TF(photon_data, specs)
