@@ -18,7 +18,9 @@ class PhotonData:
     to be done dynamically while browsing the data.
     """
 
-    def __init__(self, data_raw: DataRaw, photon_type: PhotonType, config):
+    def __init__(
+        self, data_raw: DataRaw, photon_type: PhotonType, config: dict
+    ):
         self.photon_type = photon_type
         self.config = config
         self.set_general_variables(data_raw)
