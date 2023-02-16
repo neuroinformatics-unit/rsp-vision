@@ -15,3 +15,9 @@ class AnalysisType(Enum):
     SPARSE_NOISE = 2
     RETINOTOPY = 3
     UNCLASSIFIED = 4
+
+
+class PhotonType(Enum):
+    ONE_PHOTON = 1
+    TWO_PHOTON = 2
+    THREE_PHOTON = 3

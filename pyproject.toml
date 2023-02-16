@@ -26,6 +26,7 @@ dependencies = [
     "types-PyYAML",
     "h5py",
     "python-decouple",
+    "pandas"
 ]
 
 [project.urls]
