@@ -8,7 +8,7 @@ if __name__ == "__main__":
         f.write('CONFIG_PATH="config/config.yml"')
 
     # create config folder
-    config_folder_path = Path("load_suite2p/config")
+    config_folder_path = Path("rsp_vision/config")
     config_folder_path.mkdir(parents=True, exist_ok=True)
     config_path = config_folder_path / "config.yml"
 

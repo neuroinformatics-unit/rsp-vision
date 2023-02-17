@@ -4,7 +4,7 @@ import h5py
 import numpy as np
 import pytest
 
-from load_suite2p.objects.data_raw import DataRaw
+from rsp_vision.objects.data_raw import DataRaw
 
 
 @pytest.fixture
