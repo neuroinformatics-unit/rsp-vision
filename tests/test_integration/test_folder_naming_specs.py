@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from load_suite2p.objects import folder_naming_specs
+from rsp_vision.objects import folder_naming_specs
 
 # Mocks
 

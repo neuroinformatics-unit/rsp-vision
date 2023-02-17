@@ -1,7 +1,7 @@
 include LICENSE
 include README.md
 
-recursive-include load_suite2p *.yml
+recursive-include rsp_vision *.yml
 
 include *.py
 

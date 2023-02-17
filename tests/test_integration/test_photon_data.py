@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from load_suite2p.objects.data_raw import DataRaw
-from load_suite2p.objects.enums import PhotonType
-from load_suite2p.objects.photon_data import PhotonData
+from rsp_vision.objects.data_raw import DataRaw
+from rsp_vision.objects.enums import PhotonType
+from rsp_vision.objects.photon_data import PhotonData
 
 
 @pytest.fixture

@@ -64,11 +64,11 @@ build-backend = "setuptools.build_meta"
 include-package-data = true
 
 [tool.setuptools.packages.find]
-include = ["load_suite2p*"]
+include = ["rsp_vision*"]
 exclude = ["tests*"]
 
 [tool.pytest.ini_options]
-addopts = "-s --cov=load_suite2p"
+addopts = "-s --cov=rsp_vision"
 
 [tool.black]
 target-version = ['py39']
