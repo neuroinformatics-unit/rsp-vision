@@ -28,6 +28,10 @@ if __name__ == "__main__":
             "drift_order": 2,
             "fps_two_photon": 30,
             "fps_tree_photon": 15,
+            "n_sf": 6,
+            "n_tf": 6,
+            "n_dir": 8,
+            "trigger_interval_s": 2.5,
         }
 
         yaml.dump(content, f)
