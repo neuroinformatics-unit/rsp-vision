@@ -3,6 +3,8 @@ include README.md
 
 recursive-include rsp_vision *.yml
 
+include *.py
+
 exclude *.yaml
 exclude tox.ini
 exclude .flake8

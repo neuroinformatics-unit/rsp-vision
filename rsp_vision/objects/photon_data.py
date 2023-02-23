@@ -18,8 +18,11 @@ class PhotonData:
     to be done dynamically while browsing the data.
     """
 
-    def __init__(self, data_raw: DataRaw, photon_type: PhotonType):
+    def __init__(
+        self, data_raw: DataRaw, photon_type: PhotonType, config: dict
+    ):
         self.photon_type = photon_type
+        self.config = config
         self.set_general_variables(data_raw)
         self.signal = self.get_signal_df(data_raw)
         logging.info(
@@ -225,7 +228,7 @@ class PhotonData:
         np.array(datetime)
             An array of datetime objects corresponding to the frames
         """
-        td = timedelta(seconds=(1 / get_fps(self.photon_type)))
+        td = timedelta(seconds=(1 / get_fps(self.photon_type, self.config)))
         cumulative_sum = np.cumsum(np.repeat(td, self.n_frames_per_session))
         return datetime.today() + cumulative_sum
 

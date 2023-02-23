@@ -14,7 +14,7 @@ class SF_TF:
         self.data = data
         self.photon_type = photon_type
 
-        self.fps = get_fps(photon_type)
+        self.fps = get_fps(photon_type, config)
 
         self.padding_start = int(config["padding"][0])
         self.padding_end = int(config["padding"][1])
@@ -79,7 +79,6 @@ class SF_TF:
         raise NotImplementedError("This method is not implemented yet")
 
     def responsiveness(self, rois: list):
-
         raise NotImplementedError("This method is not implemented yet")
 
     def responsiveness_anova(self):
