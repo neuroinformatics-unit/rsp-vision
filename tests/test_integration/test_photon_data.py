@@ -17,8 +17,12 @@ def get_variables():
 
 
 @pytest.fixture
-def get_data_raw_object(get_variables):
+def get_config():
+    yield {"fps_two_photon": 30}
 
+
+@pytest.fixture
+def get_data_raw_object(get_variables):
     n_sessions, n_roi, l_signal, n_stim = get_variables
 
     data = {
@@ -28,7 +32,7 @@ def get_data_raw_object(get_variables):
             "stimulus": "stimulus",
         },
         "imaging": "imaging",
-        # it should be some kinf of range
+        # it should be some kind of range
         "f": np.ones((n_sessions, n_roi, l_signal)),
         "is_cell": "is_cell",
         "r_neu": "r_neu",
@@ -74,12 +78,19 @@ def get_data_raw_object(get_variables):
     yield data_raw
 
 
-def test_set_general_variables(get_data_raw_object, get_variables):
-    n_sessions, n_roi, l_signal, n_stim = get_variables
-
+@pytest.fixture
+def get_photon_data(get_data_raw_object, get_config):
     photon_data = PhotonData.__new__(PhotonData)
     photon_data.photon_type = PhotonType.TWO_PHOTON
+    photon_data.config = get_config
     photon_data.set_general_variables(get_data_raw_object)
+
+    yield photon_data
+
+
+def test_set_general_variables(get_variables, get_photon_data):
+    n_sessions, n_roi, l_signal, n_stim = get_variables
+    photon_data = get_photon_data
 
     assert photon_data.n_sessions == n_sessions
     assert photon_data.n_roi == n_roi
@@ -88,28 +99,22 @@ def test_set_general_variables(get_data_raw_object, get_variables):
     assert photon_data.stimulus_start_frames.shape[0] == n_sessions * n_stim
 
 
-def test_make_signal_dataframe(get_data_raw_object):
-    photon_data = PhotonData.__new__(PhotonData)
-    photon_data.photon_type = PhotonType.TWO_PHOTON
-    photon_data.set_general_variables(get_data_raw_object)
+def test_make_signal_dataframe(get_photon_data, get_data_raw_object):
+    photon_data = get_photon_data
     signal = photon_data.make_signal_dataframe(get_data_raw_object)
 
     assert signal.shape == (2257200, 10)
 
 
-def test_get_stimuli(get_data_raw_object):
-    photon_data = PhotonData.__new__(PhotonData)
-    photon_data.photon_type = PhotonType.TWO_PHOTON
-    photon_data.set_general_variables(get_data_raw_object)
+def test_get_stimuli(get_photon_data, get_data_raw_object):
+    photon_data = get_photon_data
     stimuli = photon_data.get_stimuli(get_data_raw_object)
 
     assert stimuli.shape == (864, 4)
 
 
-def test_fill_up_with_stim_info(get_data_raw_object):
-    photon_data = PhotonData.__new__(PhotonData)
-    photon_data.photon_type = PhotonType.TWO_PHOTON
-    photon_data.set_general_variables(get_data_raw_object)
+def test_fill_up_with_stim_info(get_photon_data, get_data_raw_object):
+    photon_data = get_photon_data
     signal = photon_data.make_signal_dataframe(get_data_raw_object)
     stimuli = photon_data.get_stimuli(get_data_raw_object)
     signal = photon_data.fill_up_with_stim_info(signal, stimuli)

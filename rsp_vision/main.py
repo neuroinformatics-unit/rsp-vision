@@ -24,13 +24,13 @@ def main():
     )
     photon_type = PhotonType.TWO_PHOTON
     # load data
-    data, specs = load_data(folder_name)
+    data, config = load_data(folder_name)
 
     # preprocess and make PhotonData object
-    photon_data = PhotonData(data, photon_type)
+    photon_data = PhotonData(data, PhotonType.TWO_PHOTON, config)
 
     # make analysis object
-    analysis = SF_TF(photon_data, specs, photon_type)
+    analysis = SF_TF(photon_data, config, photon_type)
 
     # calculate responsiveness and display it in a nice way
     rois = list(range(11))
