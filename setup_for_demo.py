@@ -8,12 +8,11 @@ if __name__ == "__main__":
         f.write('CONFIG_PATH="config/config.yml"')
 
     # create config folder
-    Path("rsp_vision/config").mkdir(parents=True, exist_ok=True)
+    config_folder_path = Path("rsp_vision/config")
+    config_folder_path.mkdir(parents=True, exist_ok=True)
+    config_path = config_folder_path / "config.yml"
 
-    #  create config file and store it in config folder
-    f = open("rsp_vision/config/config.yml", "x")
-
-    with open("rsp_vision/config/config.yml", "w") as f:
+    with config_path.open("w", encoding="utf-8") as f:
         content = {
             "parser": "Parser2pRSP",
             "paths": {
