@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 
+from rsp_vision.analysis.utils import get_fps
 from rsp_vision.objects.data_raw import DataRaw
 from rsp_vision.objects.enums import PhotonType
 from rsp_vision.objects.photon_data import PhotonData
@@ -18,7 +19,13 @@ def get_variables():
 
 @pytest.fixture
 def get_config():
-    yield {"fps_two_photon": 30}
+    yield {
+        "fps_two_photon": 30,
+        "trigger_interval_s": 2.5,
+        "n_sf": 6,
+        "n_tf": 6,
+        "n_dir": 8,
+    }
 
 
 @pytest.fixture
@@ -81,8 +88,10 @@ def get_data_raw_object(get_variables):
 @pytest.fixture
 def get_photon_data(get_data_raw_object, get_config):
     photon_data = PhotonData.__new__(PhotonData)
+    photon_data.deactivate_checks = True
     photon_data.photon_type = PhotonType.TWO_PHOTON
     photon_data.config = get_config
+    photon_data.fps = get_fps(photon_data.photon_type, photon_data.config)
     photon_data.set_general_variables(get_data_raw_object)
 
     yield photon_data

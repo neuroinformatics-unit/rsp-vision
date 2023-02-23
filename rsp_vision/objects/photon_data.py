@@ -19,8 +19,13 @@ class PhotonData:
     """
 
     def __init__(
-        self, data_raw: DataRaw, photon_type: PhotonType, config: dict
+        self,
+        data_raw: DataRaw,
+        photon_type: PhotonType,
+        config: dict,
+        deactivate_checks=False,
     ):
+        self.deactivate_checks = deactivate_checks
         self.photon_type = photon_type
         self.config = config
         self.fps = get_fps(self.photon_type, self.config)
@@ -277,37 +282,40 @@ class PhotonData:
             )
             stimuli = pd.concat([stimuli, df])
 
-        if len(stimuli) != self.n_of_stimuli_across_all_sessions:
-            logging.error(
-                f"Len of stimuli table: {len(stimuli)}, calculated "
-                + "stimuli lenght: {self.n_of_stimuli_across_all_sessions}"
-            )
-            raise RuntimeError(
-                "Number of stimuli in raw_data.stim differs from the "
-                + "calculated amount of stimuli"
+        if not self.deactivate_checks:
+            if len(stimuli) != self.n_of_stimuli_across_all_sessions:
+                logging.error(
+                    f"Len of stimuli table: {len(stimuli)}, calculated "
+                    + "stimuli lenght: {self.n_of_stimuli_across_all_sessions}"
+                )
+                raise RuntimeError(
+                    "Number of stimuli in raw_data.stim differs from the "
+                    + "calculated amount of stimuli"
+                )
+
+            pivot_table = stimuli.pivot_table(
+                index=["sf", "tf", "direction"], aggfunc="size"
             )
 
-        pivot_table = stimuli.pivot_table(
-            index=["sf", "tf", "direction"], aggfunc="size"
-        )
+            if (
+                len(pivot_table)
+                != self.config["n_sf"]
+                * self.config["n_tf"]
+                * self.config["n_dir"]
+            ):
+                logging.error(f"Pivot table: {pivot_table}")
+                logging.error(f"Pivot table length: {len(pivot_table)}")
+                raise RuntimeError(
+                    "Number of stimuli is not correct, some combinations are "
+                    + "missing or duplicated"
+                )
 
-        if (
-            len(pivot_table)
-            != self.config["n_sf"] * self.config["n_tf"] * self.config["n_dir"]
-        ):
-            logging.error(f"Pivot table: {pivot_table}")
-            logging.error(f"Pivot table length: {len(pivot_table)}")
-            raise RuntimeError(
-                "Number of stimuli is not correct, some combinations are "
-                + "missing or duplicated"
-            )
-
-        if np.any(pivot_table.values != self.n_triggers_per_stimulus):
-            logging.error(f"Pivot table: {pivot_table}")
-            raise RuntimeError(
-                "Number of stimuli is not correct, some combinations are "
-                + "missing or duplicated"
-            )
+            if np.any(pivot_table.values != self.n_triggers_per_stimulus):
+                logging.error(f"Pivot table: {pivot_table}")
+                raise RuntimeError(
+                    "Number of stimuli is not correct, some combinations are "
+                    + "missing or duplicated"
+                )
 
         return stimuli
 
@@ -335,7 +343,10 @@ class PhotonData:
             ].tolist()
 
             s_idxs = set(signal_idxs)
-            if explored_idxs.intersection(set(s_idxs)):
+            if (
+                explored_idxs.intersection(set(s_idxs))
+                and not self.deactivate_checks
+            ):
                 raise RuntimeError("Index is duplicated across signals")
 
             explored_idxs.union(s_idxs)
@@ -343,7 +354,7 @@ class PhotonData:
             # starting frames and stimuli are alligned in source data
             stimulus = stimuli.iloc[k]
 
-            if len(signal_idxs) != self.n_roi:
+            if len(signal_idxs) != self.n_roi and not self.deactivate_checks:
                 raise RuntimeError(
                     f"Number of instances for stimulus {stimulus} is wrong."
                 )
@@ -363,11 +374,14 @@ class PhotonData:
                     signal_idx, signal.columns.get_loc("stimulus_onset")
                 ] = True
 
-        if np.any(
-            signal[signal.stimulus_onset]
-            .pivot_table(index=["sf", "tf", "direction"], aggfunc="size")
-            .values
-            != self.n_triggers_per_stimulus * self.n_roi
+        if (
+            np.any(
+                signal[signal.stimulus_onset]
+                .pivot_table(index=["sf", "tf", "direction"], aggfunc="size")
+                .values
+                != self.n_triggers_per_stimulus * self.n_roi
+            )
+            and not self.deactivate_checks
         ):
             raise RuntimeError(
                 "Signal table was not populated correctly "
