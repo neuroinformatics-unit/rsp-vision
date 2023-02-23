@@ -30,11 +30,10 @@ def main():
     photon_data = PhotonData(data, PhotonType.TWO_PHOTON, config)
 
     # make analysis object
-    analysis = SF_TF(photon_data, config, photon_type)
+    analysis = SF_TF(photon_data, photon_type)
 
     # calculate responsiveness and display it in a nice way
-    rois = list(range(11))
-    responsiveness = analysis.responsiveness(rois)
+    responsiveness = analysis.responsiveness()
     print(responsiveness)  # TODO: nice appearance
 
     # Plots

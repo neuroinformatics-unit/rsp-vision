@@ -8,83 +8,113 @@ from .utils import get_fps
 
 
 class SF_TF:
-    def __init__(
-        self, data: PhotonData, config: dict, photon_type: PhotonType
-    ):
+    def __init__(self, data: PhotonData, photon_type: PhotonType):
         self.data = data
         self.photon_type = photon_type
+        self.fps = get_fps(photon_type, data.config)
 
-        self.fps = get_fps(photon_type, config)
+        self.padding_start = int(data.config["padding"][0])
+        self.padding_end = int(data.config["padding"][1])
 
-        self.padding_start = int(config["padding"][0])
-        self.padding_end = int(config["padding"][1])
+        self.calculate_mean_response_and_baseline()
 
-        self.get_response_matrix_from_padding()
-
-    def get_response_matrix_from_padding(
+    def calculate_mean_response_and_baseline(
         self,
     ):
         stimulus_idxs = self.data.signal[
             self.data.signal["stimulus_onset"]
         ].index
-        self.n_frames_for_dispalay = int(
-            self.data.n_frames_per_trigger * self.data.n_triggers_per_stimulus
-            + self.padding_start
-            + self.padding_end
-        )
 
         self.adapted_signal = self.data.signal
         self.adapted_signal["mean_response"] = np.nan
         self.adapted_signal["mean_baseline"] = np.nan
 
-        logging.info("Starting to edit the signal daataframe...")
+        baseline_start = 0
+        if self.data.n_triggers_per_stimulus == 3:
+            response_start = 2
+            if self.data.config["baseline"] == "static":
+                baseline_start = 1
+        if self.data.n_triggers_per_stimulus == 2:
+            response_start = 1
 
-        for idx in stimulus_idxs:
-            id = idx - self.padding_start
+        logging.info("Start to edit the signal dataframe...")
 
-            self.adapted_signal.loc[
-                idx, "mean_response"
-            ] = self.adapted_signal[
-                (self.adapted_signal.index >= id + self.fps)
-                & (self.adapted_signal.index < id + self.n_frames_for_dispalay)
-            ][
-                "signal"
-            ].mean()
-
-            self.adapted_signal.loc[
-                idx, "mean_baseline"
-            ] = self.adapted_signal[
-                (
-                    self.adapted_signal.index
-                    >= id + self.n_frames_for_dispalay - (2 * self.fps)
+        # Identify the rows in the window of each stimulus onset
+        window_start_response = stimulus_idxs + (
+            self.data.n_frames_per_trigger * response_start
+        )
+        window_end_response = stimulus_idxs + (
+            self.data.n_frames_per_trigger * (response_start + 1)
+        )
+        window_mask_response = np.vstack(
+            [
+                np.arange(start, end)
+                for start, end in zip(
+                    window_start_response, window_end_response
                 )
-                & (self.adapted_signal.index < id + self.n_frames_for_dispalay)
-            ][
-                "signal"
-            ].mean()
+            ]
+        )
+
+        window_start_baseline = stimulus_idxs + (
+            self.data.n_frames_per_trigger * baseline_start
+        )
+        window_end_baseline = stimulus_idxs + (
+            self.data.n_frames_per_trigger * (baseline_start + 1)
+        )
+        window_mask_baseline = np.vstack(
+            [
+                np.arange(start, end)
+                for start, end in zip(
+                    window_start_baseline, window_end_baseline
+                )
+            ]
+        )
+
+        mean_response_signal = [
+            np.mean(
+                self.adapted_signal.iloc[
+                    window_mask_response[i]
+                ].signal.values,
+                axis=0,
+            )
+            for i in range(len(window_mask_response))
+        ]
+        mean_baseline_signal = [
+            np.mean(
+                self.adapted_signal.iloc[
+                    window_mask_baseline[i]
+                ].signal.values,
+                axis=0,
+            )
+            for i in range(len(window_mask_baseline))
+        ]
+
+        self.adapted_signal.loc[
+            stimulus_idxs, "mean_response"
+        ] = mean_response_signal
+        self.adapted_signal.loc[
+            stimulus_idxs, "mean_baseline"
+        ] = mean_baseline_signal
 
         self.adapted_signal["subtracted"] = (
             self.adapted_signal["mean_response"]
             - self.adapted_signal["mean_baseline"]
         )
 
-        view = self.adapted_signal[self.adapted_signal["stimulus_onset"]]
-        logging.info(f"Adapted signal dataframe:{view.head()}")
-
-        # in the last trigger baseline is not calculated
-        # because indexes go beyond the length of the dataframe
+        self.only_stim_onset = self.adapted_signal[
+            self.adapted_signal["stimulus_onset"]
+        ]
+        logging.info(f"Adapted signal dataframe:{self.only_stim_onset.head()}")
 
     def get_fit_parameters(self):
         # calls _fit_two_dimensional_elliptical_gaussian
         raise NotImplementedError("This method is not implemented yet")
 
-    def responsiveness(self, rois: list):
+    def responsiveness(self):
+        self.responsiveness_anova()
         raise NotImplementedError("This method is not implemented yet")
 
     def responsiveness_anova(self):
-        # perform non-parametric one way anova and
-        # return the p-value for all combos across sesssions
-
         raise NotImplementedError("This method is not implemented yet")
 
     def get_preferred_direction_all_rois(self):
