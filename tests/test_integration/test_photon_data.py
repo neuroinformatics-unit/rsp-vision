@@ -84,7 +84,7 @@ def test_set_general_variables(get_data_raw_object, get_variables):
     assert photon_data.n_sessions == n_sessions
     assert photon_data.n_roi == n_roi
     assert photon_data.n_frames_per_session == l_signal
-    assert photon_data.inner_total_n_of_stimuli == n_stim
+    assert photon_data.n_of_stimuli_per_session == n_stim
     assert photon_data.stimulus_start_frames.shape[0] == n_sessions * n_stim
 
 
