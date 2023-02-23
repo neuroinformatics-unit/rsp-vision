@@ -23,6 +23,7 @@ class PhotonData:
     ):
         self.photon_type = photon_type
         self.config = config
+        self.fps = get_fps(self.photon_type, self.config)
         self.set_general_variables(data_raw)
         self.signal = self.get_signal_df(data_raw)
         logging.info(
@@ -72,9 +73,6 @@ class PhotonData:
             The raw data object from which the data will be extracted
         """
         self.screen_size = data_raw.stim[0]["screen_size"]
-        self.is_cell = data_raw.is_cell  # seems useless
-        self.day_roi = data_raw.day["roi"]  # seems useless
-        self.day_roi_label = data_raw.day["roi_label"]  # seems useless
         self.n_sessions = data_raw.frames.shape[0]
         self.n_roi = data_raw.frames[0].shape[0]
         self.n_frames_per_session = data_raw.frames[0].shape[1]
@@ -113,7 +111,20 @@ class PhotonData:
         """
         self.n_frames_per_trigger = (
             self.n_frames_per_session / self.n_all_triggers
-        )  # could also be calculate from fps, would be good to add a check
+        )
+        if (
+            self.n_frames_per_trigger
+            != self.config["trigger_interval_s"] * self.fps
+        ):
+            logging.error(
+                "Frames per trigger from data: "
+                + f"{self.n_frames_per_trigger} "
+                + "and calculated from fps: "
+                + f"{self.config['trigger_interval_s'] * self.fps}"
+                + " are different"
+            )
+            raise RuntimeError("Number of frames per trigger is wrong")
+
         self.n_baseline_frames = (
             self.n_session_boundary_baseline_triggers
             * self.n_frames_per_trigger
@@ -280,7 +291,10 @@ class PhotonData:
             index=["sf", "tf", "direction"], aggfunc="size"
         )
 
-        if len(pivot_table) != 6 * 6 * 8:
+        if (
+            len(pivot_table)
+            != self.config["n_sf"] * self.config["n_tf"] * self.config["n_dir"]
+        ):
             logging.error(f"Pivot table: {pivot_table}")
             logging.error(f"Pivot table length: {len(pivot_table)}")
             raise RuntimeError(
@@ -329,7 +343,6 @@ class PhotonData:
             # starting frames and stimuli are alligned in source data
             stimulus = stimuli.iloc[k]
 
-            logging.info(f"\nK: {k}, stimulus:\n{stimulus}")
             if len(signal_idxs) != self.n_roi:
                 raise RuntimeError(
                     f"Number of instances for stimulus {stimulus} is wrong."
