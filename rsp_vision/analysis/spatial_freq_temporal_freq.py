@@ -1,6 +1,8 @@
 import logging
 
 import numpy as np
+import pandas as pd
+import scipy.stats as ss
 
 from ..objects.enums import PhotonType
 from ..objects.photon_data import PhotonData
@@ -40,11 +42,16 @@ class SF_TF:
         logging.info("Start to edit the signal dataframe...")
 
         # Identify the rows in the window of each stimulus onset
-        window_start_response = stimulus_idxs + (
-            self.data.n_frames_per_trigger * response_start
+        window_start_response = (
+            stimulus_idxs
+            + (self.data.n_frames_per_trigger * response_start)
+            + (self.fps * 0.5)  # ignore first 0.5s
+            - 1
         )
-        window_end_response = stimulus_idxs + (
-            self.data.n_frames_per_trigger * (response_start + 1)
+        window_end_response = (
+            stimulus_idxs
+            + (self.data.n_frames_per_trigger * (response_start + 1))
+            - 1
         )
         window_mask_response = np.vstack(
             [
@@ -55,11 +62,16 @@ class SF_TF:
             ]
         )
 
-        window_start_baseline = stimulus_idxs + (
-            self.data.n_frames_per_trigger * baseline_start
+        window_start_baseline = (
+            stimulus_idxs
+            + (self.data.n_frames_per_trigger * baseline_start)
+            + (self.fps * 1.5)  # ignore first 1.5s
+            - 1
         )
-        window_end_baseline = stimulus_idxs + (
-            self.data.n_frames_per_trigger * (baseline_start + 1)
+        window_end_baseline = (
+            stimulus_idxs
+            + (self.data.n_frames_per_trigger * (baseline_start + 1))
+            - 1
         )
         window_mask_baseline = np.vstack(
             [
@@ -101,21 +113,103 @@ class SF_TF:
             - self.adapted_signal["mean_baseline"]
         )
 
-        self.only_stim_onset = self.adapted_signal[
+        self.responses = self.adapted_signal[
             self.adapted_signal["stimulus_onset"]
+        ][
+            [
+                "frames_id",
+                "roi_id",
+                "session_id",
+                "sf",
+                "tf",
+                "direction",
+                "mean_response",
+                "mean_baseline",
+                "subtracted",
+            ]
         ]
-        logging.info(f"Adapted signal dataframe:{self.only_stim_onset.head()}")
 
     def get_fit_parameters(self):
         # calls _fit_two_dimensional_elliptical_gaussian
         raise NotImplementedError("This method is not implemented yet")
 
     def responsiveness(self):
-        self.responsiveness_anova()
-        raise NotImplementedError("This method is not implemented yet")
+        self.calculate_mean_response_and_baseline()
+        logging.info(f"Adapted signal dataframe:{self.responses.head()}")
 
-    def responsiveness_anova(self):
-        raise NotImplementedError("This method is not implemented yet")
+        self.p_values = pd.DataFrame(
+            columns=[
+                "Kruskal-Wallis test",
+                "Sign test",
+                "Wilcoxon signed rank test",
+            ]
+        )
+
+        self.p_values["Kruskal-Wallis test"] = self.nonparam_anova_over_rois()
+        (
+            self.p_values["Sign test"],
+            self.p_values["Wilcoxon signed rank test"],
+        ) = self.are_responses_significant()
+        logging.info(f"P-values for each roi:\n{self.p_values}")
+
+    def nonparam_anova_over_rois(self) -> dict:
+        # Use Kruskal-Wallis H Test because it is nonparametric.
+        # Compare if more than two independent
+        # samples have a different distribution
+
+        p_values = {}
+        for roi in range(self.data.n_roi):
+            melted = pd.melt(
+                self.responses[self.responses.roi_id == roi],
+                id_vars=["sf", "tf"],
+                value_vars=["subtracted"],
+            )
+
+            _sf = self.data.uniques["sf"]
+            _tf = self.data.uniques["tf"]
+            sf_tf_combinations = np.array(np.meshgrid(_sf, _tf)).T.reshape(
+                -1, 2
+            )
+            _dir = self.data.uniques["direction"]
+
+            samples = np.zeros(
+                (
+                    len(_dir) * self.data.n_triggers_per_stimulus,
+                    len(sf_tf_combinations),
+                )
+            )
+
+            for i, sf_tf in enumerate(sf_tf_combinations):
+                samples[:, i] = melted[
+                    (melted.sf == sf_tf[0]) & (melted.tf == sf_tf[1])
+                ].value
+
+            _, p_val = ss.kruskal(*samples)
+            p_values[roi] = p_val
+
+        return p_values
+
+    def are_responses_significant(self):
+        p_st = {}
+        p_wsrt = {}
+        for roi in range(self.data.n_roi):
+            subset = self.responses[self.responses.roi_id == roi]
+
+            # Sign test (implemented with binomial test)
+            p_st[roi] = ss.binom_test(
+                sum([1 for d in subset.subtracted if d > 0]),
+                n=len(subset.subtracted),
+                alternative="greater",
+            )
+
+            # Wilcoxon signed rank test
+            _, p_wsrt[roi] = ss.wilcoxon(
+                x=subset.mean_response,
+                y=subset.mean_baseline,
+                alternative="less",
+            )
+
+        return p_st, p_wsrt
 
     def get_preferred_direction_all_rois(self):
         raise NotImplementedError("This method is not implemented yet")
