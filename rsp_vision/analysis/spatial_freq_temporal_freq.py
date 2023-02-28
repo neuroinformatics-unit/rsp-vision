@@ -204,9 +204,8 @@ class SF_TF:
 
             # Wilcoxon signed rank test
             _, p_wsrt[roi] = ss.wilcoxon(
-                x=subset.mean_response,
-                y=subset.mean_baseline,
-                alternative="less",
+                x=subset.subtracted,
+                alternative="greater",
             )
 
         return p_st, p_wsrt
