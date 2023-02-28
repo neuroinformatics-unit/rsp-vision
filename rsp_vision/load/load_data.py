@@ -50,15 +50,17 @@ def load(folder_naming: FolderNamingSpecs, config: dict) -> DataRaw:
                 with h5py.File(allen_data_files[0].path, "r") as h5py_file:
                     data_raw = DataRaw(h5py_file, is_allen=True)
 
-                logging.info("Allen data loaded")
+                logging.info("Summary data loaded")
                 return data_raw
             else:
                 raise ValueError(
-                    "There is more than one Allen file for sf_tf analysis"
+                    "There is more than one summary file for sf_tf analysis"
                 )
         else:
             raise NotImplementedError(
-                "Only sf_tf analysis is implemented for Allen data"
+                "Only sf_tf analysis is implemented for summary data"
             )
     else:
-        raise NotImplementedError("Only loading for Allen data is implemented")
+        raise NotImplementedError(
+            "Only loading for summary data is implemented"
+        )
