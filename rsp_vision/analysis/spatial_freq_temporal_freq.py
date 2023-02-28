@@ -1,4 +1,5 @@
 import logging
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,11 @@ from .utils import get_fps
 
 
 class SF_TF:
+    """
+    Class for analyzing responses to stimuli with different
+    spatial and temporal frequencies.
+    """
+
     def __init__(self, data: PhotonData, photon_type: PhotonType):
         self.data = data
         self.photon_type = photon_type
@@ -22,13 +28,40 @@ class SF_TF:
             self.data.signal["stimulus_onset"]
         ].index
 
-        self.adapted_signal = self.data.signal
-        self.adapted_signal["mean_response"] = np.nan
-        self.adapted_signal["mean_baseline"] = np.nan
+        self._sf = np.sort(self.data.uniques["sf"])
+        self._tf = np.sort(self.data.uniques["tf"])
+        self.sf_tf_combinations = np.array(
+            np.meshgrid(self._sf, self._tf)
+        ).T.reshape(-1, 2)
+        self._dir = self.data.uniques["direction"]
+
+        self.signal = self.data.signal
+        self.signal["mean_response"] = np.nan
+        self.signal["mean_baseline"] = np.nan
 
     def responsiveness(self):
+        """
+        Calculate the responsiveness of each ROI in the signal dataframe.
+
+        This method calculates the responsiveness of each ROI in the signal
+        dataframe, based on the mean response and mean baseline signals
+        calculated in the calculate_mean_response_and_baseline method.
+        First, it performs three different statistical tests to determine
+        if the response is significantly different from the baseline:
+        a Kruskal-Wallis test, a Sign test, and a Wilcoxon signed rank test.
+        The resulting p-values for each ROI are stored in a pandas DataFrame
+        and logged for debugging purposes.
+
+        Next, the method calculates the response magnitude for each ROI, by
+        taking the  difference between the mean response and mean baseline
+        signals, and dividing by standard deviation of the baseline signal.
+        The response and baseline mean are calculated over the median traces.
+
+        Finally, the method identifies the ROIs that show significant
+        responsiveness based on the results of the statistical tests.
+        """
         self.calculate_mean_response_and_baseline()
-        logging.info(f"Adapted signal dataframe:{self.responses.head()}")
+        logging.info(f"Edited signal dataframe:{self.responses.head()}")
 
         self.p_values = pd.DataFrame(
             columns=[
@@ -42,7 +75,7 @@ class SF_TF:
         (
             self.p_values["Sign test"],
             self.p_values["Wilcoxon signed rank test"],
-        ) = self.are_responses_significant()
+        ) = self.perform_sign_tests()
         logging.info(f"P-values for each roi:\n{self.p_values}")
 
         self.magintude_over_medians = self.response_magnitude()
@@ -51,35 +84,92 @@ class SF_TF:
             + f"{self.magintude_over_medians.head()}"
         )
 
-        responsive_rois = self.significantly_responsive_rois()
-        logging.info(f"Responsive ROIs: {responsive_rois}")
+        self.responsive_rois = self.find_significant_rois()
+        logging.info(f"Responsive ROIs: {self.responsive_rois}")
 
-    def significantly_responsive_rois(self):
-        sig_kw = set(
-            np.where(
-                self.p_values["Kruskal-Wallis test"].values
-                < self.data.config["anova_threshold"]
-            )[0].tolist()
-        )
-        sig_magnitude = set(
-            np.where(
-                self.magintude_over_medians.groupby("roi").magnitude.max()
-                > self.data.config["response_magnitude_threshold"]
-            )[0].tolist()
-        )
+    def calculate_mean_response_and_baseline(
+        self,
+    ):
+        """
+        Calculate the mean response and mean baseline signals for each ROI
+        in the signal dataframe.
 
-        if self.data.config["consider_only_positive"]:
-            sig_positive = set(
-                np.where(
-                    self.p_values["Wilcoxon signed rank test"].values
-                    < self.data.config["only_positive_threshold"]
-                )[0].tolist()
+        This method calculates the mean response and mean baseline signals
+        for each ROI in the signal dataframe,
+        based on the response and baseline windows defined by the method
+        `get_response_and_baseline_windows`, which this method calls.
+        It then subtracts the mean baseline from
+        the mean response to obtain the mean subtracted signal. The resulting
+        mean response, mean baseline, and mean subtracted signal values are
+        stored in the signal dataframe, and a subset of the dataframe
+        containing only the relevant columns is stored in the responses
+        attribute.
+
+        Returns:
+            None
+        """
+        logging.info("Start to edit the signal dataframe...")
+
+        (
+            self.window_mask_response,
+            self.window_mask_baseline,
+        ) = self.get_response_and_baseline_windows()
+
+        # add calculated values in the row corresponding to
+        # the startframe of every stimulus
+        self.signal.loc[self.stimulus_idxs, "mean_response"] = [
+            np.mean(
+                self.signal.iloc[self.window_mask_response[i]].signal.values
             )
-            sig_kw = sig_kw & sig_positive
+            for i in range(len(self.window_mask_response))
+        ]
 
-        return sig_kw & sig_magnitude
+        self.signal.loc[self.stimulus_idxs, "mean_baseline"] = [
+            np.mean(
+                self.signal.iloc[self.window_mask_baseline[i]].signal.values
+            )
+            for i in range(len(self.window_mask_baseline))
+        ]
+
+        self.signal["subtracted"] = (
+            self.signal["mean_response"] - self.signal["mean_baseline"]
+        )
+
+        #  new summary dataframe, more handy
+        self.responses = self.signal[self.signal["stimulus_onset"]][
+            [
+                "frames_id",
+                "roi_id",
+                "session_id",
+                "sf",
+                "tf",
+                "direction",
+                "mean_response",
+                "mean_baseline",
+                "subtracted",
+            ]
+        ]
+        self.responses = self.responses.reset_index()
 
     def get_response_and_baseline_windows(self):
+        """
+        Get the window of indices corresponding to the response and
+        baseline periods for each stimulus presentation.
+
+        Returns:
+        -------
+        window_mask_response : numpy.ndarray
+            A 2D numpy array containing the signal dataframe indices
+            for the response period for each stimulus presentation.
+            Each row corresponds to a stimulus presentation and each
+            column contains the frame indices in that presentation.
+        window_mask_baseline : numpy.ndarray
+            A 2D numpy array containing the signal dataframe indices
+            for the baseline period for each stimulus presentation.
+            Each row corresponds to a stimulus presentation and each
+            column contains the frame indices in that presentation.
+        """
+
         baseline_start = 0
         if self.data.n_triggers_per_stimulus == 3:
             response_start = 2
@@ -131,64 +221,109 @@ class SF_TF:
 
         return window_mask_response, window_mask_baseline
 
-    def calculate_mean_response_and_baseline(
-        self,
-    ):
-        logging.info("Start to edit the signal dataframe...")
+    def nonparam_anova_over_rois(self) -> dict:
+        """
+        Perform a nonparametric ANOVA test over each ROI in the dataset.
+        This test is based on the Kruskal-Wallis H Test, which compares
+        whether more than two independent samples have different
+        distributions. For each ROI, this method creates a table with one row
+        for each combination of spatial and temporal frequencies, and one
+        column for each presentation of the stimulus. Then, it applies the
+        Kruskal-Wallis H Test to determine whether the distribution of
+        responses across different stimuli is significantly different. The
+        resulting p-values are returned as a dictionary where the keys are
+        the ROI IDs and the values are the p-values for each ROI.
 
-        (
-            self.window_mask_response,
-            self.window_mask_baseline,
-        ) = self.get_response_and_baseline_windows()
+        Returns
+        -------
+        dict
+            A dictionary where the keys are the ROI IDs and the values are
+            the p-values for each ROI.
 
-        mean_response_signal = [
-            np.mean(
-                self.adapted_signal.iloc[
-                    self.window_mask_response[i]
-                ].signal.values
+        """
+
+        p_values = {}
+        for roi in range(self.data.n_roi):
+            roi_responses = pd.melt(
+                self.responses[self.responses.roi_id == roi],
+                id_vars=["sf", "tf"],
+                value_vars=["subtracted"],
             )
-            for i in range(len(self.window_mask_response))
-        ]
-        mean_baseline_signal = [
-            np.mean(
-                self.adapted_signal.iloc[
-                    self.window_mask_baseline[i]
-                ].signal.values
+
+            samples = np.zeros(
+                (
+                    len(self._dir) * self.data.n_triggers_per_stimulus,
+                    len(self.sf_tf_combinations),
+                )
             )
-            for i in range(len(self.window_mask_baseline))
-        ]
 
-        self.adapted_signal.loc[
-            self.stimulus_idxs, "mean_response"
-        ] = mean_response_signal
-        self.adapted_signal.loc[
-            self.stimulus_idxs, "mean_baseline"
-        ] = mean_baseline_signal
+            for i, sf_tf in enumerate(self.sf_tf_combinations):
+                # samples are each presentation of an sf/tf combination,
+                # regardless of direction and repetition
+                samples[:, i] = roi_responses[
+                    (roi_responses.sf == sf_tf[0])
+                    & (roi_responses.tf == sf_tf[1])
+                ].value
 
-        self.adapted_signal["subtracted"] = (
-            self.adapted_signal["mean_response"]
-            - self.adapted_signal["mean_baseline"]
-        )
+            _, p_val = ss.kruskal(*samples.T)
+            p_values[roi] = p_val
 
-        self.responses = self.adapted_signal[
-            self.adapted_signal["stimulus_onset"]
-        ][
-            [
-                "frames_id",
-                "roi_id",
-                "session_id",
-                "sf",
-                "tf",
-                "direction",
-                "mean_response",
-                "mean_baseline",
-                "subtracted",
-            ]
-        ]
-        self.responses = self.responses.reset_index()
+        return p_values
+
+    def perform_sign_tests(self) -> Tuple[Dict[int, float], Dict[int, float]]:
+        """
+        Perform sign test and Wilcoxon signed rank test on the subtracted
+        response data for each ROI.
+
+        Returns:
+            A tuple containing two dictionaries with ROI IDs as keys and
+            p-values as values. The first dictionary contains the p-values
+            for the sign test (implemented with a binomial test) for each ROI.
+            The test checks whether the proportion of positive differences
+            between the response and baseline periods is greater than 0.5.
+            The second dictionary contains the p-values for the Wilcoxon
+            signed rank test for each ROI.
+            The test checks whether the distribution of differences between
+            the response and baseline periods is shifted to the right.
+        """
+
+        p_st = {}
+        p_wsrt = {}
+        for roi in range(self.data.n_roi):
+            roi_responses = self.responses[self.responses.roi_id == roi]
+
+            # Sign test (implemented with binomial test)
+            p_st[roi] = ss.binom_test(
+                sum([1 for d in roi_responses.subtracted if d > 0]),
+                n=len(roi_responses.subtracted),
+                alternative="greater",
+            )
+
+            # Wilcoxon signed rank test
+            _, p_wsrt[roi] = ss.wilcoxon(
+                x=roi_responses.subtracted,
+                alternative="greater",
+            )
+
+        return p_st, p_wsrt
 
     def response_magnitude(self):
-        # get specific windows for each sf/tf combo
+        """
+        Compute the response magnitude for each combination of spatial and
+        temporal frequency and ROI.
+
+        Returns:
+            A Pandas DataFrame with the following columns:
+                - "roi": the ROI index
+                - "sf": the spatial frequency
+                - "tf": the temporal frequency
+                - "response_mean": the mean of the median response signal
+                - "baseline_mean": the mean of the median baseline signal
+                - "baseline_std": the standard deviation of the median
+                    baseline signal
+                - "magnitude": the response magnitude, defined as
+                    (response_mean - baseline_mean) / baseline_std
+        """
 
         magintude_over_medians = pd.DataFrame(
             columns=[
@@ -220,12 +355,12 @@ class SF_TF:
                 )
 
                 for i, w in enumerate(r_windows):
-                    responses_dir_and_reps[i, :] = self.adapted_signal.iloc[
+                    responses_dir_and_reps[i, :] = self.signal.iloc[
                         w
                     ].signal.values
 
                 for i, w in enumerate(b_windows):
-                    baseline_dir_and_reps[i, :] = self.adapted_signal.iloc[
+                    baseline_dir_and_reps[i, :] = self.signal.iloc[
                         w
                     ].signal.values
 
@@ -256,63 +391,55 @@ class SF_TF:
 
         return magintude_over_medians
 
-    def nonparam_anova_over_rois(self) -> dict:
-        # Use Kruskal-Wallis H Test because it is nonparametric.
-        # Compare if more than two independent
-        # samples have a different distribution
+    def find_significant_rois(self):
+        """
+        Returns a set of ROIs that are significantly responsive, based on
+        statistical tests and a response magnitude threshold.
 
-        p_values = {}
-        for roi in range(self.data.n_roi):
-            melted = pd.melt(
-                self.responses[self.responses.roi_id == roi],
-                id_vars=["sf", "tf"],
-                value_vars=["subtracted"],
+        The method first identifies ROIs that show significant differences
+        across at least one condition using the Kruskal-Wallis test.
+        ROIs with p-values below the `anova_threshold` specified in the
+        `config` attribute are considered significant.
+
+        It then identifies ROIs with a response magnitude above the
+        `response_magnitude_threshold` specified in the `config` attribute.
+        The response magnitude is defined as the difference between the
+        mean response and mean baseline, divided by the standard deviation
+        of the baseline.
+
+        If the `consider_only_positive` option is set to True in the `config`
+        attribute, the method also requires ROIs to show a significant
+        positive response according to the Wilcoxon signed rank test. ROIs
+        with p-values below the `only_positive_threshold` specified in the
+        `config` attribute are considered significant.
+
+        Returns:
+            set: A set of ROIs that are significantly responsive based on the
+            specified criteria.
+        """
+        sig_kw = set(
+            np.where(
+                self.p_values["Kruskal-Wallis test"].values
+                < self.data.config["anova_threshold"]
+            )[0].tolist()
+        )
+        sig_magnitude = set(
+            np.where(
+                self.magintude_over_medians.groupby("roi").magnitude.max()
+                > self.data.config["response_magnitude_threshold"]
+            )[0].tolist()
+        )
+
+        if self.data.config["consider_only_positive"]:
+            sig_positive = set(
+                np.where(
+                    self.p_values["Wilcoxon signed rank test"].values
+                    < self.data.config["only_positive_threshold"]
+                )[0].tolist()
             )
+            sig_kw = sig_kw & sig_positive
 
-            self._sf = np.sort(self.data.uniques["sf"])
-            self._tf = np.sort(self.data.uniques["tf"])
-            self.sf_tf_combinations = np.array(
-                np.meshgrid(self._sf, self._tf)
-            ).T.reshape(-1, 2)
-            self._dir = self.data.uniques["direction"]
-
-            samples = np.zeros(
-                (
-                    len(self._dir) * self.data.n_triggers_per_stimulus,
-                    len(self.sf_tf_combinations),
-                )
-            )
-
-            for i, sf_tf in enumerate(self.sf_tf_combinations):
-                samples[:, i] = melted[
-                    (melted.sf == sf_tf[0]) & (melted.tf == sf_tf[1])
-                ].value
-
-            _, p_val = ss.kruskal(*samples.T)
-            p_values[roi] = p_val
-
-        return p_values
-
-    def are_responses_significant(self):
-        p_st = {}
-        p_wsrt = {}
-        for roi in range(self.data.n_roi):
-            subset = self.responses[self.responses.roi_id == roi]
-
-            # Sign test (implemented with binomial test)
-            p_st[roi] = ss.binom_test(
-                sum([1 for d in subset.subtracted if d > 0]),
-                n=len(subset.subtracted),
-                alternative="greater",
-            )
-
-            # Wilcoxon signed rank test
-            _, p_wsrt[roi] = ss.wilcoxon(
-                x=subset.subtracted,
-                alternative="greater",
-            )
-
-        return p_st, p_wsrt
+        return sig_kw & sig_magnitude
 
     def get_fit_parameters(self):
         # calls _fit_two_dimensional_elliptical_gaussian
