@@ -26,6 +26,59 @@ class SF_TF:
         self.adapted_signal["mean_response"] = np.nan
         self.adapted_signal["mean_baseline"] = np.nan
 
+    def responsiveness(self):
+        self.calculate_mean_response_and_baseline()
+        logging.info(f"Adapted signal dataframe:{self.responses.head()}")
+
+        self.p_values = pd.DataFrame(
+            columns=[
+                "Kruskal-Wallis test",
+                "Sign test",
+                "Wilcoxon signed rank test",
+            ]
+        )
+
+        self.p_values["Kruskal-Wallis test"] = self.nonparam_anova_over_rois()
+        (
+            self.p_values["Sign test"],
+            self.p_values["Wilcoxon signed rank test"],
+        ) = self.are_responses_significant()
+        logging.info(f"P-values for each roi:\n{self.p_values}")
+
+        self.magintude_over_medians = self.response_magnitude()
+        logging.info(
+            "Response magnitude calculated over median:\n"
+            + f"{self.magintude_over_medians.head()}"
+        )
+
+        responsive_rois = self.significantly_responsive_rois()
+        logging.info(f"Responsive ROIs: {responsive_rois}")
+
+    def significantly_responsive_rois(self):
+        sig_kw = set(
+            np.where(
+                self.p_values["Kruskal-Wallis test"].values
+                < self.data.config["anova_threshold"]
+            )[0].tolist()
+        )
+        sig_magnitude = set(
+            np.where(
+                self.magintude_over_medians.groupby("roi").magnitude.max()
+                > self.data.config["response_magnitude_threshold"]
+            )[0].tolist()
+        )
+
+        if self.data.config["consider_only_positive"]:
+            sig_positive = set(
+                np.where(
+                    self.p_values["Wilcoxon signed rank test"].values
+                    < self.data.config["only_positive_threshold"]
+                )[0].tolist()
+            )
+            sig_kw = sig_kw & sig_positive
+
+        return sig_kw & sig_magnitude
+
     def get_response_and_baseline_windows(self):
         baseline_start = 0
         if self.data.n_triggers_per_stimulus == 3:
@@ -133,31 +186,6 @@ class SF_TF:
             ]
         ]
         self.responses = self.responses.reset_index()
-
-    def get_fit_parameters(self):
-        # calls _fit_two_dimensional_elliptical_gaussian
-        raise NotImplementedError("This method is not implemented yet")
-
-    def responsiveness(self):
-        self.calculate_mean_response_and_baseline()
-        logging.info(f"Adapted signal dataframe:{self.responses.head()}")
-
-        self.p_values = pd.DataFrame(
-            columns=[
-                "Kruskal-Wallis test",
-                "Sign test",
-                "Wilcoxon signed rank test",
-            ]
-        )
-
-        self.p_values["Kruskal-Wallis test"] = self.nonparam_anova_over_rois()
-        (
-            self.p_values["Sign test"],
-            self.p_values["Wilcoxon signed rank test"],
-        ) = self.are_responses_significant()
-        logging.info(f"P-values for each roi:\n{self.p_values}")
-
-        self.magintude_over_medians = self.response_magnitude()
 
     def response_magnitude(self):
         # get specific windows for each sf/tf combo
@@ -285,6 +313,10 @@ class SF_TF:
             )
 
         return p_st, p_wsrt
+
+    def get_fit_parameters(self):
+        # calls _fit_two_dimensional_elliptical_gaussian
+        raise NotImplementedError("This method is not implemented yet")
 
     def get_preferred_direction_all_rois(self):
         raise NotImplementedError("This method is not implemented yet")
