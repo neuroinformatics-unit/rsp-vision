@@ -146,16 +146,25 @@ class PhotonData:
         # I assume the signal has been cut in the generation of
         # this summary data in order to allign perfectly
         # It needs to be checked with trigger information
-        return np.array(
+
+        frames_in_session = np.array(
             (
                 self.n_baseline_frames
-                + np.arange(0, self.n_of_stimuli_across_all_sessions)
+                + np.arange(0, self.n_of_stimuli_per_session)
                 * self.n_triggers_per_stimulus
                 * self.n_frames_per_trigger
                 + 1
             ),
             dtype=int,
         )
+
+        frames_all_sessions = (
+            frames_in_session.reshape(-1, 1)
+            + np.arange(0, self.n_sessions) * self.n_frames_per_session
+        )
+        frames_all_sessions = np.sort(frames_all_sessions.flatten(), axis=None)
+
+        return frames_all_sessions
 
     def make_signal_dataframe(self, data_raw):
         """Make the signal dataframe, which will be filled up with
@@ -316,7 +325,11 @@ class PhotonData:
                     "Number of stimuli is not correct, some combinations are "
                     + "missing or duplicated"
                 )
-
+        self.uniques = {
+            "sf": stimuli.sf.unique(),
+            "tf": stimuli.tf.unique(),
+            "direction": stimuli.direction.unique(),
+        }
         return stimuli
 
     def fill_up_with_stim_info(self, signal, stimuli):
