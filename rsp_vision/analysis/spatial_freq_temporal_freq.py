@@ -165,8 +165,8 @@ class SF_TF:
                 value_vars=["subtracted"],
             )
 
-            _sf = self.data.uniques["sf"]
-            _tf = self.data.uniques["tf"]
+            _sf = np.sort(self.data.uniques["sf"])
+            _tf = np.sort(self.data.uniques["tf"])
             sf_tf_combinations = np.array(np.meshgrid(_sf, _tf)).T.reshape(
                 -1, 2
             )
@@ -184,7 +184,7 @@ class SF_TF:
                     (melted.sf == sf_tf[0]) & (melted.tf == sf_tf[1])
                 ].value
 
-            _, p_val = ss.kruskal(*samples)
+            _, p_val = ss.kruskal(*samples.T)
             p_values[roi] = p_val
 
         return p_values
