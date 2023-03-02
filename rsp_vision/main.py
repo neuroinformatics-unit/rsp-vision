@@ -1,6 +1,6 @@
 from rich.prompt import Prompt
 
-from .analysis.spatial_freq_temporal_freq import SF_TF
+from .analysis.spatial_freq_temporal_freq import FrequencyAnalysis
 from .load.load_data import load_data
 from .objects.enums import PhotonType
 from .objects.photon_data import PhotonData
@@ -30,7 +30,7 @@ def main():
     photon_data = PhotonData(data, PhotonType.TWO_PHOTON, config)
 
     # make analysis object
-    analysis = SF_TF(photon_data, photon_type)
+    analysis = FrequencyAnalysis(photon_data, photon_type)
 
     # calculate responsiveness and display it in a nice way
     responsiveness = analysis.responsiveness()
