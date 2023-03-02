@@ -66,3 +66,14 @@ The `stim` key is a dictionary containing information about the stimuli, with `s
 Overall, the `PhotonData` object provides a more organized and accessible format for analyzing the raw data.
 
 ## Spatial and temporal frequency analysis
+
+The goal of this analysis is to identify the cells that respond to the drifting gratings.
+
+The features of the stimuli of which we care about are their spatial and temporal frequency, in particular the combination of the two. This is why we focus on the `sf` and `tf` columns of the `signal` dataframe. Combinations of these two features are repeated n times, where `n = len(directions) * len(repetitions)`.
+
+In order to compute the various statical analysis, two frames windows are taken into account, the response window, in the drifting grating part, and the baseline window, in the static or gray part of the stimulus. The mean is computed across the frames in these windows, and the difference between the two means is computed. These values are stored in the `response` `pandas.DataFrame`.
+
+Three non-parametric statistics are computed in order to quantify id the response to `sf`/`tf` combinations is significant:
+- The Kruskal-Wallis test
+- The Wilcoxon rank-sum test
+- The sign-rank test
