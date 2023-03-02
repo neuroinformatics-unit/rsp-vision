@@ -10,7 +10,7 @@ from ..objects.photon_data import PhotonData
 from .utils import get_fps
 
 
-class SF_TF:
+class FrequencyAnalysis:
     """
     Class for analyzing responses to stimuli with different
     spatial and temporal frequencies.
@@ -293,11 +293,11 @@ class SF_TF:
             roi_responses = self.responses[self.responses.roi_id == roi]
 
             # Sign test (implemented with binomial test)
-            p_st[roi] = ss.binom_test(
+            p_st[roi] = ss.binomtest(
                 sum([1 for d in roi_responses.subtracted if d > 0]),
                 n=len(roi_responses.subtracted),
                 alternative="greater",
-            )
+            ).pvalue
 
             # Wilcoxon signed rank test
             _, p_wsrt[roi] = ss.wilcoxon(
