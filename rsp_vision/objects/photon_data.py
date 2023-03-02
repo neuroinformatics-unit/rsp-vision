@@ -121,14 +121,13 @@ class PhotonData:
             self.n_frames_per_trigger
             != self.config["trigger_interval_s"] * self.fps
         ):
-            logging.error(
-                "Frames per trigger from data: "
-                + f"{self.n_frames_per_trigger} "
-                + "and calculated from fps: "
-                + f"{self.config['trigger_interval_s'] * self.fps}"
-                + " are different"
+            message = f"Frames per trigger from data: \
+            {self.n_frames_per_trigger} and calculated from fps: \
+            {self.config['trigger_interval_s'] * self.fps} are different"
+            logging.error(message)
+            raise RuntimeError(
+                "Number of frames per trigger is wrong\n" + message
             )
-            raise RuntimeError("Number of frames per trigger is wrong")
 
         self.n_baseline_frames = (
             self.n_session_boundary_baseline_triggers
@@ -291,11 +290,58 @@ class PhotonData:
             )
             stimuli = pd.concat([stimuli, df])
 
+        self.check_consistency_of_stimuli_df(stimuli)
+
+        self.uniques = {
+            "sf": stimuli.sf.unique(),
+            "tf": stimuli.tf.unique(),
+            "direction": stimuli.direction.unique(),
+        }
+        return stimuli
+
+    def check_consistency_of_stimuli_df(self, stimuli):
+        """
+        Check the consistency of stimuli dataframe with the expected
+        number of stimuli and their combinations.
+
+        Parameters
+        ----------
+        stimuli : pandas DataFrame
+            DataFrame containing stimuli information.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        RuntimeError
+            If the number of stimuli in the input dataframe is not equal
+            to the expected number of stimuli or if there are missing or
+            duplicated combinations of stimuli.
+
+        Notes
+        -----
+        The method first checks if the number of stimuli in the input
+        dataframe is equal to the expected number of stimuli across all
+        sessions. If not, it raises a RuntimeError and logs an error message.
+
+        Then, it creates a pivot table of the stimuli dataframe based on
+        the "sf", "tf", and "direction" columns and checks if the number
+        of rows in the pivot table is equal to the expected number of stimuli
+        combinations. If not, it raises a RuntimeError and logs an error
+        message.
+
+        Finally, it checks if the number of triggers per stimulus is
+        consistent across all stimuli combinations in the pivot table.
+        If not, it raises a RuntimeError and logs an error message.
+        """
         if not self.deactivate_checks:
             if len(stimuli) != self.n_of_stimuli_across_all_sessions:
                 logging.error(
                     f"Len of stimuli table: {len(stimuli)}, calculated "
-                    + "stimuli lenght: {self.n_of_stimuli_across_all_sessions}"
+                    + f"stimuli lenght: \
+                    {self.n_of_stimuli_across_all_sessions}"
                 )
                 raise RuntimeError(
                     "Number of stimuli in raw_data.stim differs from the "
@@ -325,12 +371,6 @@ class PhotonData:
                     "Number of stimuli is not correct, some combinations are "
                     + "missing or duplicated"
                 )
-        self.uniques = {
-            "sf": stimuli.sf.unique(),
-            "tf": stimuli.tf.unique(),
-            "direction": stimuli.direction.unique(),
-        }
-        return stimuli
 
     def fill_up_with_stim_info(self, signal, stimuli):
         """Complete the signal dataframe with the stimulus information.
@@ -339,7 +379,7 @@ class PhotonData:
         ----------
         signal : pd.DataFrame
             Signal dataframe to be filled up with stimulus information
-        stimuli : _type_
+        stimuli : pd.DataFrame
             Dataframe with the stimuli information
 
         Returns
@@ -348,24 +388,15 @@ class PhotonData:
             Final signal dataframe with stimulus information
         """
 
-        explored_idxs = set()
         # register only the stimulus onset
-        for k, start_frame in enumerate(self.stimulus_start_frames):
-            signal_idxs = signal.index[
-                signal["frames_id"] == start_frame
-            ].tolist()
-
-            s_idxs = set(signal_idxs)
-            if (
-                explored_idxs.intersection(set(s_idxs))
-                and not self.deactivate_checks
-            ):
-                raise RuntimeError("Index is duplicated across signals")
-
-            explored_idxs.union(s_idxs)
+        for stimulus_index, start_frame in enumerate(
+            self.stimulus_start_frames
+        ):
+            mask = signal["frames_id"] == start_frame
+            signal_idxs = signal.index[mask]
 
             # starting frames and stimuli are alligned in source data
-            stimulus = stimuli.iloc[k]
+            stimulus = stimuli.iloc[stimulus_index]
 
             if len(signal_idxs) != self.n_roi and not self.deactivate_checks:
                 raise RuntimeError(
@@ -373,34 +404,40 @@ class PhotonData:
                 )
 
             # there would be the same start frame for each session for each roi
-            for signal_idx in signal_idxs:
-                signal.iloc[
-                    signal_idx, signal.columns.get_loc("sf")
-                ] = stimulus["sf"]
-                signal.iloc[
-                    signal_idx, signal.columns.get_loc("tf")
-                ] = stimulus["tf"]
-                signal.iloc[
-                    signal_idx, signal.columns.get_loc("direction")
-                ] = stimulus["direction"]
-                signal.iloc[
-                    signal_idx, signal.columns.get_loc("stimulus_onset")
-                ] = True
+            signal.loc[mask, "sf"] = stimulus["sf"]
+            signal.loc[mask, "tf"] = stimulus["tf"]
+            signal.loc[mask, "direction"] = stimulus["direction"]
+            signal.loc[mask, "stimulus_onset"] = True
 
-        if (
-            np.any(
-                signal[signal.stimulus_onset]
-                .pivot_table(index=["sf", "tf", "direction"], aggfunc="size")
-                .values
-                != self.n_triggers_per_stimulus * self.n_roi
-            )
-            and not self.deactivate_checks
-        ):
-            raise RuntimeError(
-                "Signal table was not populated correctly "
-                + "with stimulus information"
-            )
+        self.check_consistency_of_signal_df(signal)
 
         logging.info("Stimulus information added to signal dataframe")
 
         return signal
+
+    def check_consistency_of_signal_df(self, signal):
+        """Check the consistency of the signal dataframe with the
+        expected number of stimuli.
+
+        Parameters
+        ----------
+        signal : pd.DataFrame
+            Signal dataframe with stimulus information
+
+        Raises
+        ------
+        ValueError
+            If the signal table was not populated correctly with
+            stimulus information.
+        """
+        if not self.deactivate_checks:
+            pivot_table = signal[signal.stimulus_onset].pivot_table(
+                index=["sf", "tf", "direction"], aggfunc="size"
+            )
+            expected = self.n_triggers_per_stimulus * self.n_roi
+            if not np.all(pivot_table == expected):
+                raise ValueError(
+                    f"Signal table was not populated correctly \
+                    with stimulus information.\nPivot table:{pivot_table}, \
+                    expercted:{expected}"
+                )
