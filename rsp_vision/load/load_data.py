@@ -5,10 +5,10 @@ from typing import Tuple
 import h5py
 from decouple import config
 
-from objects.data_raw import DataRaw
-from objects.enums import AnalysisType, DataType
-from objects.folder_naming_specs import FolderNamingSpecs
-from load.read_config import read
+from ..load.read_config import read
+from ..objects.data_raw import DataRaw
+from ..objects.enums import AnalysisType, DataType
+from ..objects.folder_naming_specs import FolderNamingSpecs
 
 CONFIG_PATH = config("CONFIG_PATH")
 config_path = Path(__file__).parents[1] / CONFIG_PATH

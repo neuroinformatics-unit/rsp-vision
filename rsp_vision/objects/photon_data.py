@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
-from analysis.utils import ascii_array_to_string, get_fps
-from objects.data_raw import DataRaw
-from objects.enums import PhotonType
+from rsp_vision.analysis.utils import ascii_array_to_string, get_fps
+from rsp_vision.objects.data_raw import DataRaw
+from rsp_vision.objects.enums import PhotonType
 
 
 class PhotonData:

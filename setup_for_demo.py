@@ -35,6 +35,7 @@ if __name__ == "__main__":
             "response_magnitude_threshold": 2.7,
             "consider_only_positive": False,
             "only_positive_threshold": 0.05,
+            "baseline": "static",
         }
 
         yaml.dump(content, f)
