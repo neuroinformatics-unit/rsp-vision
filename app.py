@@ -2,6 +2,7 @@ import pickle
 
 import dash_bootstrap_components as dbc
 import numpy as np
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, dcc, html
@@ -44,9 +45,13 @@ def get_df_sf_tf_combo_plot():
         signal.loc[start:end, "roi_id"] = signal.loc[idx, "roi_id"]
         signal.loc[start:end, "session_id"] = signal.loc[idx, "session_id"]
 
+    return counts
 
-get_df_sf_tf_combo_plot()
+
+counts = get_df_sf_tf_combo_plot()
 # print(signal.head())
+
+directions = list(data.uniques["direction"])
 
 # LAYOUT
 # =============================================================================
@@ -60,16 +65,6 @@ app.layout = html.Div(
                 dbc.Row(
                     [
                         dbc.Col(
-                            dcc.Dropdown(
-                                options=[
-                                    {"label": str(roi), "value": roi}
-                                    for roi in rois
-                                ],
-                                value=0,
-                                id="demo-dropdown",
-                            ),
-                        ),
-                        dbc.Col(
                             [
                                 html.H3("Responsive ROIs"),
                                 html.Ul(
@@ -77,12 +72,32 @@ app.layout = html.Div(
                                 ),
                             ]
                         ),
+                        dbc.Col(
+                            dcc.Dropdown(
+                                options=[
+                                    {"label": str(roi + 1), "value": roi}
+                                    for roi in rois
+                                ],
+                                value=0,
+                                id="demo-dropdown",
+                            ),
+                        ),
                     ]
                 ),
             ]
         ),
         html.Div(
             id="example-graph",
+        ),
+        html.Div(
+            [
+                html.H3("Directions"),
+                dcc.Checklist(
+                    [{"label": str(dir), "value": dir} for dir in directions],
+                    [directions[0]],
+                    id="directions-checkbox",
+                ),
+            ]
         ),
         html.Div(
             id="sf_tf-graph",
@@ -96,9 +111,9 @@ app.layout = html.Div(
 @app.callback(
     Output("example-graph", "children"), Input("demo-dropdown", "value")
 )
-def update_fig_all_sessions(roi):
+def update_fig_all_sessions(roi_id):
     lineplot = px.line(
-        signal[signal.roi_id == roi],
+        signal[signal.roi_id == roi_id],
         x="frames_id",
         y="signal",
         color="session_id",
@@ -111,35 +126,126 @@ def update_fig_all_sessions(roi):
         y="sf",
         color="tf",
     )
+    fig = go.Figure(data=lineplot.data + scatterplot.data)
+    fig.update_layout(
+        title=f"Signal across sessions, roi: {roi_id + 1}",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+        showlegend=False,
+    )
 
     return html.Div(
         dcc.Graph(
             id="my-graph",
-            figure=go.Figure(data=lineplot.data + scatterplot.data),
+            figure=fig,
         )
     )
 
 
 @app.callback(
-    Output("sf_tf-graph", "children"), Input("demo-dropdown", "value")
+    Output("sf_tf-graph", "children"),
+    [Input("demo-dropdown", "value"), Input("directions-checkbox", "value")],
 )
-def sf_tf_grid(roi):
-    no_nan = signal[
-        (signal["roi_id"] == roi) & signal.sf.notnull() & signal.tf.notnull()
+def sf_tf_grid(roi_id, dirs):
+    this_roi_df = signal[
+        (signal["roi_id"] == roi_id)
+        & signal.sf.notnull()
+        & signal.tf.notnull()
     ]
 
+    horizontal_df = pd.DataFrame(
+        columns=[
+            "stimulus_frames",
+            "signal_rep_1",
+            "signal_rep_2",
+            "signal_rep_3",
+            "mean_signal",
+            "median_signal",
+            "sf",
+            "tf",
+            "dir",
+        ]
+    )
+
+    for sf_tf in analysis.sf_tf_combinations:
+        for dir in dirs:
+            repetitions = this_roi_df[
+                (this_roi_df.sf == sf_tf[0])
+                & (this_roi_df.tf == sf_tf[1])
+                & (this_roi_df.direction == dir)
+            ]
+
+            df = repetitions.pivot(
+                index="stimulus_frames", columns="session_id"
+            )["signal"]
+            cols = df.keys().values
+            df.rename(
+                columns={
+                    cols[0]: "signal_rep_1",
+                    cols[1]: "signal_rep_2",
+                    cols[2]: "signal_rep_3",
+                },
+                inplace=True,
+            )
+            df["stimulus_frames"] = counts
+            df["sf"] = repetitions.sf.iloc[0]
+            df["tf"] = repetitions.tf.iloc[0]
+            df["dir"] = repetitions.direction.iloc[0]
+            df["mean_signal"] = df[
+                [
+                    "signal_rep_1",
+                    "signal_rep_2",
+                    "signal_rep_3",
+                ]
+            ].mean(axis=1)
+            df["median_signal"] = df[
+                [
+                    "signal_rep_1",
+                    "signal_rep_2",
+                    "signal_rep_3",
+                ]
+            ].median(axis=1)
+
+            horizontal_df = pd.concat([horizontal_df, df], ignore_index=True)
+
+    vertical_df = pd.melt(
+        horizontal_df,
+        id_vars=[
+            "stimulus_frames",
+            "sf",
+            "tf",
+            "dir",
+        ],
+        value_vars=[
+            "signal_rep_1",
+            "signal_rep_2",
+            "signal_rep_3",
+            "mean_signal",
+            "median_signal",
+        ],
+        var_name="signal_kind",
+        value_name="signal",
+    )
+
+    print(vertical_df)
+
     fig = px.line(
-        no_nan[no_nan["roi_id"] == roi],
+        vertical_df,
         x="stimulus_frames",
         y="signal",
         facet_col="sf",
         facet_row="tf",
         width=1500,
         height=800,
-        color="session_id",
+        color="signal_kind",
     )
-    fig.update_layout(title=f"SF TF traces for roi {roi}")
-    fig.update_traces(line=dict(width=0.3))
+
+    fig.update_layout(
+        title=f"SF TF traces for roi {roi_id + 1}",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
+    )
+    fig.update_traces(line=dict(width=0.5))
 
     return html.Div(
         dcc.Graph(
