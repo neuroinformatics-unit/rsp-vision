@@ -86,6 +86,7 @@ venv/
 **/config.yml
 .env
 
-# used in testing
+# other
 *.hdf5
 *.pickle
+*.obsidian
