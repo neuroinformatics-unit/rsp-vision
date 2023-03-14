@@ -1,7 +1,9 @@
 import numpy as np
 
 
-def test_get_response_and_baseline_windows(get_variables, get_sf_tf_instance):
+def test_get_response_and_baseline_windows(
+    get_variables, get_freq_response_instance
+):
     (
         _,
         n_roi,
@@ -11,11 +13,11 @@ def test_get_response_and_baseline_windows(get_variables, get_sf_tf_instance):
         _,
     ) = get_variables
 
-    sf_tf = get_sf_tf_instance
+    response = get_freq_response_instance
     (
         window_mask_response,
         window_mask_baseline,
-    ) = sf_tf.get_response_and_baseline_windows()
+    ) = response.get_response_and_baseline_windows()
 
     assert (
         len(window_mask_baseline)
@@ -24,18 +26,18 @@ def test_get_response_and_baseline_windows(get_variables, get_sf_tf_instance):
     )
 
 
-def test_calculate_mean_response_and_baseline(get_sf_tf_instance):
-    sf_tf = get_sf_tf_instance
-    sf_tf.calculate_mean_response_and_baseline()
+def test_calculate_mean_response_and_baseline(get_freq_response_instance):
+    response = get_freq_response_instance
+    response.calculate_mean_response_and_baseline()
 
     # based on random seed = 101
-    assert int(sf_tf.responses["subtracted"].values[1]) == 34
+    assert int(response.data.responses["subtracted"].values[1]) == 34
 
 
-def test_nonparam_anova_over_rois(get_sf_tf_instance):
-    sf_tf = get_sf_tf_instance
-    sf_tf.calculate_mean_response_and_baseline()
-    p_values = sf_tf.nonparam_anova_over_rois()
+def test_nonparam_anova_over_rois(get_freq_response_instance):
+    response = get_freq_response_instance
+    response.calculate_mean_response_and_baseline()
+    p_values = response.nonparam_anova_over_rois()
 
     decimal_points = 3
     p_values = np.around(
@@ -47,10 +49,10 @@ def test_nonparam_anova_over_rois(get_sf_tf_instance):
     assert np.all(p_values == p_values_seed_101)
 
 
-def test_perform_sign_tests(get_sf_tf_instance):
-    sf_tf = get_sf_tf_instance
-    sf_tf.calculate_mean_response_and_baseline()
-    p_st, p_wsrt = sf_tf.perform_sign_tests()
+def test_perform_sign_tests(get_freq_response_instance):
+    response = get_freq_response_instance
+    response.calculate_mean_response_and_baseline()
+    p_st, p_wsrt = response.perform_sign_tests()
 
     decimal_points = 3
     p_st = np.around(np.fromiter(p_st.values(), dtype=float), decimal_points)
@@ -66,11 +68,11 @@ def test_perform_sign_tests(get_sf_tf_instance):
     assert np.all(p_wsrt == p_wsrt_seed_101)
 
 
-def test_response_magnitude(get_sf_tf_instance):
-    sf_tf = get_sf_tf_instance
-    sf_tf.calculate_mean_response_and_baseline()
+def test_response_magnitude(get_freq_response_instance):
+    response = get_freq_response_instance
+    response.calculate_mean_response_and_baseline()
 
-    magnitude = sf_tf.response_magnitude()["magnitude"]
+    magnitude = response.response_magnitude()["magnitude"]
 
     decimal_points = 3
     magnitude = np.around(np.fromiter(magnitude, dtype=float), decimal_points)
@@ -103,8 +105,8 @@ def test_response_magnitude(get_sf_tf_instance):
     assert np.all(magnitude == magnitude_seed_101)
 
 
-def test_find_significant_rois(get_sf_tf_instance):
-    sf_tf = get_sf_tf_instance
-    sf_tf.responsiveness()
+def test_find_significant_rois(get_freq_response_instance):
+    response = get_freq_response_instance
+    response()
 
-    assert len(sf_tf.responsive_rois) == 0
+    assert len(response.data.responsive_rois) == 0

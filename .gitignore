@@ -88,3 +88,4 @@ venv/
 
 # used in testing
 *.hdf5
+*.pickle
