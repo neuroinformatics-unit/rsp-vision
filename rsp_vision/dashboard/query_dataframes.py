@@ -1,6 +1,10 @@
 import numpy as np
 import pandas as pd
 
+from rsp_vision.analysis.gaussians_calculations import (
+    elliptical_gaussian_adermann,
+)
+
 
 def get_df_sf_tf_combo_plot(signal, data):
     signal["stimulus_frames"] = np.nan
@@ -116,3 +120,35 @@ def get_preferred_sf_tf(responses, roi_id, dir):
     sf_0, tf_0 = median_subtracted_response["subtracted"].idxmax()
     peak_response = median_subtracted_response.loc[(sf_0, tf_0)]["subtracted"]
     return sf_0, tf_0, peak_response
+
+
+def get_median_subtracted_response(responses, roi_id, dir, sfs_inverted, tfs):
+    median_subtracted_response = (
+        responses[(responses.roi_id == roi_id) & (responses.direction == dir)]
+        .groupby(["sf", "tf"])[["subtracted"]]
+        .median()
+    )
+    msr_for_plotting = np.zeros((len(sfs_inverted), len(tfs)))
+    for i, sf in enumerate(sfs_inverted):
+        for j, tf in enumerate(tfs):
+            msr_for_plotting[i, j] = median_subtracted_response.loc[(sf, tf)][
+                "subtracted"
+            ]
+
+    return msr_for_plotting
+
+
+def fit_elliptical_gaussian(sfs_inverted, tfs, responses, roi_id, config, dir):
+    sf_0, tf_0, peak_response = get_preferred_sf_tf(responses, roi_id, dir)
+
+    # same tuning width for sf and tf
+    sigma = config["fitting"]["tuning_width"]
+
+    R = np.zeros((len(sfs_inverted), len(tfs)))
+    for i, sf in enumerate(sfs_inverted):
+        for j, tf in enumerate(tfs):
+            R[i, j] = elliptical_gaussian_adermann(
+                peak_response, sf, tf, sf_0, tf_0, sigma
+            )
+
+    return R
