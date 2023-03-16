@@ -4,8 +4,7 @@ import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
 from rsp_vision.dashboard.callbacks import (
-    get_gaussian_plot_callback,
-    get_responses_heatmap_callback,
+    get_andermann_gaussian_plot_callback,
     get_sf_tf_grid_callback,
     get_update_fig_all_sessions_callback,
 )
@@ -26,17 +25,9 @@ def get_app():
     # Unpack data
     signal = data.signal
     responses = data.responses
-    # p_values = analysis.p_values
-    # magnitude = analysis.magintude_over_medians
     responsive_rois = data.responsive_rois
-
-    # config = data.config
-
     rois = list(range(data.n_roi))
     directions = list(data._dir)
-    # sfs = np.sort(data.uniques["sf"])
-    # sfs_inverted = np.sort(data.uniques["sf"])[::-1]
-    # tfs = np.sort(data.uniques["tf"])
 
     # ADAPT DATA FRAMES
     # =============================================================================
@@ -56,11 +47,14 @@ def get_app():
             html.Div(
                 id="sf_tf-graph",
             ),
+            # html.Div(
+            #     id="median-response-graph",
+            # ),
+            # html.Div(
+            #     id="gaussian-graph",
+            # ),
             html.Div(
-                id="median-response-graph",
-            ),
-            html.Div(
-                id="gaussian-graph",
+                id="gaussian-graph-andermann",
             ),
         ]
     )
@@ -69,7 +63,8 @@ def get_app():
     # =============================================================================
     get_update_fig_all_sessions_callback(app, signal)
     get_sf_tf_grid_callback(app, signal, data, counts)
-    get_responses_heatmap_callback(app, responses, data)
-    get_gaussian_plot_callback(app, responses, data)
+    # get_responses_heatmap_callback(app, responses, data)
+    # get_symmetric_gaussian_plot_callback(app, responses, data)
+    get_andermann_gaussian_plot_callback(app, responses, data)
 
     return app
