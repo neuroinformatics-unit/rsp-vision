@@ -5,6 +5,7 @@ from dash import Dash, dcc, html
 
 from rsp_vision.dashboard.callbacks import (
     get_andermann_gaussian_plot_callback,
+    get_murakami_plot_callback,
     get_sf_tf_grid_callback,
     get_update_fig_all_sessions_callback,
 )
@@ -24,10 +25,17 @@ def get_app():
 
     # Unpack data
     signal = data.signal
-    responses = data.responses
     responsive_rois = data.responsive_rois
+    n_roi = data.n_roi
     rois = list(range(data.n_roi))
     directions = list(data._dir)
+    sfs = data._sf
+    tfs = data._tf
+
+    downsapled_gaussians = data.downsampled_gaussian
+    oversampled_gaussians = data.oversampled_gaussian
+    fit_outputs = data.fit_output
+    median_subtracted_responses = data.median_subtracted_response
 
     # ADAPT DATA FRAMES
     # =============================================================================
@@ -56,6 +64,9 @@ def get_app():
             html.Div(
                 id="gaussian-graph-andermann",
             ),
+            html.Div(
+                id="murakami-plot",
+            ),
         ]
     )
 
@@ -65,6 +76,15 @@ def get_app():
     get_sf_tf_grid_callback(app, signal, data, counts)
     # get_responses_heatmap_callback(app, responses, data)
     # get_symmetric_gaussian_plot_callback(app, responses, data)
-    get_andermann_gaussian_plot_callback(app, responses, data)
+    get_andermann_gaussian_plot_callback(
+        app,
+        median_subtracted_responses,
+        downsapled_gaussians,
+        oversampled_gaussians,
+        fit_outputs,
+    )
+    get_murakami_plot_callback(
+        app, n_roi, directions, sfs, tfs, downsapled_gaussians
+    )
 
     return app

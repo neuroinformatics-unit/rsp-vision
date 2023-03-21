@@ -1,10 +1,16 @@
 import logging
+from math import log2
+from multiprocessing import Pool
 from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
 
+from rsp_vision.analysis.gaussians_calculations import (
+    create_gaussian_matrix,
+    fit_2D_gaussian_to_data,
+)
 from rsp_vision.objects.photon_data import PhotonData
 
 
@@ -42,7 +48,7 @@ class FrequencyResponsiveness:
         self.calculate_mean_response_and_baseline()
         logging.info(f"Edited signal dataframe:{self.data.responses.head()}")
 
-        p_values = pd.DataFrame(
+        self.data.p_values = pd.DataFrame(
             columns=[
                 "Kruskal-Wallis test",
                 "Sign test",
@@ -50,23 +56,32 @@ class FrequencyResponsiveness:
             ]
         )
 
-        p_values["Kruskal-Wallis test"] = self.nonparam_anova_over_rois()
+        self.data.p_values[
+            "Kruskal-Wallis test"
+        ] = self.nonparam_anova_over_rois()
         (
-            p_values["Sign test"],
-            p_values["Wilcoxon signed rank test"],
+            self.data.p_values["Sign test"],
+            self.data.p_values["Wilcoxon signed rank test"],
         ) = self.perform_sign_tests()
-        logging.info(f"P-values for each roi:\n{p_values}")
+        logging.info(f"P-values for each roi:\n{self.data.p_values}")
 
-        magintude_over_medians = self.response_magnitude()
+        self.data.magintude_over_medians = self.response_magnitude()
         logging.info(
             "Response magnitude calculated over median:\n"
-            + f"{magintude_over_medians.head()}"
+            + f"{self.data.magintude_over_medians.head()}"
         )
 
         self.data.responsive_rois = self.find_significant_rois(
-            p_values, magintude_over_medians
+            self.data.p_values, self.data.magintude_over_medians
         )
         logging.info(f"Responsive ROIs: {self.data.responsive_rois}")
+
+        # using multiprocessing, very slow step
+        logging.info("Calculating Gaussian fits...")
+        self.get_all_fits()
+        self.calculate_downsampled_gaussian()
+        self.calculate_oversampled_gaussian()
+        logging.info("Gaussian fits calculated")
 
         return self.data
 
@@ -432,3 +447,132 @@ class FrequencyResponsiveness:
             sig_kw = sig_kw & sig_positive
 
         return sig_kw & sig_magnitude
+
+    @staticmethod
+    def get_preferred_sf_tf(median_subtracted_response):
+        sf_0, tf_0 = median_subtracted_response["subtracted"].idxmax()
+        peak_response = median_subtracted_response.loc[(sf_0, tf_0)][
+            "subtracted"
+        ]
+        return sf_0, tf_0, peak_response
+
+    @staticmethod
+    def get_median_subtracted_response(responses, roi_id, dir, to_array=False):
+        median_subtracted_response = (
+            responses[
+                (responses.roi_id == roi_id) & (responses.direction == dir)
+            ]
+            .groupby(["sf", "tf"])[["subtracted"]]
+            .median()
+        )
+        return median_subtracted_response
+
+    @staticmethod
+    def get_median_subtracted_response_2d_matrix(
+        median_subtracted_response, sf, tf
+    ):
+        median_subtracted_response_2d_matrix = np.zeros((len(sf), len(tf)))
+        for i, s in enumerate(sf):
+            for j, t in enumerate(tf):
+                median_subtracted_response_2d_matrix[
+                    i, j
+                ] = median_subtracted_response.loc[(s, t)]["subtracted"]
+        return median_subtracted_response_2d_matrix
+
+    def get_all_fits(self):
+        self.data.measured_preference = {}
+        self.data.fit_output = {}
+        self.data.median_subtracted_response = {}
+        with Pool() as p:
+            # the roi order should be preserved
+            roi_fit_data = p.map(
+                self.get_this_roi_fits_data, range(self.data.n_roi)
+            )
+
+            for roi_id, roi_data in enumerate(roi_fit_data):
+                for key in roi_data.keys():
+                    self.data.measured_preference[(roi_id, key)] = roi_data[
+                        key
+                    ][0]
+                    self.data.fit_output[(roi_id, key)] = roi_data[key][1]
+                    self.data.median_subtracted_response[
+                        (roi_id, key)
+                    ] = roi_data[key][2]
+
+    def get_this_roi_fits_data(self, roi_id):
+        """
+        Returns a dictionary with the best fit parameters for each ROI and
+        direction.
+        """
+        roi_data = {}
+        for dir in self.data._dir:
+            median_subtracted_response = self.get_median_subtracted_response(
+                self.data.responses, roi_id, dir
+            )
+            sf_0, tf_0, peak_response = self.get_preferred_sf_tf(
+                median_subtracted_response
+            )
+            msr_array = self.get_median_subtracted_response_2d_matrix(
+                median_subtracted_response, self.data._sf, self.data._tf
+            )
+
+            parameters_to_fit_starting_point = [
+                peak_response,
+                sf_0,
+                tf_0,
+                np.std(
+                    self.data._sf, ddof=1
+                ),  # config["fitting"]["tuning_width"],
+                np.std(
+                    self.data._tf, ddof=1
+                ),  # config["fitting"]["tuning_width"],
+                1,  # config["fitting"]["power_law_exp"],
+            ]
+
+            best_result = fit_2D_gaussian_to_data(
+                self.data._sf,
+                self.data._tf,
+                msr_array,
+                parameters_to_fit_starting_point,
+            )
+
+            roi_data[dir] = (
+                (sf_0, tf_0, peak_response),
+                best_result.x,
+                msr_array,
+            )
+        return roi_data
+
+    def calculate_downsampled_gaussian(self):
+        self.data.downsampled_gaussian = {}
+        for roi_id in range(self.data.n_roi):
+            for dir in self.data._dir:
+                self.data.downsampled_gaussian[
+                    (roi_id, dir)
+                ] = create_gaussian_matrix(
+                    self.data.fit_output[(roi_id, dir)],
+                    self.data._sf,
+                    self.data._tf,
+                )
+
+    def calculate_oversampled_gaussian(self, oversampling_factor=100):
+        self.data.oversampled_gaussian = {}
+        for roi_id in range(self.data.n_roi):
+            for dir in self.data._dir:
+                self.data.oversampled_gaussian[
+                    (roi_id, dir)
+                ] = create_gaussian_matrix(
+                    self.data.fit_output[(roi_id, dir)],
+                    np.logspace(
+                        log2(self.data._sf.min()),
+                        log2(self.data._sf.max()),
+                        num=oversampling_factor,
+                        base=2,
+                    ),
+                    np.logspace(
+                        log2(self.data._tf.min()),
+                        log2(self.data._tf.max()),
+                        num=oversampling_factor,
+                        base=2,
+                    ),
+                )
