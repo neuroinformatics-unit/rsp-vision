@@ -158,10 +158,50 @@ def fit_correlation(gaussian, msr):
     return fit_corr
 
 
-def find_peak_coordinates(gaussian_downsampled):
-    # find the peak
-    peak = np.unravel_index(
-        np.argmax(gaussian_downsampled), gaussian_downsampled.shape
+def find_peak_coordinates(oversampled_gaussians, sfs, tfs):
+    # find the peak indices
+    peak_indices = np.unravel_index(
+        np.argmax(oversampled_gaussians), oversampled_gaussians.shape
     )
-    #  peak is a tuple with the index of sf and tf peak response
+
+    # normalize the peak indices to the range [0,1]
+    peak_norm = np.array(peak_indices) / np.array(oversampled_gaussians.shape)
+
+    # map the normalized indices to octaves using
+    # the min and max sf and tf values
+    octaves = np.array(
+        [
+            from_frequency_to_octaves(peak_norm[0], sfs.min(), sfs.max()),
+            from_frequency_to_octaves(peak_norm[1], tfs.min(), tfs.max()),
+        ]
+    )
+
+    # if much smaller than sfs and tfs, then set the
+    # peak to the smallest sf and tf
+    if octaves[0] < from_frequency_to_octaves(
+        np.min(sfs) / 5, sfs.min(), sfs.max()
+    ):
+        octaves[0] = from_frequency_to_octaves(
+            np.min(sfs), sfs.min(), sfs.max()
+        )
+    if octaves[1] < from_frequency_to_octaves(
+        np.min(tfs) / 5, tfs.min(), tfs.max()
+    ):
+        octaves[1] = from_frequency_to_octaves(
+            np.min(tfs), tfs.min(), tfs.max()
+        )
+
+    # convert octaves to frequency values
+    peak = from_octaves_to_frequency(octaves)
+
     return peak
+
+
+def from_frequency_to_octaves(frequency, min_frequency, max_frequency):
+    return np.log2(frequency / min_frequency) - np.log2(
+        max_frequency / min_frequency
+    )
+
+
+def from_octaves_to_frequency(octaves):
+    return 2**octaves
