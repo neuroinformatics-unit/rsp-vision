@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -7,9 +8,7 @@ from dash import Dash, Input, Output, dcc, html
 from rsp_vision.dashboard.query_dataframes import (
     find_peak_coordinates,
     fit_correlation,
-    fit_symmetric_gaussian,
     get_dataframe_for_facet_plot,
-    get_median_subtracted_response,
 )
 
 
@@ -88,61 +87,14 @@ def get_sf_tf_grid_callback(app: Dash, signal, data, counts) -> None:
         )
 
 
-# not in use
-def get_responses_heatmap_callback(app: Dash, responses, data) -> None:
-    @app.callback(
-        Output("median-response-graph", "children"),
-        [
-            Input("demo-dropdown", "value"),
-            Input("directions-checkbox", "value"),
-        ],
-    )
-    def responses_heatmap(roi_id, dir):
-        msr_for_plotting = get_median_subtracted_response(
-            responses, roi_id, dir, data._sf[::-1], data._tf
-        )
-        x_labels, y_labels = get_labels(data, sf_inverted=True)
-        fig = px.imshow(msr_for_plotting, x=x_labels, y=y_labels)
-
-        return html.Div(
-            dcc.Graph(
-                id="median_response_plot",
-                figure=fig,
-            )
-        )
-
-
-# not in use
-def get_symmetric_gaussian_plot_callback(app: Dash, responses, data) -> None:
-    @app.callback(
-        Output("gaussian-graph", "children"),
-        [
-            Input("demo-dropdown", "value"),
-            Input("directions-checkbox", "value"),
-        ],
-    )
-    def gaussian_plot(roi_id, dir):
-        R = fit_symmetric_gaussian(
-            data._sf[::-1], data._tf, responses, roi_id, data.config, dir
-        )
-
-        x_labels, y_labels = get_labels(data, sf_inverted=True)
-        fig = px.imshow(R, x=x_labels, y=y_labels, aspect="equal")
-
-        return html.Div(
-            dcc.Graph(
-                id="gaussian_plot",
-                figure=fig,
-            )
-        )
-
-
 def get_andermann_gaussian_plot_callback(
     app: Dash,
     median_subtracted_responses,
     downsapled_gaussians,
     oversampled_gaussians,
     fit_outputs,
+    sfs,
+    tfs,
 ) -> None:
     @app.callback(
         Output("gaussian-graph-andermann", "children"),
@@ -162,10 +114,15 @@ def get_andermann_gaussian_plot_callback(
                 "Oversampled Gaussian",
             ),
         )
+        uniform_sfs = np.linspace(0, len(sfs) - 1, len(sfs))
+        uniform_tfs = np.linspace(0, len(tfs) - 1, len(tfs))
 
+        #  Add the heatmap for the median subtracted response
         fig.add_trace(
             go.Heatmap(
                 z=median_subtracted_responses[(roi_id, dir)],
+                x=uniform_sfs,
+                y=uniform_tfs,
                 colorscale="Viridis",
                 showscale=False,
             ),
@@ -173,24 +130,69 @@ def get_andermann_gaussian_plot_callback(
             col=1,
         )
 
+        fig.update_xaxes(tickvals=uniform_sfs, ticktext=sfs, row=1, col=1)
+        fig.update_yaxes(tickvals=uniform_tfs, ticktext=tfs, row=1, col=1)
+
         # Add the heatmap for the original Gaussian
         fig.add_trace(
             go.Heatmap(
                 z=downsapled_gaussians[(roi_id, dir)],
+                x=uniform_sfs,
+                y=uniform_tfs,
                 colorscale="Viridis",
                 showscale=False,
             ),
             row=1,
             col=2,
         )
+        # Update the tick labels to display the original values
+        fig.update_xaxes(tickvals=uniform_sfs, ticktext=sfs, row=1, col=2)
+        fig.update_yaxes(tickvals=uniform_tfs, ticktext=tfs, row=1, col=2)
 
         # Add the heatmap for the oversampled Gaussian
+        oversampling_factor = 100
+        uniform_oversampled_sfs = np.linspace(
+            0, oversampling_factor - 1, oversampling_factor
+        )
+        uniform_oversampled_tfs = np.linspace(
+            0, oversampling_factor - 1, oversampling_factor
+        )
+
         fig.add_trace(
             go.Heatmap(
                 z=oversampled_gaussians[(roi_id, dir)],
+                x=uniform_oversampled_sfs,
+                y=uniform_oversampled_tfs,
                 colorscale="Viridis",
                 showscale=False,
             ),
+            row=1,
+            col=3,
+        )
+
+        log_sfs = np.logspace(
+            np.log2(min(sfs)),
+            np.log2(max(sfs)),
+            num=oversampling_factor,
+            base=2,
+        )
+
+        log_tfs = np.logspace(
+            np.log2(min(tfs)),
+            np.log2(max(tfs)),
+            num=oversampling_factor,
+            base=2,
+        )
+
+        fig.update_xaxes(
+            tickvals=uniform_oversampled_sfs[::10],
+            ticktext=np.round(log_sfs[::10], 2),
+            row=1,
+            col=3,
+        )
+        fig.update_yaxes(
+            tickvals=uniform_oversampled_tfs[::10],
+            ticktext=np.round(log_tfs[::10], 2),
             row=1,
             col=3,
         )
@@ -203,7 +205,7 @@ def get_andermann_gaussian_plot_callback(
         # Update layout to maintain the aspect ratio
         fig.update_layout(
             autosize=False,
-            width=800,
+            width=1100,
             height=400,
             margin=dict(t=50, b=50, l=50, r=50),
             showlegend=False,

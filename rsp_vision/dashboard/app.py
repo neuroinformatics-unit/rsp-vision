@@ -82,6 +82,8 @@ def get_app():
         downsapled_gaussians,
         oversampled_gaussians,
         fit_outputs,
+        sfs,
+        tfs,
     )
     get_murakami_plot_callback(
         app,
