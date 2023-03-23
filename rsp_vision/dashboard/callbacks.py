@@ -238,26 +238,34 @@ def get_labels(data, sf_inverted=True):
 
 
 def get_murakami_plot_callback(
-    app: Dash, n_roi, directions, sfs, tfs, gaussian_downsampled
+    app: Dash,
+    n_roi,
+    directions,
+    sfs,
+    tfs,
+    oversampled_gaussians,
+    responsive_rois,
 ) -> None:
     @app.callback(
         Output("murakami-plot", "children"),
         [
             Input("demo-dropdown", "value"),
             Input("directions-checkbox", "value"),
+            Input("which-roi-to-show-in-murakami-plot", "value"),
+            Input("murakami-plot-scale", "value"),
         ],
     )
-    def murakami_plot(_roi_id, _dire):
+    def murakami_plot(_roi_id, _dire, rois_to_show, scale):
         fig = go.Figure()
 
         #  range of plotly colors equal to the length of n_roi
         colors = colors = px.colors.qualitative.Light24[:n_roi]
 
-        for roi_id in range(n_roi):
+        def murakami_plot_tools(roi_id):
             color = colors[roi_id]
             peaks = {
                 (roi_id, dire): find_peak_coordinates(
-                    gaussian_downsampled[(roi_id, dire)]
+                    oversampled_gaussians[(roi_id, dire)], sfs, tfs
                 )
                 # for roi_id in range(n_roi)
                 for dire in directions
@@ -267,68 +275,33 @@ def get_murakami_plot_callback(
                 {
                     "roi_id": roi_id,
                     "direction": dire,
-                    "temporal_frequency": tfs[peaks[(roi_id, dire)][0]],
-                    "spatial_frequency": sfs[peaks[(roi_id, dire)][1]],
+                    "temporal_frequency": peaks[(roi_id, dire)][0],
+                    "spatial_frequency": peaks[(roi_id, dire)][1],
                 }
                 for dire in directions
-            )
-            # print(p)
-
-            fig.add_trace(
-                go.Scatter(
-                    x=p["temporal_frequency"],
-                    y=p["spatial_frequency"],
-                    mode="markers",
-                    name=roi_id,
-                    marker=dict(size=6, color=color),
-                )
             )
 
             # # Add median point for each ROI
             median_peaks = p.groupby("roi_id").median(
                 ["temporal_frequency", "spatial_frequency"]
             )
-            print(f"Median peaks: {median_peaks}")
-
-            # plot median peaks as red dots
-            fig.add_trace(
-                go.Scatter(
-                    x=median_peaks["temporal_frequency"],
-                    y=median_peaks["spatial_frequency"],
-                    mode="markers",
-                    marker=dict(size=12, color=color),
-                    showlegend=False,
-                    name="Median",
-                )
-            )
-
-            if roi_id == _roi_id:
-                # draw a circle around the
-                # point with coordinates (roi_id, _dire)
-                circle_scaling_factor_y = 0.1
-                circle_scaling_factor_x = 0.1
-                row = p[(p.roi_id == _roi_id) & (p.direction == _dire)].iloc[0]
-                tf = row["temporal_frequency"]
-                sf = row["spatial_frequency"]
-                fig.add_shape(
-                    type="circle",
-                    xref="x",
-                    yref="y",
-                    x0=tf - circle_scaling_factor_x * tf,
-                    y0=sf - circle_scaling_factor_y * sf,
-                    x1=tf + circle_scaling_factor_x * tf,
-                    y1=sf + circle_scaling_factor_y * sf,
-                    line_color="green",
-                    line_width=2,
-                    opacity=0.5,
-                )
 
             # connect with a line all blue dots with the
             # red dot (median) one by one
-            for d in directions:
+            for i, d in enumerate(directions):
                 row = p[(p.roi_id == roi_id) & (p.direction == d)].iloc[0]
                 tf = row["temporal_frequency"]
                 sf = row["spatial_frequency"]
+                fig.add_trace(
+                    go.Scatter(
+                        x=[tf, median_peaks["temporal_frequency"][roi_id]],
+                        y=[sf, median_peaks["spatial_frequency"][roi_id]],
+                        mode="markers",
+                        marker=dict(color=color, size=10),
+                        name=f"ROI {roi_id + 1}" if i == 0 else "",
+                        showlegend=True if i == 0 else False,
+                    )
+                )
                 fig.add_trace(
                     go.Scatter(
                         x=[tf, median_peaks["temporal_frequency"][roi_id]],
@@ -339,13 +312,37 @@ def get_murakami_plot_callback(
                     )
                 )
 
+            if roi_id == _roi_id:
+                row = p[(p.roi_id == _roi_id) & (p.direction == _dire)].iloc[0]
+                tf = row["temporal_frequency"]
+                sf = row["spatial_frequency"]
+
+                fig.add_trace(
+                    go.Scatter(
+                        x=[tf],
+                        y=[sf],
+                        mode="markers",
+                        marker=dict(color="red", size=20),
+                        showlegend=False,
+                    )
+                )
+
+        if rois_to_show == "choosen":
+            murakami_plot_tools(_roi_id)
+        elif rois_to_show == "responsive":
+            for roi_id in responsive_rois:
+                murakami_plot_tools(roi_id)
+        elif rois_to_show == "all":
+            for roi_id in range(n_roi):
+                murakami_plot_tools(roi_id)
+
         fig.update_layout(
             title="Murakami plot",
             yaxis_title="Spatial frequency (cycles/deg)",
             xaxis_title="Temporal frequency (Hz)",
-            legend_title="ROI id",
-            yaxis_type="log",
-            xaxis_type="log",
+            legend_title="ROI",
+            # yaxis_type="log",
+            # xaxis_type="log",
             plot_bgcolor="rgba(0, 0, 0, 0)",
             paper_bgcolor="rgba(0, 0, 0, 0)",
             autosize=False,
@@ -353,6 +350,13 @@ def get_murakami_plot_callback(
             height=1000,
             margin=dict(t=50, b=50, l=50, r=50),
         )
+
+        if scale == "log":
+            fig.update_yaxes(type="log")
+            fig.update_xaxes(type="log")
+        else:
+            fig.update_yaxes(type="linear")
+            fig.update_xaxes(type="linear")
 
         return html.Div(
             dcc.Graph(
