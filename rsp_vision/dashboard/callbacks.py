@@ -18,20 +18,25 @@ def get_update_fig_all_sessions_callback(app: Dash, signal) -> None:
     )
     def update_fig_all_sessions(roi_id):
         pastel_colors = [
-            "#acd0f8", "#ace7d0", 
+            "#acd0f8",
+            "#ace7d0",
         ]
 
         unique_session_ids = signal["session_id"].unique()
         line_data = []
 
         for i, session_id in enumerate(unique_session_ids):
-            session_data = signal[(signal.roi_id == roi_id) & (signal.session_id == session_id)]
+            session_data = signal[
+                (signal.roi_id == roi_id) & (signal.session_id == session_id)
+            ]
             line_data.append(
                 go.Scatter(
                     x=session_data["frames_id"],
                     y=session_data["signal"],
                     mode="lines",
-                    line=dict(color=pastel_colors[i % len(pastel_colors)], width=0.3),
+                    line=dict(
+                        color=pastel_colors[i % len(pastel_colors)], width=0.3
+                    ),
                     showlegend=False,
                 )
             )
