@@ -4,6 +4,9 @@ include README.md
 recursive-include rsp_vision *.yml
 
 include *.py
+include *.yaml
+include *.yml
+include *.cruft.json
 
 exclude *.yaml
 exclude tox.ini
