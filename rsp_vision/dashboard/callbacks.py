@@ -1,8 +1,11 @@
+import itertools
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.subplots as sp
+from plotly.subplots import make_subplots
+
 from dash import Dash, Input, Output, dcc, html
 
 from rsp_vision.dashboard.query_dataframes import (
@@ -14,24 +17,30 @@ from rsp_vision.dashboard.query_dataframes import (
 
 def get_update_fig_all_sessions_callback(app: Dash, signal) -> None:
     @app.callback(
-        Output("example-graph", "children"), Input("demo-dropdown", "value")
+        Output("example-graph", "children"),
+        Input("roi-choice-dropdown", "value"),
     )
     def update_fig_all_sessions(roi_id):
         pastel_colors = [
-            "#acd0f8", "#ace7d0", 
+            "#acd0f8",
+            "#ace7d0",
         ]
 
         unique_session_ids = signal["session_id"].unique()
         line_data = []
 
         for i, session_id in enumerate(unique_session_ids):
-            session_data = signal[(signal.roi_id == roi_id) & (signal.session_id == session_id)]
+            session_data = signal[
+                (signal.roi_id == roi_id) & (signal.session_id == session_id)
+            ]
             line_data.append(
                 go.Scatter(
                     x=session_data["frames_id"],
                     y=session_data["signal"],
                     mode="lines",
-                    line=dict(color=pastel_colors[i % len(pastel_colors)], width=0.3),
+                    line=dict(
+                        color=pastel_colors[i % len(pastel_colors)], width=0.3
+                    ),
                     showlegend=False,
                 )
             )
@@ -64,7 +73,7 @@ def get_sf_tf_grid_callback(app: Dash, signal, data, counts) -> None:
     @app.callback(
         Output("sf_tf-graph", "children"),
         [
-            Input("demo-dropdown", "value"),
+            Input("roi-choice-dropdown", "value"),
             Input("directions-checkbox", "value"),
         ],
     )
@@ -112,7 +121,7 @@ def get_andermann_gaussian_plot_callback(
     @app.callback(
         Output("gaussian-graph-andermann", "children"),
         [
-            Input("demo-dropdown", "value"),
+            Input("roi-choice-dropdown", "value"),
             Input("directions-checkbox", "value"),
         ],
     )
@@ -264,7 +273,7 @@ def get_murakami_plot_callback(
     @app.callback(
         Output("murakami-plot", "children"),
         [
-            Input("demo-dropdown", "value"),
+            Input("roi-choice-dropdown", "value"),
             Input("directions-checkbox", "value"),
             Input("which-roi-to-show-in-murakami-plot", "value"),
             Input("murakami-plot-scale", "value"),
@@ -274,7 +283,7 @@ def get_murakami_plot_callback(
         fig = go.Figure()
 
         #  range of plotly colors equal to the length of n_roi
-        colors = colors = px.colors.qualitative.Light24[:n_roi]
+        colors =  px.colors.qualitative.Light24[:n_roi]
 
         def murakami_plot_tools(roi_id):
             color = colors[roi_id]
@@ -376,6 +385,249 @@ def get_murakami_plot_callback(
         return html.Div(
             dcc.Graph(
                 id="gaussian_plot",
+                figure=fig,
+            )
+        )
+
+
+# polar plot showing the peak response for each direction
+# in a facet plot with sf in the y axis and tf in the x axis
+def get_polar_plot_callback(
+    app: Dash,
+    directions,
+    sfs,
+    tfs,
+    downsampled_gaussians,
+) -> None:
+    @app.callback(
+        Output("polar-plot", "children"),
+        [
+            Input("roi-choice-dropdown", "value"),
+        ],
+    )
+    def polar_plot(roi_id):
+        def get_corresponding_value(
+            downsampled_gaussians, roi_id, dire, sf_idx, tf_idx
+        ):
+            # if I use the oversampled gaussian, I get a different result
+            # there is always a point in which the peak is very high
+            # therefore it does not give us much information on the preference
+            # of the neuron
+            gaussian = downsampled_gaussians[(roi_id, dire)]
+            return gaussian[tf_idx, sf_idx]
+
+        # Update the DataFrame construction with the get_corresponding_value function
+        p = pd.DataFrame(
+            {
+                "roi_id": roi_id,
+                "direction": dire,
+                "temporal_frequency": tfs[tf_idx],
+                "spatial_frequency": sfs[sf_idx],
+                "corresponding_value": get_corresponding_value(
+                    downsampled_gaussians, roi_id, dire, sf_idx, tf_idx
+                ),
+            }
+            for dire in directions
+            for tf_idx, sf_idx in itertools.product(
+                range(len(tfs)), range(len(sfs))
+            )
+        )
+
+        p_sorted = p.sort_values(by="direction")
+
+        subplot_titles = ["Responses across sf/tf for each direction", "cumulative responses"]
+        fig = make_subplots(
+            rows = 1,
+            cols = 2,
+            specs=[[{"type": "polar"}, {"type": "polar"}]],
+            subplot_titles=subplot_titles,
+        )
+        colors = px.colors.qualitative.Light24[:int(len(sfs))]
+       
+        for i, (tf, sf) in enumerate(itertools.product(tfs, sfs)):
+            row = p_sorted[(p_sorted.temporal_frequency == tf) & (p_sorted.spatial_frequency == sf)]
+            color = colors[i % len(sfs)]
+
+            r_values = row["corresponding_value"].tolist()
+            theta_values = row["direction"].tolist()
+            fig.add_trace(
+                go.Scatterpolar(
+                    r=r_values + [r_values[0]],
+                    theta=theta_values + [theta_values[0]],
+                    mode="lines",
+                    thetaunit="degrees",
+                    line=dict(color=color, width=4),
+                    showlegend=False
+                ),
+                row=1,
+                col=1
+
+            )
+
+        # Find cumulative trace
+        pivot_table = p.pivot(index=[
+            "temporal_frequency", "spatial_frequency"
+        ], columns="direction", values="corresponding_value")
+        
+        # normalize values to make all positive
+        # pivot_table = pivot_table - pivot_table.min().min()
+        # pivot_table = pivot_table / pivot_table.max().max()
+    
+        total_values = pivot_table.median(axis=0)
+        print(total_values)
+
+        
+        fig.add_trace(
+            go.Scatterpolar(
+                r=total_values.tolist() + [total_values.tolist()[0]],
+                theta=total_values.index.tolist() + [total_values.index.tolist()[0]],
+                mode="lines",
+                thetaunit="degrees",
+                name="Cumulative",
+                line=dict(color="black", width=3),
+                showlegend=False
+            ),
+            row=1,
+            col=2
+        )
+
+        # add subplot titles
+        
+        fig.update_layout(
+            polar=dict(radialaxis=dict(visible=True)),
+            plot_bgcolor="rgba(0, 0, 0, 0)",
+            paper_bgcolor="rgba(0, 0, 0, 0)",
+            width=1600,
+            height=800,
+        )
+
+        return html.Div(
+            dcc.Graph(
+                id="polar_plot",
+                figure=fig,
+            )
+        )
+
+
+def get_polar_plot_facet_callback(
+    app: Dash,
+    directions,
+    sfs,
+    tfs,
+    downsampled_gaussians,
+) -> None:
+    @app.callback(
+        Output("polar-plot-facet", "children"),
+        Input("roi-choice-dropdown", "value"),
+    )
+    def polar_plot_facet(roi_id):
+
+        def get_corresponding_value(
+            downsampled_gaussians, roi_id, dire, sf_idx, tf_idx
+        ):
+            # if I use the oversampled gaussian, I get a different result
+            # there is always a point in which the peak is very high
+            # therefore it does not give us much information on the preference
+            # of the neuron
+            gaussian = downsampled_gaussians[(roi_id, dire)]
+            return gaussian[tf_idx, sf_idx]
+
+        # Update the DataFrame construction with the get_corresponding_value function
+        p = pd.DataFrame(
+            {
+                "roi_id": roi_id,
+                "direction": dire,
+                "temporal_frequency": tfs[tf_idx],
+                "spatial_frequency": sfs[sf_idx],
+                "corresponding_value": get_corresponding_value(
+                    downsampled_gaussians, roi_id, dire, sf_idx, tf_idx
+                ),
+            }
+            for dire in directions
+            for tf_idx, sf_idx in itertools.product(
+                range(len(tfs)), range(len(sfs))
+            )
+        )
+        p_sorted = p.sort_values(by="direction")
+        max_value = p_sorted["corresponding_value"].max()
+
+        ncols = len(sfs)
+        nrows = len(tfs)
+
+        subplot_titles = [
+            f"sf: {sf}, tf: {tf}" for tf, sf in itertools.product(tfs, sfs)
+        ]
+        fig = make_subplots(
+            rows=nrows,
+            cols=ncols,
+            specs=[[{"type": "polar"}] * ncols] * nrows,
+            horizontal_spacing=0.04,
+            vertical_spacing=0.04,
+            subplot_titles=subplot_titles,
+        )
+
+        for tf_idx, sf_idx in itertools.product(
+            range(len(tfs)), range(len(sfs))
+        ):
+            tf = tfs[tf_idx]
+            sf = sfs[sf_idx]
+
+            subset = p_sorted[
+                (p_sorted["temporal_frequency"] == tf)
+                & (p_sorted["spatial_frequency"] == sf)
+            ]
+
+            r_values = subset["corresponding_value"].tolist()
+            theta_values = subset["direction"].tolist()
+
+            fig.add_trace(
+                go.Scatterpolar(
+                    r=r_values + [r_values[0]],
+                    theta=theta_values + [theta_values[0]],
+                    mode="lines",
+                    fill="toself",
+                    fillcolor="rgba(0, 0, 0, 0.2)",
+                    marker=dict(size=10),
+                    line=dict(width=1),
+                    thetaunit="degrees",
+                    showlegend=False,
+                    subplot=f"polar{tf_idx * ncols + sf_idx + 1}",
+                ),
+                row=tf_idx + 1,
+                col=sf_idx + 1,
+            )
+
+            subplot_name = f"polar{tf_idx * ncols + sf_idx + 1}"
+            fig.update_layout(
+                {
+                    subplot_name: dict(
+                        radialaxis=dict(
+                            visible=False,
+                            range=[0, max_value],
+                            gridcolor="rgba(0, 0, 0, 0)",
+                        ),
+                        angularaxis=dict(
+                            visible=False,
+                            showticklabels=False,
+                            showgrid=False,
+                            gridcolor="rgba(0, 0, 0, 0)",
+                        ),
+                    )
+                }
+            )
+
+        fig.update_layout(
+            title=f"SF TF polar plot for roi {roi_id + 1}",
+            plot_bgcolor="rgba(0, 0, 0, 0)",
+            paper_bgcolor="rgba(0, 0, 0, 0)",
+            width=1500,
+            height=1500,
+        )
+        
+
+        return html.Div(
+            dcc.Graph(
+                id="polar-plot-facet-internal",
                 figure=fig,
             )
         )
