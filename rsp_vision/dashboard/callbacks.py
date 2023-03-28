@@ -113,7 +113,6 @@ def get_sf_tf_grid_callback(app: Dash, signal, data, counts) -> None:
     )
     def sf_tf_grid(roi_id, dir):
         dir = dir["value"]
-        print(dir)
         vertical_df = get_dataframe_for_facet_plot(
             signal, data, counts, roi_id, dir
         )
@@ -148,7 +147,7 @@ def get_sf_tf_grid_callback(app: Dash, signal, data, counts) -> None:
 def get_andermann_gaussian_plot_callback(
     app: Dash,
     median_subtracted_responses,
-    downsapled_gaussians,
+    downsampled_gaussians,
     oversampled_gaussians,
     fit_outputs,
     sfs,
@@ -173,15 +172,14 @@ def get_andermann_gaussian_plot_callback(
                 "Oversampled Gaussian",
             ),
         )
-        uniform_sfs = np.linspace(0, len(sfs) - 1, len(sfs))
-        uniform_tfs = np.linspace(0, len(tfs) - 1, len(tfs))
+        uniform_sfs = uniform_tfs = np.arange(0, len(sfs), 1)
 
         #  Add the heatmap for the median subtracted response
         fig.add_trace(
             go.Heatmap(
                 z=median_subtracted_responses[(roi_id, dir)],
-                x=uniform_sfs,
-                y=uniform_tfs,
+                x=uniform_tfs,
+                y=uniform_sfs,
                 colorscale="Viridis",
                 showscale=False,
             ),
@@ -189,24 +187,18 @@ def get_andermann_gaussian_plot_callback(
             col=1,
         )
 
-        fig.update_xaxes(tickvals=uniform_sfs, ticktext=sfs, row=1, col=1)
-        fig.update_yaxes(tickvals=uniform_tfs, ticktext=tfs, row=1, col=1)
-
         # Add the heatmap for the original Gaussian
         fig.add_trace(
             go.Heatmap(
-                z=downsapled_gaussians[(roi_id, dir)],
-                x=uniform_sfs,
-                y=uniform_tfs,
+                z=downsampled_gaussians[(roi_id, dir)],
+                x=uniform_tfs,
+                y=uniform_sfs,
                 colorscale="Viridis",
                 showscale=False,
             ),
             row=1,
             col=2,
         )
-        # Update the tick labels to display the original values
-        fig.update_xaxes(tickvals=uniform_sfs, ticktext=sfs, row=1, col=2)
-        fig.update_yaxes(tickvals=uniform_tfs, ticktext=tfs, row=1, col=2)
 
         # Add the heatmap for the oversampled Gaussian
         oversampling_factor = 100
@@ -220,8 +212,8 @@ def get_andermann_gaussian_plot_callback(
         fig.add_trace(
             go.Heatmap(
                 z=oversampled_gaussians[(roi_id, dir)],
-                x=uniform_oversampled_sfs,
-                y=uniform_oversampled_tfs,
+                x=uniform_oversampled_tfs,
+                y=uniform_oversampled_sfs,
                 colorscale="Viridis",
                 showscale=False,
             ),
@@ -243,21 +235,8 @@ def get_andermann_gaussian_plot_callback(
             base=2,
         )
 
-        fig.update_xaxes(
-            tickvals=uniform_oversampled_sfs[::10],
-            ticktext=np.round(log_sfs[::10], 2),
-            row=1,
-            col=3,
-        )
-        fig.update_yaxes(
-            tickvals=uniform_oversampled_tfs[::10],
-            ticktext=np.round(log_tfs[::10], 2),
-            row=1,
-            col=3,
-        )
-
         fit_corr = fit_correlation(
-            downsapled_gaussians[(roi_id, dir)],
+            downsampled_gaussians[(roi_id, dir)],
             median_subtracted_responses[(roi_id, dir)],
         )
 
@@ -272,7 +251,23 @@ def get_andermann_gaussian_plot_callback(
                 𝜁: {fit_outputs[(roi_id, dir)][-1]:.2f}",
         )
 
-        # Update axis titles
+        fig.update_xaxes(tickvals=uniform_tfs, ticktext=tfs, row=1, col=1)
+        fig.update_yaxes(tickvals=uniform_sfs, ticktext=sfs, row=1, col=1)
+        fig.update_xaxes(tickvals=uniform_tfs, ticktext=tfs, row=1, col=2)
+        fig.update_yaxes(tickvals=uniform_sfs, ticktext=sfs, row=1, col=2)
+        fig.update_yaxes(
+            tickvals=uniform_oversampled_sfs[::10],
+            ticktext=np.round(log_sfs[::10], 2),
+            row=1,
+            col=3,
+        )
+        fig.update_xaxes(
+            tickvals=uniform_oversampled_tfs[::10],
+            ticktext=np.round(log_tfs[::10], 2),
+            row=1,
+            col=3,
+        )
+
         fig.update_yaxes(title_text="Spatial Frequency", row=1, col=1)
         fig.update_xaxes(title_text="Temporal Frequency", row=1, col=1)
         fig.update_yaxes(title_text="Spatial Frequency", row=1, col=2)
@@ -612,7 +607,7 @@ def get_polar_plot_facet_callback(
         nrows = len(tfs)
 
         subplot_titles = [
-            f"sf: {sf}, tf: {tf}" for tf, sf in itertools.product(tfs, sfs)
+            f"sf: {sf}, tf: {tf}" for sf, tf in itertools.product(tfs, sfs)
         ]
         fig = make_subplots(
             rows=nrows,
@@ -650,8 +645,8 @@ def get_polar_plot_facet_callback(
                     showlegend=False,
                     subplot=f"polar{tf_idx * ncols + sf_idx + 1}",
                 ),
-                row=tf_idx + 1,
-                col=sf_idx + 1,
+                row=sf_idx + 1,
+                col=tf_idx + 1,
             )
 
             subplot_name = f"polar{tf_idx * ncols + sf_idx + 1}"
