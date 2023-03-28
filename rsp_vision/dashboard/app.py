@@ -8,6 +8,8 @@ from rsp_vision.dashboard.callbacks import (
     get_murakami_plot_callback,
     get_sf_tf_grid_callback,
     get_update_fig_all_sessions_callback,
+    get_polar_plot_callback,
+    get_polar_plot_facet_callback,
 )
 from rsp_vision.dashboard.layout import get_sidebar
 from rsp_vision.dashboard.query_dataframes import get_df_sf_tf_combo_plot
@@ -32,7 +34,7 @@ def get_app():
     sfs = data._sf
     tfs = data._tf
 
-    downsapled_gaussians = data.downsampled_gaussian
+    downsampled_gaussians = data.downsampled_gaussian
     oversampled_gaussians = data.oversampled_gaussian
     fit_outputs = data.fit_output
     median_subtracted_responses = data.median_subtracted_response
@@ -55,17 +57,17 @@ def get_app():
             html.Div(
                 id="sf_tf-graph",
             ),
-            # html.Div(
-            #     id="median-response-graph",
-            # ),
-            # html.Div(
-            #     id="gaussian-graph",
-            # ),
             html.Div(
                 id="gaussian-graph-andermann",
             ),
             html.Div(
                 id="murakami-plot",
+            ),
+            html.Div(
+                id="polar-plot",
+            ),
+            html.Div(
+                id="polar-plot-facet",
             ),
         ]
     )
@@ -74,12 +76,10 @@ def get_app():
     # =============================================================================
     get_update_fig_all_sessions_callback(app, signal)
     get_sf_tf_grid_callback(app, signal, data, counts)
-    # get_responses_heatmap_callback(app, responses, data)
-    # get_symmetric_gaussian_plot_callback(app, responses, data)
     get_andermann_gaussian_plot_callback(
         app,
         median_subtracted_responses,
-        downsapled_gaussians,
+        downsampled_gaussians,
         oversampled_gaussians,
         fit_outputs,
         sfs,
@@ -93,6 +93,20 @@ def get_app():
         tfs,
         oversampled_gaussians,
         responsive_rois,
+    )
+    get_polar_plot_callback(
+        app,
+        directions,
+        sfs,
+        tfs,
+        median_subtracted_responses,
+    )
+    get_polar_plot_facet_callback(
+        app,
+        directions,
+        sfs,
+        tfs,
+        median_subtracted_responses,
     )
 
     return app
