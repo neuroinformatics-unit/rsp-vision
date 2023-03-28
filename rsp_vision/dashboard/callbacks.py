@@ -365,8 +365,6 @@ def get_murakami_plot_callback(
             yaxis_title="Spatial frequency (cycles/deg)",
             xaxis_title="Temporal frequency (Hz)",
             legend_title="ROI",
-            # yaxis_type="log",
-            # xaxis_type="log",
             plot_bgcolor="rgba(0, 0, 0, 0)",
             paper_bgcolor="rgba(0, 0, 0, 0)",
             autosize=False,
@@ -390,54 +388,99 @@ def get_murakami_plot_callback(
         )
 
 
-# polar plot showing the peak response for each direction
-# in a facet plot with sf in the y axis and tf in the x axis
+def get_corresponding_value(data, roi_id, dire, sf_idx, tf_idx):
+    # if I use the oversampled gaussian, I get a different result
+    # there is always a point in which the peak is very high
+    # therefore it does not give us much information on the preference
+    # of the neuron
+    matrix = data[(roi_id, dire)]
+    return matrix[tf_idx, sf_idx]
+
+
+def get_peaks_dataframe(
+    gaussian_or_original,
+    roi_id,
+    directions,
+    sfs,
+    tfs,
+    median_subtracted_responses,
+    downsampled_gaussians,
+):
+    if gaussian_or_original == "original":
+        data = median_subtracted_responses
+    elif gaussian_or_original == "gaussian":
+        data = downsampled_gaussians
+
+    p = pd.DataFrame(
+        {
+            "roi_id": roi_id,
+            "direction": dire,
+            "temporal_frequency": tfs[tf_idx],
+            "spatial_frequency": sfs[sf_idx],
+            "corresponding_value": get_corresponding_value(
+                data, roi_id, dire, sf_idx, tf_idx
+            ),
+        }
+        for dire in directions
+        for tf_idx, sf_idx in itertools.product(
+            range(len(tfs)), range(len(sfs))
+        )
+    )
+
+    p_sorted = p.sort_values(by="direction")
+
+    return p_sorted
+
+
 def get_polar_plot_callback(
     app: Dash,
     directions,
     sfs,
     tfs,
     downsampled_gaussians,
+    median_subtracted_responses,
 ) -> None:
     @app.callback(
         Output("polar-plot", "children"),
         [
             Input("roi-choice-dropdown", "value"),
+            Input("polar-plot-gaussian-or-original", "value"),
+            Input("polar-plot-mean-or-median-or-cumulative", "value"),
         ],
     )
-    def polar_plot(roi_id):
-        def get_corresponding_value(
-            downsampled_gaussians, roi_id, dire, sf_idx, tf_idx
-        ):
-            # if I use the oversampled gaussian, I get a different result
-            # there is always a point in which the peak is very high
-            # therefore it does not give us much information on the preference
-            # of the neuron
-            gaussian = downsampled_gaussians[(roi_id, dire)]
-            return gaussian[tf_idx, sf_idx]
-
-        p = pd.DataFrame(
-            {
-                "roi_id": roi_id,
-                "direction": dire,
-                "temporal_frequency": tfs[tf_idx],
-                "spatial_frequency": sfs[sf_idx],
-                "corresponding_value": get_corresponding_value(
-                    downsampled_gaussians, roi_id, dire, sf_idx, tf_idx
-                ),
-            }
-            for dire in directions
-            for tf_idx, sf_idx in itertools.product(
-                range(len(tfs)), range(len(sfs))
-            )
+    def polar_plot(roi_id, gaussian_or_original, mean_or_median_or_cumulative):
+        p_sorted = get_peaks_dataframe(
+            gaussian_or_original,
+            roi_id,
+            directions,
+            sfs,
+            tfs,
+            median_subtracted_responses,
+            downsampled_gaussians,
         )
 
-        p_sorted = p.sort_values(by="direction")
+        pivot_table = p_sorted.pivot(
+            index=["temporal_frequency", "spatial_frequency"],
+            columns="direction",
+            values="corresponding_value",
+        )
 
         subplot_titles = [
             "Responses across sf/tf for each direction",
-            "cumulative responses",
+            "",
         ]
+        if mean_or_median_or_cumulative == "mean":
+            total_values = pivot_table.mean(axis=0)
+            subplot_titles[1] = "mean responses"
+        elif mean_or_median_or_cumulative == "median":
+            total_values = pivot_table.median(axis=0)
+            subplot_titles[1] = "median responses"
+        elif mean_or_median_or_cumulative == "cumulative":
+            pivot_table = pivot_table - pivot_table.min().min()
+            pivot_table = pivot_table / pivot_table.max().max()
+            total_values = pivot_table.sum(axis=0)
+            subplot_titles[1] = "cumulative responses"
+
         fig = make_subplots(
             rows=1,
             cols=2,
@@ -468,20 +511,6 @@ def get_polar_plot_callback(
                 col=1,
             )
 
-        # Find cumulative trace
-        pivot_table = p.pivot(
-            index=["temporal_frequency", "spatial_frequency"],
-            columns="direction",
-            values="corresponding_value",
-        )
-
-        # normalize values to make all positive
-        # pivot_table = pivot_table - pivot_table.min().min()
-        # pivot_table = pivot_table / pivot_table.max().max()
-
-        total_values = pivot_table.median(axis=0)
-        print(total_values)
-
         fig.add_trace(
             go.Scatterpolar(
                 r=total_values.tolist() + [total_values.tolist()[0]],
@@ -496,8 +525,6 @@ def get_polar_plot_callback(
             row=1,
             col=2,
         )
-
-        # add subplot titles
 
         fig.update_layout(
             polar=dict(radialaxis=dict(visible=True)),
@@ -521,38 +548,26 @@ def get_polar_plot_facet_callback(
     sfs,
     tfs,
     downsampled_gaussians,
+    median_subtracted_responses,
 ) -> None:
     @app.callback(
         Output("polar-plot-facet", "children"),
-        Input("roi-choice-dropdown", "value"),
+        [
+            Input("roi-choice-dropdown", "value"),
+            Input("polar-plot-gaussian-or-original", "value"),
+        ],
     )
-    def polar_plot_facet(roi_id):
-        def get_corresponding_value(
-            downsampled_gaussians, roi_id, dire, sf_idx, tf_idx
-        ):
-            # if I use the oversampled gaussian, I get a different result
-            # there is always a point in which the peak is very high
-            # therefore it does not give us much information on the preference
-            # of the neuron
-            gaussian = downsampled_gaussians[(roi_id, dire)]
-            return gaussian[tf_idx, sf_idx]
-
-        p = pd.DataFrame(
-            {
-                "roi_id": roi_id,
-                "direction": dire,
-                "temporal_frequency": tfs[tf_idx],
-                "spatial_frequency": sfs[sf_idx],
-                "corresponding_value": get_corresponding_value(
-                    downsampled_gaussians, roi_id, dire, sf_idx, tf_idx
-                ),
-            }
-            for dire in directions
-            for tf_idx, sf_idx in itertools.product(
-                range(len(tfs)), range(len(sfs))
-            )
+    def polar_plot_facet(roi_id, gaussian_or_original):
+        p_sorted = get_peaks_dataframe(
+            gaussian_or_original,
+            roi_id,
+            directions,
+            sfs,
+            tfs,
+            median_subtracted_responses,
+            downsampled_gaussians,
         )
-        p_sorted = p.sort_values(by="direction")
+
         max_value = p_sorted["corresponding_value"].max()
 
         ncols = len(sfs)

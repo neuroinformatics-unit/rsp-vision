@@ -99,6 +99,7 @@ def get_app():
         directions,
         sfs,
         tfs,
+        downsampled_gaussians,
         median_subtracted_responses,
     )
     get_polar_plot_facet_callback(
@@ -106,6 +107,7 @@ def get_app():
         directions,
         sfs,
         tfs,
+        downsampled_gaussians,
         median_subtracted_responses,
     )
 
