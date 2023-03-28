@@ -1,18 +1,52 @@
 import itertools
+import math
 
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.subplots as sp
-from dash import Dash, Input, Output, dcc, html
+from dash import Dash, Input, Output, State, dcc, html
 from plotly.subplots import make_subplots
 
+from rsp_vision.dashboard.layout import generate_figure
 from rsp_vision.dashboard.query_dataframes import (
     find_peak_coordinates,
     fit_correlation,
     get_dataframe_for_facet_plot,
 )
+
+
+def get_update_circle_figure_callback(app: Dash) -> None:
+    @app.callback(
+        Output("directions-circle", "figure"),
+        Input("selected-direction", "children"),
+    )
+    def update_circle_figure(selected_direction):
+        directions = [0, 45, 90, 135, 180, 225, 270, 315]
+        circle_x = [math.cos(math.radians(d)) for d in directions]
+        circle_y = [math.sin(math.radians(d)) for d in directions]
+
+        return generate_figure(
+            directions, circle_x, circle_y, selected_direction
+        )
+
+
+def get_update_radio_items_callback(app: Dash) -> None:
+    @app.callback(
+        [
+            Output("direction-store", "data"),
+            Output("selected-direction", "children"),
+        ],
+        Input("directions-circle", "clickData"),
+        State("direction-store", "data"),
+    )
+    def update_radio_items(clickData, current_data):
+        if clickData is not None:
+            direction = clickData["points"][0]["customdata"]
+            return {"value": direction}, direction
+        else:
+            return current_data, current_data["value"]
 
 
 def get_update_fig_all_sessions_callback(app: Dash, signal) -> None:
@@ -74,10 +108,12 @@ def get_sf_tf_grid_callback(app: Dash, signal, data, counts) -> None:
         Output("sf_tf-graph", "children"),
         [
             Input("roi-choice-dropdown", "value"),
-            Input("directions-checkbox", "value"),
+            Input("direction-store", "data"),
         ],
     )
     def sf_tf_grid(roi_id, dir):
+        dir = dir["value"]
+        print(dir)
         vertical_df = get_dataframe_for_facet_plot(
             signal, data, counts, roi_id, dir
         )
@@ -122,10 +158,11 @@ def get_andermann_gaussian_plot_callback(
         Output("gaussian-graph-andermann", "children"),
         [
             Input("roi-choice-dropdown", "value"),
-            Input("directions-checkbox", "value"),
+            Input("direction-store", "data"),
         ],
     )
     def gaussian_plot(roi_id, dir):
+        dir = dir["value"]
         # Create subplots for the two Gaussian plots
         fig = sp.make_subplots(
             rows=1,
@@ -274,12 +311,13 @@ def get_murakami_plot_callback(
         Output("murakami-plot", "children"),
         [
             Input("roi-choice-dropdown", "value"),
-            Input("directions-checkbox", "value"),
+            Input("direction-store", "data"),
             Input("which-roi-to-show-in-murakami-plot", "value"),
             Input("murakami-plot-scale", "value"),
         ],
     )
     def murakami_plot(_roi_id, _dire, rois_to_show, scale):
+        _dire = _dire["value"]
         fig = go.Figure()
 
         #  range of plotly colors equal to the length of n_roi
