@@ -9,7 +9,9 @@ from rsp_vision.dashboard.callbacks import (
     get_polar_plot_callback,
     get_polar_plot_facet_callback,
     get_sf_tf_grid_callback,
+    get_update_circle_figure_callback,
     get_update_fig_all_sessions_callback,
+    get_update_radio_items_callback,
 )
 from rsp_vision.dashboard.layout import get_sidebar
 from rsp_vision.dashboard.query_dataframes import get_df_sf_tf_combo_plot
@@ -42,35 +44,6 @@ def get_app():
     # ADAPT DATA FRAMES
     # =============================================================================
     counts = get_df_sf_tf_combo_plot(signal, data)
-
-    # LAYOUT
-    # =============================================================================
-
-    sidebar = get_sidebar(responsive_rois, rois, directions)
-
-    app.layout = dbc.Container(
-        [
-            html.Div([dcc.Location(id="url"), sidebar]),
-            html.Div(
-                id="example-graph",
-            ),
-            html.Div(
-                id="sf_tf-graph",
-            ),
-            html.Div(
-                id="gaussian-graph-andermann",
-            ),
-            html.Div(
-                id="murakami-plot",
-            ),
-            html.Div(
-                id="polar-plot",
-            ),
-            html.Div(
-                id="polar-plot-facet",
-            ),
-        ]
-    )
 
     # CALLBACKS
     # =============================================================================
@@ -109,6 +82,36 @@ def get_app():
         tfs,
         downsampled_gaussians,
         median_subtracted_responses,
+    )
+    get_update_radio_items_callback(app)
+    get_update_circle_figure_callback(app)
+
+    # LAYOUT
+    # =============================================================================
+    sidebar = get_sidebar(responsive_rois, rois, directions)
+
+    app.layout = dbc.Container(
+        [
+            html.Div([dcc.Location(id="url"), sidebar]),
+            html.Div(
+                id="example-graph",
+            ),
+            html.Div(
+                id="sf_tf-graph",
+            ),
+            html.Div(
+                id="gaussian-graph-andermann",
+            ),
+            html.Div(
+                id="murakami-plot",
+            ),
+            html.Div(
+                id="polar-plot",
+            ),
+            html.Div(
+                id="polar-plot-facet",
+            ),
+        ]
     )
 
     return app
