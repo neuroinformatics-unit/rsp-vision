@@ -80,7 +80,9 @@ class FrequencyResponsiveness:
         logging.info("Calculating Gaussian fits...")
         self.get_all_fits()
         self.calculate_downsampled_gaussian()
-        self.calculate_oversampled_gaussian()
+        self.calculate_oversampled_gaussian(
+            oversampling_factor=self.config["fitting"]["oversampling_factor"]
+        )
         logging.info("Gaussian fits calculated")
 
         return self.data
@@ -457,7 +459,7 @@ class FrequencyResponsiveness:
         return sf_0, tf_0, peak_response
 
     @staticmethod
-    def get_median_subtracted_response(responses, roi_id, dir, to_array=False):
+    def get_median_subtracted_response(responses, roi_id, dir):
         median_subtracted_response = (
             responses[
                 (responses.roi_id == roi_id) & (responses.direction == dir)
@@ -520,13 +522,9 @@ class FrequencyResponsiveness:
                 peak_response,
                 sf_0,
                 tf_0,
-                np.std(
-                    self.data._sf, ddof=1
-                ),  # config["fitting"]["tuning_width"],
-                np.std(
-                    self.data._tf, ddof=1
-                ),  # config["fitting"]["tuning_width"],
-                1,  # config["fitting"]["power_law_exp"],
+                np.std(self.data._sf, ddof=1),
+                np.std(self.data._tf, ddof=1),
+                self.config["fitting"]["power_law_exp"],
             ]
 
             best_result = fit_2D_gaussian_to_data(
@@ -534,6 +532,7 @@ class FrequencyResponsiveness:
                 self.data._tf,
                 msr_array,
                 parameters_to_fit_starting_point,
+                self.config,
             )
 
             roi_data[dir] = (
