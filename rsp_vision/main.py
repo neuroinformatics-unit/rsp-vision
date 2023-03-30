@@ -1,6 +1,6 @@
 from rich.prompt import Prompt
 
-from .analysis.spatial_freq_temporal_freq import SF_TF
+from .analysis.spatial_freq_temporal_freq import FrequencyAnalysis
 from .load.load_data import load_data
 from .objects.enums import PhotonType
 from .objects.photon_data import PhotonData
@@ -22,18 +22,18 @@ def main():
         Example: AK_1111739_hL_RSPd_monitor_front\n \
         📁"
     )
-
+    photon_type = PhotonType.TWO_PHOTON
     # load data
-    data, specs = load_data(folder_name)
+    data, config = load_data(folder_name)
 
     # preprocess and make PhotonData object
-    photon_data = PhotonData(data, PhotonType.TWO_PHOTON, specs.config)
+    photon_data = PhotonData(data, PhotonType.TWO_PHOTON, config)
 
     # make analysis object
-    analysis = SF_TF(photon_data, specs)
+    analysis = FrequencyAnalysis(photon_data, photon_type)
 
     # calculate responsiveness and display it in a nice way
-    responsiveness = analysis.responsiveness(photon_data)
+    responsiveness = analysis.responsiveness()
     print(responsiveness)  # TODO: nice appearance
 
     # Plots
