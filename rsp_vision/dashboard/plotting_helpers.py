@@ -1,3 +1,4 @@
+import itertools
 import math
 from typing import List
 
@@ -164,7 +165,7 @@ def from_octaves_to_frequency(octaves):
     return 2**octaves
 
 
-def generate_figure(
+def get_direction_plot_for_controller(
     directions: List[int],
     circle_x: List[float],
     circle_y: List[float],
@@ -220,3 +221,47 @@ def get_circle_coordinates(
     circle_x = [math.cos(math.radians(d)) for d in directions]
     circle_y = [math.sin(math.radians(d)) for d in directions]
     return circle_x, circle_y
+
+
+def get_corresponding_value(data, roi_id, dire, sf_idx, tf_idx):
+    # if I use the oversampled gaussian, I get a different result
+    # there is always a point in which the peak is very high
+    # therefore it does not give us much information on the preference
+    # of the neuron
+    matrix = data[(roi_id, dire)]
+    return matrix[tf_idx, sf_idx]
+
+
+def get_peaks_dataframe(
+    gaussian_or_original,
+    roi_id,
+    directions,
+    sfs,
+    tfs,
+    median_subtracted_responses,
+    downsampled_gaussians,
+):
+    if gaussian_or_original == "original":
+        data = median_subtracted_responses
+    elif gaussian_or_original == "gaussian":
+        data = downsampled_gaussians
+
+    p = pd.DataFrame(
+        {
+            "roi_id": roi_id,
+            "direction": dire,
+            "temporal_frequency": tfs[tf_idx],
+            "spatial_frequency": sfs[sf_idx],
+            "corresponding_value": get_corresponding_value(
+                data, roi_id, dire, sf_idx, tf_idx
+            ),
+        }
+        for dire in directions
+        for tf_idx, sf_idx in itertools.product(
+            range(len(tfs)), range(len(sfs))
+        )
+    )
+
+    p_sorted = p.sort_values(by="direction")
+
+    return p_sorted
