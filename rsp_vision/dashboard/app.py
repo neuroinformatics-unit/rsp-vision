@@ -14,7 +14,7 @@ from rsp_vision.dashboard.callbacks import (
     get_update_radio_items_callback,
 )
 from rsp_vision.dashboard.layout import get_sidebar
-from rsp_vision.dashboard.query_dataframes import get_df_sf_tf_combo_plot
+from rsp_vision.dashboard.plotting_helpers import get_df_sf_tf_combo_plot
 
 
 def get_app():
@@ -32,7 +32,7 @@ def get_app():
     responsive_rois = data.responsive_rois
     n_roi = data.n_roi
     rois = list(range(data.n_roi))
-    directions = list(data._dir)
+    directions = [int(x) for x in list(data._dir)]
     sfs = data._sf
     tfs = data._tf
 
@@ -84,7 +84,7 @@ def get_app():
         median_subtracted_responses=median_subtracted_responses,
     )
     get_update_radio_items_callback(app)
-    get_update_circle_figure_callback(app)
+    get_update_circle_figure_callback(app, directions)
 
     # LAYOUT
     # =============================================================================
