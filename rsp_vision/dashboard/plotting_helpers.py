@@ -1,13 +1,17 @@
 import itertools
 import math
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
 
+from rsp_vision.objects.photon_data import PhotonData
 
-def get_df_sf_tf_combo_plot(signal, data):
+
+def get_df_sf_tf_combo_plot(
+    signal: pd.DataFrame, data: PhotonData
+) -> np.ndarray:
     signal["stimulus_frames"] = np.nan
     n_frames_per_stim = int(
         data.n_frames_per_trigger * data.n_triggers_per_stimulus
@@ -28,7 +32,13 @@ def get_df_sf_tf_combo_plot(signal, data):
     return counts
 
 
-def get_dataframe_for_facet_plot(signal, data, counts, roi_id, dir):
+def get_dataframe_for_facet_plot(
+    signal: pd.DataFrame,
+    data: PhotonData,
+    counts: np.ndarray,
+    roi_id: int,
+    direction: int,
+) -> pd.DataFrame:
     this_roi_df = signal[
         (signal["roi_id"] == roi_id)
         & signal.sf.notnull()
@@ -53,7 +63,7 @@ def get_dataframe_for_facet_plot(signal, data, counts, roi_id, dir):
         repetitions = this_roi_df[
             (this_roi_df.sf == sf_tf[0])
             & (this_roi_df.tf == sf_tf[1])
-            & (this_roi_df.direction == dir)
+            & (this_roi_df.direction == direction)
         ]
 
         df = repetitions.pivot(index="stimulus_frames", columns="session_id")[
@@ -111,23 +121,36 @@ def get_dataframe_for_facet_plot(signal, data, counts, roi_id, dir):
     return vertical_df
 
 
-def fit_correlation(gaussian, msr):
-    fit_corr, _ = pearsonr(msr.flatten(), gaussian.flatten())
+def fit_correlation(
+    gaussian: np.ndarray, median_subtracted_response: np.ndarray
+) -> float:
+    fit_corr, _ = pearsonr(
+        median_subtracted_response.flatten(), gaussian.flatten()
+    )
     return fit_corr
 
 
-def find_peak_coordinates(oversampled_gaussians, sfs, tfs, config):
+def find_peak_coordinates(
+    oversampled_gaussian: np.ndarray,
+    spatial_frequencies: np.ndarray,
+    temporal_frequencies: np.ndarray,
+    config: dict,
+):
     # find the peak indices
     peak_indices = np.unravel_index(
-        np.argmax(oversampled_gaussians), oversampled_gaussians.shape
+        np.argmax(oversampled_gaussian), oversampled_gaussian.shape
     )
 
     # normalize the peak indices to the range [0,1]
-    peak_norm = np.array(peak_indices) / np.array(oversampled_gaussians.shape)
+    peak_norm = np.array(peak_indices) / np.array(oversampled_gaussian.shape)
 
     # Replace 0 frequency with a small value (min_frequency / 100)
-    small_sf = sfs.min() / config["fitting"]["oversampling_factor"]
-    small_tf = tfs.min() / config["fitting"]["oversampling_factor"]
+    small_sf = (
+        spatial_frequencies.min() / config["fitting"]["oversampling_factor"]
+    )
+    small_tf = (
+        temporal_frequencies.min() / config["fitting"]["oversampling_factor"]
+    )
     peak_norm[0] = peak_norm[0] if peak_norm[0] != 0 else small_sf
     peak_norm[1] = peak_norm[1] if peak_norm[1] != 0 else small_tf
 
@@ -135,25 +158,18 @@ def find_peak_coordinates(oversampled_gaussians, sfs, tfs, config):
     # the min and max sf and tf values
     octaves = np.array(
         [
-            from_frequency_to_octaves(peak_norm[0], sfs.min(), sfs.max()),
-            from_frequency_to_octaves(peak_norm[1], tfs.min(), tfs.max()),
+            from_frequency_to_octaves(
+                peak_norm[0],
+                spatial_frequencies.min(),
+                spatial_frequencies.max(),
+            ),
+            from_frequency_to_octaves(
+                peak_norm[1],
+                temporal_frequencies.min(),
+                temporal_frequencies.max(),
+            ),
         ]
     )
-
-    # if much smaller than sfs and tfs, then set the
-    # peak to the smallest sf and tf
-    # if octaves[0] < from_frequency_to_octaves(
-    #     np.min(sfs) / 5, sfs.min(), sfs.max()
-    # ):
-    #     octaves[0] = from_frequency_to_octaves(
-    #         np.min(sfs), sfs.min(), sfs.max()
-    #     )
-    # if octaves[1] < from_frequency_to_octaves(
-    #     np.min(tfs) / 5, tfs.min(), tfs.max()
-    # ):
-    #     octaves[1] = from_frequency_to_octaves(
-    #         np.min(tfs), tfs.min(), tfs.max()
-    #     )
 
     # convert octaves to frequency values
     peak = from_octaves_to_frequency(octaves)
@@ -161,13 +177,15 @@ def find_peak_coordinates(oversampled_gaussians, sfs, tfs, config):
     return peak
 
 
-def from_frequency_to_octaves(frequency, min_frequency, max_frequency):
+def from_frequency_to_octaves(
+    frequency: float, min_frequency: float, max_frequency: float
+) -> float:
     return np.log2(frequency / min_frequency) - np.log2(
         max_frequency / min_frequency
     )
 
 
-def from_octaves_to_frequency(octaves):
+def from_octaves_to_frequency(octaves: float) -> float:
     return 2**octaves
 
 
@@ -222,31 +240,33 @@ def get_direction_plot_for_controller(
 
 
 def get_circle_coordinates(
-    directions,
-):
+    directions: np.ndarray,
+) -> Tuple[List[float], List[float]]:
     circle_x = [math.cos(math.radians(d)) for d in directions]
     circle_y = [math.sin(math.radians(d)) for d in directions]
     return circle_x, circle_y
 
 
-def get_corresponding_value(data, roi_id, dire, sf_idx, tf_idx):
+def get_corresponding_value(
+    data: np.ndarray, roi_id: int, direction: int, sf_idx: int, tf_idx: int
+) -> float:
     # if I use the oversampled gaussian, I get a different result
     # there is always a point in which the peak is very high
     # therefore it does not give us much information on the preference
     # of the neuron
-    matrix = data[(roi_id, dire)]
+    matrix = data[(roi_id, direction)]
     return matrix[tf_idx, sf_idx]
 
 
 def get_peaks_dataframe(
-    gaussian_or_original,
-    roi_id,
-    directions,
-    sfs,
-    tfs,
-    median_subtracted_responses,
-    downsampled_gaussians,
-):
+    gaussian_or_original: str,
+    roi_id: int,
+    directions: np.ndarray,
+    spatial_frequencies: np.ndarray,
+    temporal_frequencies: np.ndarray,
+    median_subtracted_responses: np.ndarray,
+    downsampled_gaussians: np.ndarray,
+) -> pd.DataFrame:
     if gaussian_or_original == "original":
         data = median_subtracted_responses
     elif gaussian_or_original == "gaussian":
@@ -256,15 +276,15 @@ def get_peaks_dataframe(
         {
             "roi_id": roi_id,
             "direction": dire,
-            "temporal_frequency": tfs[tf_idx],
-            "spatial_frequency": sfs[sf_idx],
+            "temporal_frequency": temporal_frequencies[tf_idx],
+            "spatial_frequency": spatial_frequencies[sf_idx],
             "corresponding_value": get_corresponding_value(
                 data, roi_id, dire, sf_idx, tf_idx
             ),
         }
         for dire in directions
         for tf_idx, sf_idx in itertools.product(
-            range(len(tfs)), range(len(sfs))
+            range(len(temporal_frequencies)), range(len(spatial_frequencies))
         )
     )
 
