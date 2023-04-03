@@ -17,7 +17,7 @@ from rsp_vision.dashboard.layout import get_sidebar
 from rsp_vision.dashboard.plotting_helpers import get_df_sf_tf_combo_plot
 
 
-def get_app():
+def get_app() -> Dash:
     app = Dash(
         __name__, external_stylesheets=[dbc.themes.FLATLY, dbc.icons.BOOTSTRAP]
     )
