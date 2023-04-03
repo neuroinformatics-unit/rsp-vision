@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def test_get_response_and_baseline_windows(
@@ -107,6 +108,13 @@ def test_response_magnitude(get_freq_response_instance):
 
 def test_find_significant_rois(get_freq_response_instance):
     response = get_freq_response_instance
-    response()
+    response.calculate_mean_response_and_baseline()
+    p_values = pd.DataFrame()
+    p_values["Kruskal-Wallis test"] = response.nonparam_anova_over_rois()
+    magnitude = response.response_magnitude()
 
-    assert len(response.data.responsive_rois) == 0
+    significant_rois = response.find_significant_rois(p_values, magnitude)
+
+    # based on random seed = 101
+    # in this case, only the first ROI is significant
+    assert significant_rois == {0}

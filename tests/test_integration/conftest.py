@@ -46,7 +46,7 @@ def get_config():
         "baseline": "static",
         "anova_threshold": 0.1,
         "response_magnitude_threshold": 0.1,
-        "consider_only_positive": True,
+        "consider_only_positive": False,
         "only_positive_threshold": 0.1,
         "spatial_frequencies": [0.01, 0.02, 0.04, 0.08, 0.16, 0.32],
         "temporal_frequencies": [0.5, 1, 2, 4, 8, 16],
