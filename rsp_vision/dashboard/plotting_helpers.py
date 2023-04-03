@@ -116,7 +116,7 @@ def fit_correlation(gaussian, msr):
     return fit_corr
 
 
-def find_peak_coordinates(oversampled_gaussians, sfs, tfs):
+def find_peak_coordinates(oversampled_gaussians, sfs, tfs, config):
     # find the peak indices
     peak_indices = np.unravel_index(
         np.argmax(oversampled_gaussians), oversampled_gaussians.shape
@@ -124,6 +124,12 @@ def find_peak_coordinates(oversampled_gaussians, sfs, tfs):
 
     # normalize the peak indices to the range [0,1]
     peak_norm = np.array(peak_indices) / np.array(oversampled_gaussians.shape)
+
+    # Replace 0 frequency with a small value (min_frequency / 100)
+    small_sf = sfs.min() / config["fitting"]["oversampling_factor"]
+    small_tf = tfs.min() / config["fitting"]["oversampling_factor"]
+    peak_norm[0] = peak_norm[0] if peak_norm[0] != 0 else small_sf
+    peak_norm[1] = peak_norm[1] if peak_norm[1] != 0 else small_tf
 
     # map the normalized indices to octaves using
     # the min and max sf and tf values
@@ -136,18 +142,18 @@ def find_peak_coordinates(oversampled_gaussians, sfs, tfs):
 
     # if much smaller than sfs and tfs, then set the
     # peak to the smallest sf and tf
-    if octaves[0] < from_frequency_to_octaves(
-        np.min(sfs) / 5, sfs.min(), sfs.max()
-    ):
-        octaves[0] = from_frequency_to_octaves(
-            np.min(sfs), sfs.min(), sfs.max()
-        )
-    if octaves[1] < from_frequency_to_octaves(
-        np.min(tfs) / 5, tfs.min(), tfs.max()
-    ):
-        octaves[1] = from_frequency_to_octaves(
-            np.min(tfs), tfs.min(), tfs.max()
-        )
+    # if octaves[0] < from_frequency_to_octaves(
+    #     np.min(sfs) / 5, sfs.min(), sfs.max()
+    # ):
+    #     octaves[0] = from_frequency_to_octaves(
+    #         np.min(sfs), sfs.min(), sfs.max()
+    #     )
+    # if octaves[1] < from_frequency_to_octaves(
+    #     np.min(tfs) / 5, tfs.min(), tfs.max()
+    # ):
+    #     octaves[1] = from_frequency_to_octaves(
+    #         np.min(tfs), tfs.min(), tfs.max()
+    #     )
 
     # convert octaves to frequency values
     peak = from_octaves_to_frequency(octaves)

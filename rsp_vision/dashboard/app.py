@@ -15,6 +15,7 @@ from rsp_vision.dashboard.callbacks import (
 )
 from rsp_vision.dashboard.layout import get_sidebar
 from rsp_vision.dashboard.plotting_helpers import get_df_sf_tf_combo_plot
+from rsp_vision.objects.photon_data import PhotonData
 
 
 def get_app() -> Dash:
@@ -25,7 +26,7 @@ def get_app() -> Dash:
     # LOAD DATA
     # =============================================================================
     with open("AK_1111739_hL_RSPd_monitor_front_data.pickle", "rb") as f:
-        data = pickle.load(f)
+        data: PhotonData = pickle.load(f)
 
     # Unpack data
     signal = data.signal
@@ -66,6 +67,7 @@ def get_app() -> Dash:
         tfs=tfs,
         oversampled_gaussians=oversampled_gaussians,
         responsive_rois=responsive_rois,
+        config=data.config,
     )
     get_polar_plot_callback(
         app=app,
