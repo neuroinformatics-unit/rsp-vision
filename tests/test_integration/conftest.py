@@ -39,20 +39,27 @@ def get_config():
     yield {
         "fps_two_photon": 30,
         "trigger_interval_s": 2.5,
-        "n_sf": 6,
-        "n_tf": 6,
-        "n_dir": 8,
+        "n_spatial_frequencies": 6,
+        "n_temporal_frequencies": 6,
+        "n_directions": 8,
         "padding": [0, 1],
         "baseline": "static",
         "anova_threshold": 0.1,
         "response_magnitude_threshold": 0.1,
         "consider_only_positive": True,
         "only_positive_threshold": 0.1,
+        "spatial_frequencies": [0.01, 0.02, 0.04, 0.08, 0.16, 0.32],
+        "temporal_frequencies": [0.5, 1, 2, 4, 8, 16],
+        "directions": [0, 45, 90, 135, 180, 225, 270, 315],
     }
 
 
 @pytest.fixture
 def get_data_raw_object(get_variables):
+    #  mock directions: [1, 2]
+    #  mock spatial frequencies: [3, 4]
+    #  mock temporal frequencies: [5, 6]
+
     (
         n_sessions,
         n_roi,
@@ -178,7 +185,7 @@ def get_data_raw_object(get_variables):
 @pytest.fixture
 def get_photon_data(get_data_raw_object, get_config):
     photon_data = PhotonData.__new__(PhotonData)
-    photon_data.deactivate_checks = True
+    photon_data.using_real_data = False
     photon_data.photon_type = PhotonType.TWO_PHOTON
     photon_data.config = get_config
     photon_data.fps = get_fps(photon_data.photon_type, photon_data.config)
@@ -195,6 +202,6 @@ def get_freq_response_instance(get_config, get_data_raw_object):
             data_raw=get_data_raw_object,
             photon_type=pt,
             config=get_config,
-            deactivate_checks=True,
+            using_real_data=False,
         )
     )
