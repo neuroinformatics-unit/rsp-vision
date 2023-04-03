@@ -19,70 +19,80 @@ class PhotonData:
     It does not include padding calculations, which I would like it
     to be done dynamically while browsing the data.
 
+    -----------------
     Full list of attributes created running init:
-    - DataFrames:
-        * signal (pd.DataFrame) - the main dataframe containing all the
-            information about the signal
-        * stimuli (pd.DataFrame) - the dataframe containing all the
-            information about the stimuli
-        * responses (pd.DataFrame) - the dataframe containing the
-            response of the ROIs to the stimuli - initialized as None
-        * magnitude_over_medians (pd.DataFrame) - the dataframe containing
-            the magnitude of the ROIs' response - initialized as None
-    - Strings:
-        * grey_or_static (str) - the type of stimulus
-    - Numpy arrays:
-        * day_stim (np.array) - the day of the stimulus
-        * screen_size (np.array) - the size of the screen
-        * stimulus_idxs (np.array) - the indexes of the frames that are
-            stimulus onsets
-        * spatial_frequencies (np.array) - the spatial frequencies
-            used in the experiment
-        * temporal_frequencies (np.array) - the temporal frequencies
-            used in the experiment
-        * sf_tf_combinations (np.array) - the combinations of sf and tf
-            that were used in the experiment
-        * directions (np.array) - the directions used in the experiment
-    - Arrays:
-        * sf_tf_combinations (np.array) - the combinations of sf and tf
-            that were used in the experiment
-    - Integers:
-        * n_frames_per_stim (int) - the number of frames per stimulus
-        * n_frames_per_trigger (int) - the number of frames per trigger
-        * n_triggers_per_stimulus (int) - the number of triggers per
-            stimulus
-        * n_stimuli (int) - the number of stimuli
-        * n_stimuli_per_session (int) - the number of stimuli per session
-        * n_sessions (int) - the number of sessions
-        * n_rois (int) - the number of rois
-        * n_frames (int) - the number of frames
-    - Floats:
-        * fps (float) - the frames per second of the experiment
-    - Booleans:
-        * deactivate_checks (bool) - whether to deactivate the checks
-            that are done on the data
-    - Dictionaries:
-        * config (dict) - the configuration dictionary
-        * p_values (dict) - the p values obtained to determine if the
-            response of ROIs is significant in respoect to SF/TF combinations -
-            initialized as None
-        * measured_preference (dict) - the measured preference of ROIs in terms
-            of SF/TF combinations - initialized as None
-        * fit_output (dict) - the fit output parameters from the gaussian fit
-            operation - initialized as None
-        * median_subtracted_response (dict) - the median subtracted
-            response of the ROIs - initialized as None
-        * downsampled_gaussian (dict) - the downsampled gaussian calculated
-            with the fit output parameters - initialized as None
-        * oversampled_gaussian (dict) - the oversampled gaussian calculated
-            with the fit output parameters - initialized as None
-    - Enums:
-        * photon_type (PhotonType) - the type of photon data
-    - Other:
-        * data_raw (DataRaw) - the raw data object
-        * responsive_rois (Set[int]) - the set of responsive ROIs - initialized
-            as None
 
+    * deactivate_checks (bool) - whether to deactivate the checks, useful
+        to spot bugs in new datasets
+    * photon_type (PhotonType) - the photon type, two or three photon
+    * config (dict) - the config dictionary
+    * fps (float) - the number of frames per second
+
+    * n_spatial_frequencies (int) - the number of spatial frequencies
+    * n_temporal_frequencies (int) - the number of temporal frequencies
+    * n_directions (int) - the number of directions
+    * spatial_frequencies (np.ndarray) - the spatial frequencies
+    * temporal_frequencies (np.ndarray) - the temporal frequencies
+    * directions (np.ndarray) - the directions
+    * sf_tf_combinations (list) - the list of all the combinations of
+        spatial and temporal frequencies
+
+    * screen_size (float) - the size of the screen
+    * n_sessions (int) - the number of sessions
+    * n_roi (int) - the number of roi
+    * n_frames_per_session (int) - the number of frames per session
+    * day_stim (np.ndarray) - the day of the stimulus
+    * grey_or_static (str) - the string defining the type of protocol
+        in use
+    * is_grey (bool) - whether there was a grey baseline stimulus
+    * n_frames (int) - the number of frames
+    * n_triggers_per_stimulus (int) - the number of triggers per stimulus,
+        one stim -> 2 or 3 triggers
+    * n_all_triggers (int) - the number of all triggers across all sessions
+    * n_session_boundary_baseline_triggers (int) - the number of session
+        boundary baseline triggers, they happen at the beginning and at
+        the end of each session
+    * n_stimulus_triggers_across_all_sessions (int) - the number of
+        triggers that fall into a stimulus, across all sessions
+    * n_of_stimuli_across_all_sessions (int) - the number of stimuli
+        across all sessions
+
+    * n_frames_per_trigger (int) - the number of frames per trigger
+    * n_baseline_frames (int) - the number of baseline frames at the
+        beginning and end of each session
+    * n_stimulus_triggers_per_session (int) - the number of stimulus
+        triggers per session
+    * n_of_stimuli_per_session (int) - the number of stimuli per session
+    * stimulus_start_frames (np.ndarray) - the start frames of the stimuli
+
+    * signal (pd.DataFrame) - the final dataframe; see docstring of
+        `get_signal_and_stimuli_df` for more info
+    * stimuli (pd.DataFrame) - the stimuli dataframe; see docstring of
+        `get_stimuli` for more info
+
+    * stimuli_idx (pd.Series) - the index of the stimuli
+
+    -----------------
+    The following will be initialized in the
+    `initialize_analysis_output_variables`, and will be used to store
+    the results of the analysis:
+
+    * response (pd.DataFrame) - dataframe with calculated responses
+        for drifting and baseline periods
+    * p_values (dict) - the p_values computed with a variety of methods
+        for each roi
+    * magnitude_over_medians (pd.DataFrame) - the response magnitude
+        calculated over medians
+    * responsive_rois (set) - the set of responsive rois, given the
+        p_value threshold
+    * measured_preference (dict) - the sf/tf preference of each roi
+    * fit_output (dict) - the output of the gaussian fit
+    * median_subtracted_response (dict) - the median subtracted response
+        (drift - baseline)
+    * downsampled_gaussian (dict) - for each roi, for each direction, the
+        gaussian fit of the median subtracted response oversampled
+    * oversampled_gaussian (dict) - for each roi, for each direction, the
+        gaussian fit of the median subtracted response
     """
 
     def __init__(
@@ -92,15 +102,16 @@ class PhotonData:
         config: dict,
         deactivate_checks=False,
     ):
-        self.deactivate_checks = deactivate_checks
-        self.photon_type = photon_type
-        self.config = config
+        self.deactivate_checks: bool = deactivate_checks
+        self.photon_type: PhotonType = photon_type
+        self.config: dict = config
 
-        self.fps = get_fps(self.photon_type, self.config)
+        self.fps: float = get_fps(self.photon_type, self.config)
         self.set_general_variables(data_raw)
-        self.signal, self.stimuli = self.get_signal_and_stimuli_df(data_raw)
-        self.set_post_data_extraction_variables()
 
+        self.signal, self.stimuli = self.get_signal_and_stimuli_df(data_raw)
+
+        self.set_post_data_extraction_variables()
         self.initialize_analysis_output_variables()
 
         logging.info(
@@ -108,7 +119,9 @@ class PhotonData:
             + f"{self.signal[self.signal['stimulus_onset']].head()}"
         )
 
-    def get_signal_and_stimuli_df(self, data_raw: DataRaw) -> pd.DataFrame:
+    def get_signal_and_stimuli_df(
+        self, data_raw: DataRaw
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """The main function of this class, which returns the final
         `signal` dataframe. It will contain the following columns:
         * day (int) - the day of the experiment (1, 2, 3 or 4)
@@ -149,9 +162,11 @@ class PhotonData:
         data_raw : DataRaw
             The raw data object from which the data will be extracted
         """
-        self.n_spatial_frequencies = self.config["n_spatial_frequencies"]
-        self.n_temporal_frequencies = self.config["n_temporal_frequencies"]
-        self.n_directions = self.config["n_directions"]
+        self.n_spatial_frequencies: int = self.config["n_spatial_frequencies"]
+        self.n_temporal_frequencies: int = self.config[
+            "n_temporal_frequencies"
+        ]
+        self.n_directions: int = self.config["n_directions"]
         self.spatial_frequencies = np.array(
             self.config["spatial_frequencies"], dtype=float
         )
@@ -165,15 +180,15 @@ class PhotonData:
             )
         )
 
-        self.screen_size = data_raw.stim[0]["screen_size"]
-        self.n_sessions = data_raw.frames.shape[0]
-        self.n_roi = data_raw.frames[0].shape[0]
-        self.n_frames_per_session = data_raw.frames[0].shape[1]
-        self.day_stim = data_raw.day["stimulus"]  # seems useless
-        self.grey_or_static = self.ascii_array_to_string(
+        self.screen_size: float = data_raw.stim[0]["screen_size"]
+        self.n_sessions: int = data_raw.frames.shape[0]
+        self.n_roi: int = data_raw.frames[0].shape[0]
+        self.n_frames_per_session: int = data_raw.frames[0].shape[1]
+        self.day_stim: np.ndarray = data_raw.day["stimulus"]  # seems useless
+        grey_or_static = self.ascii_array_to_string(
             data_raw.stim[0]["stimulus"]["grey_or_static"]
         )
-        if self.grey_or_static in [
+        if grey_or_static in [
             "grey_static_drift",
             "grey_static_drift_switch",
         ]:
@@ -183,12 +198,12 @@ class PhotonData:
             self.is_gray = False
             self.n_triggers_per_stimulus = 2
 
-        self.n_all_triggers = data_raw.stim[0]["n_triggers"]
+        self.n_all_triggers: int = data_raw.stim[0]["n_triggers"]
         self.n_session_boundary_baseline_triggers = int(
             data_raw.stim[0]["stimulus"]["n_baseline_triggers"]
         )
 
-        self.n_stimulus_triggers_across_all_sessions = (
+        self.n_stimulus_triggers_across_all_sessions: int = (
             self.n_all_triggers - 2 * self.n_session_boundary_baseline_triggers
         ) * self.n_sessions
         self.n_of_stimuli_across_all_sessions = int(
@@ -202,7 +217,7 @@ class PhotonData:
         """Calculations to find the start frames of the stimuli,
         as in the matlab codebase.
         """
-        self.n_frames_per_trigger = (
+        self.n_frames_per_trigger = int(
             self.n_frames_per_session / self.n_all_triggers
         )
         if (
@@ -217,7 +232,7 @@ class PhotonData:
                 "Number of frames per trigger is wrong\n" + message
             )
 
-        self.n_baseline_frames = (
+        self.n_baseline_frames: int = (
             self.n_session_boundary_baseline_triggers
             * self.n_frames_per_trigger
         )
