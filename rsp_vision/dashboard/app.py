@@ -33,9 +33,9 @@ def get_app() -> Dash:
     responsive_rois = data.responsive_rois
     n_roi = data.n_roi
     rois = list(range(data.n_roi))
-    directions = [int(x) for x in list(data._dir)]
-    sfs = data._sf
-    tfs = data._tf
+    directions = data.directions
+    spatial_frequencies = data.spatial_frequencies
+    temporal_frequencies = data.temporal_frequencies
 
     downsampled_gaussians = data.downsampled_gaussian
     oversampled_gaussians = data.oversampled_gaussian
@@ -56,15 +56,15 @@ def get_app() -> Dash:
         downsampled_gaussians=downsampled_gaussians,
         oversampled_gaussians=oversampled_gaussians,
         fit_outputs=fit_outputs,
-        sfs=sfs,
-        tfs=tfs,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
     )
     get_murakami_plot_callback(
         app=app,
         n_roi=n_roi,
         directions=directions,
-        sfs=sfs,
-        tfs=tfs,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
         oversampled_gaussians=oversampled_gaussians,
         responsive_rois=responsive_rois,
         config=data.config,
@@ -72,16 +72,16 @@ def get_app() -> Dash:
     get_polar_plot_callback(
         app=app,
         directions=directions,
-        sfs=sfs,
-        tfs=tfs,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
         downsampled_gaussians=downsampled_gaussians,
         median_subtracted_responses=median_subtracted_responses,
     )
     get_polar_plot_facet_callback(
         app=app,
         directions=directions,
-        sfs=sfs,
-        tfs=tfs,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
         downsampled_gaussians=downsampled_gaussians,
         median_subtracted_responses=median_subtracted_responses,
     )
