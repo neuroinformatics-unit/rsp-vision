@@ -16,8 +16,8 @@ def get_df_sf_tf_combo_plot(signal, data):
     start_frames_indexes = signal[signal["stimulus_onset"]].index
 
     for idx in start_frames_indexes:
-        start = idx  # - analysis.padding[0]
-        end = idx + n_frames_per_stim - 1  # + analysis.padding[1]
+        start = idx
+        end = idx + n_frames_per_stim - 1
         signal.loc[start:end, "stimulus_frames"] = counts
         signal.loc[start:end, "sf"] = signal.loc[idx, "sf"]
         signal.loc[start:end, "tf"] = signal.loc[idx, "tf"]
