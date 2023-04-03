@@ -263,7 +263,8 @@ class FrequencyResponsiveness:
 
             samples = np.zeros(
                 (
-                    len(self.data._dir) * self.data.n_triggers_per_stimulus,
+                    len(self.data.directions)
+                    * self.data.n_triggers_per_stimulus,
                     len(self.data.sf_tf_combinations),
                 )
             )
@@ -517,7 +518,7 @@ class FrequencyResponsiveness:
         direction.
         """
         roi_data = {}
-        for dir in self.data._dir:
+        for dir in self.data.directions:
             median_subtracted_response = self.get_median_subtracted_response(
                 self.data.responses, roi_id, dir
             )
@@ -525,21 +526,23 @@ class FrequencyResponsiveness:
                 median_subtracted_response
             )
             msr_array = self.get_median_subtracted_response_2d_matrix(
-                median_subtracted_response, self.data._sf, self.data._tf
+                median_subtracted_response,
+                self.data.spatial_frequencies,
+                self.data.temporal_frequencies,
             )
 
             parameters_to_fit_starting_point = [
                 peak_response,
                 sf_0,
                 tf_0,
-                np.std(self.data._sf, ddof=1),
-                np.std(self.data._tf, ddof=1),
+                np.std(self.data.spatial_frequencies, ddof=1),
+                np.std(self.data.temporal_frequencies, ddof=1),
                 self.data.config["fitting"]["power_law_exp"],
             ]
 
             best_result = fit_2D_gaussian_to_data(
-                self.data._sf,
-                self.data._tf,
+                self.data.spatial_frequencies,
+                self.data.temporal_frequencies,
                 msr_array,
                 parameters_to_fit_starting_point,
                 self.data.config,
@@ -555,13 +558,13 @@ class FrequencyResponsiveness:
     def calculate_downsampled_gaussian(self) -> None:
         self.data.downsampled_gaussian = {}
         for roi_id in range(self.data.n_roi):
-            for dir in self.data._dir:
+            for dir in self.data.directions:
                 self.data.downsampled_gaussian[
                     (roi_id, dir)
                 ] = create_gaussian_matrix(
                     self.data.fit_output[(roi_id, dir)],
-                    self.data._sf,
-                    self.data._tf,
+                    self.data.spatial_frequencies,
+                    self.data.temporal_frequencies,
                 )
 
     def calculate_oversampled_gaussian(
@@ -569,20 +572,20 @@ class FrequencyResponsiveness:
     ) -> None:
         self.data.oversampled_gaussian = {}
         for roi_id in range(self.data.n_roi):
-            for dir in self.data._dir:
+            for dir in self.data.directions:
                 self.data.oversampled_gaussian[
                     (roi_id, dir)
                 ] = create_gaussian_matrix(
                     self.data.fit_output[(roi_id, dir)],
                     np.logspace(
-                        log2(self.data._sf.min()),
-                        log2(self.data._sf.max()),
+                        log2(self.data.spatial_frequencies.min()),
+                        log2(self.data.spatial_frequencies.max()),
                         num=oversampling_factor,
                         base=2,
                     ),
                     np.logspace(
-                        log2(self.data._tf.min()),
-                        log2(self.data._tf.max()),
+                        log2(self.data.temporal_frequencies.min()),
+                        log2(self.data.temporal_frequencies.max()),
                         num=oversampling_factor,
                         base=2,
                     ),
