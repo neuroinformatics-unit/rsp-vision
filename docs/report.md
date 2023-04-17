@@ -68,4 +68,3 @@ After generating the Poisson-distributed data, the sign of each value is randoml
 | 37 |                     1 |           1 |                           2 |                    3 |                           0 |                  1 |
 | 38 |                     1 |           1 |                           1 |                    2 |                           0 |                  1 |
 | 39 |                     0 |           3 |                           2 |                    5 |                           0 |                  0 |
-
