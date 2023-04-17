@@ -1,8 +1,13 @@
+# these tests require complex fixtures which are defined in
+# tests/conftest.py. The fixtures are used to generate mock data
+# which is used to test the full functionality of the
+# FrequencyResponsiveness class. Their output is compared to
+# expected outputs which are stored in a pickle file.
+
+
 import numpy as np
 import pandas as pd
 import pytest
-from itertools import chain
-
 
 seeds = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11]
 
@@ -72,9 +77,7 @@ def test_nonparam_anova_over_rois(response, expected_outputs, seed):
         ),
         decimal_points,
     )
-    assert np.all(
-        p_values == p_values_expected
-    )
+    assert np.all(p_values == p_values_expected)
 
 
 @pytest.mark.parametrize("seed", seeds)
@@ -91,10 +94,15 @@ def test_perform_sign_tests(response, expected_outputs, seed):
 
     outputs = expected_outputs[str(seed)]
     p_st_expected = np.around(
-        np.fromiter(outputs["p_values"]["Sign test"].values, dtype=float), decimal_points
+        np.fromiter(outputs["p_values"]["Sign test"].values, dtype=float),
+        decimal_points,
     )
     p_wsrt_expected = np.around(
-        np.fromiter(outputs["p_values"]["Wilcoxon signed rank test"].values, dtype=float), decimal_points
+        np.fromiter(
+            outputs["p_values"]["Wilcoxon signed rank test"].values,
+            dtype=float,
+        ),
+        decimal_points,
     )
 
     assert np.all(p_st == p_st_expected)
@@ -112,7 +120,11 @@ def test_response_magnitude(response, expected_outputs, seed):
     magnitude = np.around(np.fromiter(magnitude, dtype=float), decimal_points)
     outputs = expected_outputs[str(seed)]
     magnitude_expected = np.around(
-        np.fromiter(outputs["magnitude_over_medians"]["magnitude"].values(), dtype=float), decimal_points
+        np.fromiter(
+            outputs["magnitude_over_medians"]["magnitude"].values(),
+            dtype=float,
+        ),
+        decimal_points,
     )
 
     assert np.all(magnitude == magnitude_expected)
@@ -132,3 +144,71 @@ def test_find_significant_rois(response, expected_outputs, seed):
     significant_rois_expected = set(outputs["responsive_rois"])
 
     assert significant_rois == significant_rois_expected
+
+
+@pytest.mark.parametrize("seed", seeds)
+def test_calculate_downsampled_gaussian(response, expected_outputs, seed):
+    _response = response(seed)
+
+    outputs = expected_outputs[str(seed)]
+
+    # let's use the same fit outputs in order to test just
+    # the creation of the downsampled gaussian matrix
+    _response.data.fit_output = outputs["fit_output"]
+    _response.calculate_downsampled_gaussian()
+
+    for key in _response.data.downsampled_gaussian.keys():
+        assert np.all(
+            np.around(_response.data.downsampled_gaussian[key], decimals=1)
+            == np.around(outputs["downsampled_gaussian"][key], decimals=1)
+        )
+
+
+@pytest.mark.parametrize("seed", seeds)
+def test_calculate_oversampled_gaussian(response, expected_outputs, seed):
+    _response = response(seed)
+
+    outputs = expected_outputs[str(seed)]
+
+    # let's use the same fit outputs in order to test just
+    # the creation of the downsampled gaussian matrix
+    _response.data.fit_output = outputs["fit_output"]
+    _response.calculate_oversampled_gaussian()
+
+    for key in _response.data.oversampled_gaussian.keys():
+        assert np.all(
+            np.around(_response.data.oversampled_gaussian[key], decimals=3)
+            == np.around(outputs["oversampled_gaussian"][key], decimals=3)
+        )
+
+
+@pytest.mark.parametrize("seed", seeds)
+def test_get_this_roi_fits_data(response, expected_outputs, seed):
+    _response = response(seed)
+    _response()
+    outputs = expected_outputs[str(seed)]
+
+    for roi_id in range(_response.data.n_roi):
+        for dir in _response.data.directions:
+            measured_preference = outputs["measured_preference"][(roi_id, dir)]
+            median_subtracted_response = outputs["median_subtracted_response"][
+                (roi_id, dir)
+            ]
+            # we do not test the fit output because it will change
+            # every time even if the seed is the same
+
+            assert np.all(
+                np.around(
+                    _response.data.measured_preference[(roi_id, dir)],
+                    decimals=3,
+                )
+                == np.around(measured_preference, decimals=3)
+            )
+
+            assert np.all(
+                np.around(
+                    _response.data.median_subtracted_response[(roi_id, dir)],
+                    decimals=3,
+                )
+                == np.around(median_subtracted_response, decimals=3)
+            )
