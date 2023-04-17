@@ -1,12 +1,15 @@
+import pathlib
+import pickle
+from functools import lru_cache
+
+import pytest
+
 from tests.test_integration.generate_mock_data import (
-    get_experimental_variables_mock,
     get_data_raw_object_mock,
+    get_experimental_variables_mock,
     get_photon_data_mock,
     get_response_mock,
 )
-import pytest
-import pickle
-import pathlib
 
 
 @pytest.fixture
@@ -26,6 +29,7 @@ def photon_data():
 
 @pytest.fixture
 def response():
+    @lru_cache(maxsize=None)  # Cache all computed responses
     def _responses(seed_number):
         return get_response_mock(seed_number)
 
