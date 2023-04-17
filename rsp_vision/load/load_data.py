@@ -28,7 +28,6 @@ def load_data(folder_name: str) -> Tuple[DataRaw, dict]:
         specs: specs object
         data_raw: list containing all raw data
     """
-
     config = read_config_file(config_path)
     folder_naming = FolderNamingSpecs(folder_name, config)
     folder_naming.extract_all_file_names()
@@ -69,7 +68,8 @@ def load_data_from_filename(
 
 
 def read_config_file(config_path: Path) -> dict:
-    """Reads the configuration file and returns the content as a dictionary.
+    """Reads the configuration file and returns the content as a
+    dictionary.
 
     Parameters
     ----------
@@ -80,7 +80,6 @@ def read_config_file(config_path: Path) -> dict:
     dict
         content of the configuration file
     """
-
     with open(config_path, "r") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
         logging.debug(f"Config file read from {config_path}")

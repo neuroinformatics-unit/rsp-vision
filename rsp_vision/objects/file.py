@@ -4,8 +4,7 @@ from .enums import AnalysisType, DataType
 
 
 class File:
-    """Class containing the name of the file, its path and its
-        extension.
+    """Class containing the name of the file, its path and its extension.
 
     Attributes
     ----------
