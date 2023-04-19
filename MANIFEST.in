@@ -4,10 +4,9 @@ include README.md
 recursive-include rsp_vision *.yml
 
 include *.py
-include *.yaml
-include *.yml
-include *.cruft.json
 
+exclude *.yml
+exclude *.cruft.json
 exclude *.yaml
 exclude tox.ini
 exclude .flake8
@@ -15,3 +14,4 @@ exclude .flake8
 recursive-exclude tests *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
+recursive-exclude * *.yml
