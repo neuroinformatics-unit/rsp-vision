@@ -1,8 +1,7 @@
 import pathlib
-import pickle
 from functools import lru_cache
-import pandas as pd
 
+import pandas as pd
 import pytest
 
 from tests.test_integration.generate_mock_data import (
