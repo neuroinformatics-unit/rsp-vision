@@ -170,11 +170,9 @@ class PhotonData:
         self.n_roi: int = data_raw.frames[0].shape[0]
         self.n_frames_per_session: int = data_raw.frames[0].shape[1]
         self.day_stim: np.ndarray = data_raw.day["stimulus"]  # seems useless
-        grey_or_static = (
-            data_raw.stim[0]["stimulus"]["grey_or_static"]
-            .tobytes()
-            .decode("utf-8")
-        )
+
+        
+        grey_or_static = "".join([chr(int(i)) for i in data_raw.stim[0]["stimulus"]["grey_or_static"]])
         if grey_or_static in [
             "grey_static_drift",
             "grey_static_drift_switch",
