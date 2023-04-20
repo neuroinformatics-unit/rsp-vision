@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -297,7 +297,8 @@ def get_murakami_plot_callback(
     sfs: np.ndarray,
     tfs: np.ndarray,
     oversampled_gaussians: Dict[Tuple[int, int], np.ndarray],
-    responsive_rois: List[int],
+    responsive_rois: Set[int],
+    config: dict,
 ) -> None:
     @app.callback(
         Output("murakami-plot", "children"),
@@ -309,19 +310,19 @@ def get_murakami_plot_callback(
         ],
     )
     def murakami_plot(
-        _roi_id: int, _dire: dict, rois_to_show: list, scale: str
+        _roi_id: int, _dire: dict, rois_to_show: str, scale: str
     ) -> html.Div:
         _dire = _dire["value"]
 
         colors = px.colors.qualitative.Light24[:n_roi]
 
-        def figure_for_murakami_plot(roi_id):
-            fig = go.Figure()
+        fig = go.Figure()
 
+        def figure_for_murakami_plot(roi_id):
             color = colors[roi_id]
             peaks = {
                 (roi_id, dire): find_peak_coordinates(
-                    oversampled_gaussians[(roi_id, dire)], sfs, tfs
+                    oversampled_gaussians[(roi_id, dire)], sfs, tfs, config
                 )
                 for dire in directions
             }
