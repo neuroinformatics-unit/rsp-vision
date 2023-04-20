@@ -40,7 +40,10 @@ def exception_handler(func: object) -> object:
 
 @exception_handler
 def analysis_pipeline() -> None:
-    """Entry point of the program. CLI or GUI functionality is added here."""
+    """Entry point of the program.
+
+    CLI or GUI functionality is added here.
+    """
     # pipeline draft
     start_logging()
 
@@ -74,9 +77,11 @@ def analysis_pipeline() -> None:
 
 
 def start_logging(module=None):
-    """Start logging to file and console. The log level to file is set to
-    DEBUG, to console to INFO. The log file is saved in the current working
-    directory. Uses fancylog to format the log messages.
+    """Start logging to file and console.
+
+    The log level to file is set to DEBUG, to console to INFO. The log file is
+    saved in the current working directory. Uses fancylog to format the log
+    messages.
     """
     if module is None:
         module = get_module_for_logging()

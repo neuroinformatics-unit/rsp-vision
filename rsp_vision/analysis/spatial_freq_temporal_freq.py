@@ -15,35 +15,44 @@ from rsp_vision.objects.photon_data import PhotonData
 
 
 class FrequencyResponsiveness:
-    """
-    Class for analyzing responses to stimuli with different
-    spatial and temporal frequencies.
-    """
+    """Class for analyzing responses to stimuli with different spatial and
+    temporal frequencies."""
 
     def __init__(self, data: PhotonData):
         # modify the signal dataframe and responses dataframe in place
         self.data = data
 
     def __call__(self) -> PhotonData:
-        """
-        Calculate the responsiveness of each ROI in the signal dataframe.
+        """Calculate the responsiveness of each ROI and fit Gaussian models
+        to the response data.
 
         This method calculates the responsiveness of each ROI in the signal
         dataframe, based on the mean response and mean baseline signals
         calculated in the calculate_mean_response_and_baseline method.
-        First, it performs three different statistical tests to determine
-        if the response is significantly different from the baseline:
-        a Kruskal-Wallis test, a Sign test, and a Wilcoxon signed rank test.
-        The resulting p-values for each ROI are stored in a pandas DataFrame
-        and logged for debugging purposes.
+        Statistical tests are performed to determine if the response is
+        significantly different from the baseline, and the p-values for each
+        ROI are stored in a pandas DataFrame and logged for debugging
+        purposes.
 
-        Next, the method calculates the response magnitude for each ROI, by
-        taking the  difference between the mean response and mean baseline
-        signals, and dividing by standard deviation of the baseline signal.
-        The response and baseline mean are calculated over the median traces.
+        The method also computes the response magnitude for each combination
+        of spatial and temporal frequency and ROI. The response magnitude is
+        defined as the difference between the mean of the median response
+        signal and the mean of the median baseline signal, divided by the
+        standard deviation of the median baseline signal. The response and
+        baseline mean are calculated over the median traces. The resulting
+        response magnitudes are stored in a Pandas DataFrame and logged for
+        debugging purposes.
 
-        Finally, the method identifies the ROIs that show significant
-        responsiveness based on the results of the statistical tests.
+        Finally, the method fits Gaussian models to the response data for each
+        ROI using multiprocessing. The resulting fits are used to calculate
+        oversampled and downsampled response matrices, which are stored in the
+        `PhotonData` object.
+
+        Returns
+        -------
+        PhotonData
+            A `PhotonData` object containing the processed signal data and
+            Gaussian model fits.
         """
         self.calculate_mean_response_and_baseline()
         logging.info(f"Edited signal dataframe:{self.data.responses.head()}")
@@ -92,9 +101,8 @@ class FrequencyResponsiveness:
     def calculate_mean_response_and_baseline(
         self,
     ) -> None:
-        """
-        Calculate the mean response and mean baseline signals for each ROI
-        in the signal dataframe.
+        """Calculate the mean response and mean baseline signals for each
+        ROI in the signal dataframe.
 
         This method calculates the mean response and mean baseline signals
         for each ROI in the signal dataframe,
@@ -163,8 +171,7 @@ class FrequencyResponsiveness:
     def get_response_and_baseline_windows(
         self,
     ) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Get the window of indices corresponding to the response and
+        """Get the window of indices corresponding to the response and
         baseline periods for each stimulus presentation.
 
         Returns:
@@ -233,14 +240,13 @@ class FrequencyResponsiveness:
         return window_mask_response, window_mask_baseline
 
     def nonparam_anova_over_rois(self) -> dict:
-        """
-        Perform a nonparametric ANOVA test over each ROI in the dataset.
+        """Perform a nonparametric ANOVA test over each ROI in the dataset.
         This test is based on the Kruskal-Wallis H Test, which compares
         whether more than two independent samples have different
-        distributions. For each ROI, this method creates a table with one row
-        for each combination of spatial and temporal frequencies, and one
-        column for each presentation of the stimulus. Then, it applies the
-        Kruskal-Wallis H Test to determine whether the distribution of
+        distributions. For each ROI, this method creates a table with one
+        row for each combination of spatial and temporal frequencies, and
+        one column for each presentation of the stimulus. Then, it applies
+        the Kruskal-Wallis H Test to determine whether the distribution of
         responses across different stimuli is significantly different. The
         resulting p-values are returned as a dictionary where the keys are
         the ROI IDs and the values are the p-values for each ROI.
@@ -250,9 +256,7 @@ class FrequencyResponsiveness:
         dict
             A dictionary where the keys are the ROI IDs and the values are
             the p-values for each ROI.
-
         """
-
         p_values = {}
         for roi in range(self.data.n_roi):
             roi_responses = pd.melt(
@@ -283,9 +287,8 @@ class FrequencyResponsiveness:
         return p_values
 
     def perform_sign_tests(self) -> Tuple[Dict[int, float], Dict[int, float]]:
-        """
-        Perform sign test and Wilcoxon signed rank test on the subtracted
-        response data for each ROI.
+        """Perform sign test and Wilcoxon signed rank test on the
+        subtracted response data for each ROI.
 
         Returns:
             A tuple containing two dictionaries with ROI IDs as keys and
@@ -298,7 +301,6 @@ class FrequencyResponsiveness:
             The test checks whether the distribution of differences between
             the response and baseline periods is shifted to the right.
         """
-
         p_st = {}
         p_wsrt = {}
         for roi in range(self.data.n_roi):
@@ -322,9 +324,8 @@ class FrequencyResponsiveness:
         return p_st, p_wsrt
 
     def response_magnitude(self) -> pd.DataFrame:
-        """
-        Compute the response magnitude for each combination of spatial and
-        temporal frequency and ROI.
+        """Compute the response magnitude for each combination of spatial
+        and temporal frequency and ROI.
 
         Returns:
             A Pandas DataFrame with the following columns:
@@ -338,7 +339,6 @@ class FrequencyResponsiveness:
                 - "magnitude": the response magnitude, defined as
                     (response_mean - baseline_mean) / baseline_std
         """
-
         magnitude_over_medians = pd.DataFrame(
             columns=[
                 "roi",
@@ -408,9 +408,8 @@ class FrequencyResponsiveness:
     def find_significant_rois(
         self, p_values: Dict[str, float], magnitude_over_medians: pd.DataFrame
     ) -> Set[int]:
-        """
-        Returns a set of ROIs that are significantly responsive, based on
-        statistical tests and a response magnitude threshold.
+        """Returns a set of ROIs that are significantly responsive, based
+        on statistical tests and a response magnitude threshold.
 
         The method first identifies ROIs that show significant differences
         across at least one condition using the Kruskal-Wallis test.
@@ -459,6 +458,29 @@ class FrequencyResponsiveness:
 
     @staticmethod
     def get_preferred_sf_tf(median_subtracted_response: pd.DataFrame) -> tuple:
+        """Compute the preferred spatial and temporal frequency and peak
+        response.
+
+        This method computes the preferred spatial frequency, preferred
+        temporal frequency, and peak response of a neuron from its
+        median-subtracted response matrix. The preferred spatial and
+        temporal frequencies are the indices of the maximum value of the
+        matrix. The peak response is the value of the matrix at the preferred
+        spatial and temporal frequencies.
+
+        Parameters
+        ----------
+        median_subtracted_response : pd.DataFrame
+            A Pandas DataFrame containing the median-subtracted response
+            matrix for a neuron, where the rows correspond to spatial
+            frequencies and the columns correspond to temporal frequencies.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the preferred spatial frequency, preferred
+            temporal frequency, and peak response of the neuron.
+        """
         sf_0, tf_0 = median_subtracted_response["subtracted"].idxmax()
         peak_response = median_subtracted_response.loc[(sf_0, tf_0)][
             "subtracted"
@@ -469,6 +491,32 @@ class FrequencyResponsiveness:
     def get_median_subtracted_response(
         responses: pd.DataFrame, roi_id: int, dir: int
     ) -> pd.DataFrame:
+        """Compute the median-subtracted response matrix for a neuron.
+
+        This method computes the median-subtracted response matrix for a
+        neuron, given its responses to a set of drifting gratings of different
+        spatial frequencies, temporal frequencies, and directions. The
+        median-subtracted response matrix is computed by subtracting the
+        median baseline signal from the median response signal for each
+        combination of spatial frequency and temporal frequency.
+
+        Parameters
+        ----------
+        responses : pd.DataFrame
+            A Pandas DataFrame containing the responses of a neuron to a set
+            of drifting gratings.
+        roi_id : int
+            The index of the neuron in the responses DataFrame.
+        direction : int
+            The direction of the drifting gratings (0 or 1).
+
+        Returns
+        -------
+        pd.DataFrame
+            A Pandas DataFrame containing the median-subtracted response
+            matrix for the neuron, where the rows correspond to spatial
+            frequencies and the columns correspond to temporal frequencies.
+        """
         median_subtracted_response = (
             responses[
                 (responses.roi_id == roi_id) & (responses.direction == dir)
@@ -484,6 +532,33 @@ class FrequencyResponsiveness:
         sf: np.ndarray,
         tf: np.ndarray,
     ) -> np.ndarray:
+        """This method converts the median-subtracted response DataFrame to
+        a 2D matrix, where each row corresponds to a spatial frequency and
+        each column corresponds to a temporal frequency. The values in the
+        matrix correspond to the median-subtracted response for each
+        combination of spatial frequency and temporal frequency.
+
+        Parameters
+        ----------
+        median_subtracted_response : pd.DataFrame
+            A Pandas DataFrame containing the median-subtracted response
+            matrix for a neuron, where the rows correspond to spatial
+            frequencies and the columns correspond to temporal frequencies.
+        sf : np.ndarray
+            An array containing the spatial frequencies used in the
+            experiment.
+        tf : np.ndarray
+            An array containing the temporal frequencies used in the
+            experiment.
+
+        Returns
+        -------
+        np.ndarray
+            A 2D NumPy array containing the median-subtracted response for
+            each combination of spatial frequency and temporal frequency,
+            where the rows correspond to spatial frequencies and the columns
+            correspond to temporal frequencies.
+        """
         median_subtracted_response_2d_matrix = np.zeros((len(sf), len(tf)))
         for i, s in enumerate(sf):
             for j, t in enumerate(tf):
@@ -493,6 +568,41 @@ class FrequencyResponsiveness:
         return median_subtracted_response_2d_matrix
 
     def get_all_fits(self) -> None:
+        """Calculate the Gaussian fits for all ROIs using multiprocessing.
+
+        This method computes the Gaussian fits for all ROIs using the
+        `get_this_roi_fits_data` method in parallel across multiple processes
+        using the Python `multiprocessing` module. The results are stored in
+        the `measured_preference`, `fit_output`, and
+        `median_subtracted_response` attributes of the `PhotonData` object,
+        which are dictionaries mapping ROI index and SF-TF combination to the
+        corresponding values. Each dictionary maps the following keys to their
+        corresponding values:
+
+        - "peak_response": the peak response of the neuron in the given ROI
+            and SF-TF combination
+        - "sf_0": the preferred spatial frequency of the neuron in the given
+            ROI and SF-TF combination
+        - "tf_0": the preferred temporal frequency of the neuron in the given
+            ROI and SF-TF combination
+        - "sigma_sf": the spatial frequency tuning width of the neuron in the
+            given ROI and SF-TF combination
+        - "sigma_tf": the temporal frequency tuning width of the neuron in the
+            given ROI and SF-TF combination
+        - "zeta": (𝜁) the power-law exponent that controls the dependence of
+            temporal frequency preference on spatial frequency
+        - "fit_result": the result of the least-squares fit of the 2D Gaussian
+            to the response matrix for the given ROI and SF-TF combination
+        - "median_subtracted_response": the median-subtracted response matrix
+            for the given ROI and SF-TF combination
+
+        The results are stored in dictionaries to allow easy access to the fits
+        for each ROI and SF-TF combination. The dictionaries are stored as
+        attributes of the `PhotonData` object.
+
+        Returns:
+            None.
+        """
         self.data.measured_preference = {}
         self.data.fit_output = {}
         self.data.median_subtracted_response = {}
@@ -513,9 +623,36 @@ class FrequencyResponsiveness:
                     ] = roi_data[key][2]
 
     def get_this_roi_fits_data(self, roi_id: int) -> dict:
-        """
-        Returns a dictionary with the best fit parameters for each ROI and
-        direction.
+        """Calculate the best fit parameters for each ROI and direction.
+        This method takes as input the ROI index, and loops over the
+        directions to calculate the best fit parameters for each spatial
+        and temporal frequency. First, it calls the
+        get_median_subtracted_response method to obtain the median-
+        subtracted response matrix for the given ROI and direction. Next,
+        it calculates the preferred spatial and temporal frequencies, as
+        well as the peak response, using the get_preferred_sf_tf method.
+        Then, it constructs a 2D matrix of the median-subtracted response
+        values using the get_median_subtracted_response_2d_matrix method.
+
+        Finally, the method performs a 2D Gaussian fit to the 2D response
+        matrix using the fit_2D_gaussian_to_data method. The resulting best
+        fit parameters are stored in a dictionary, where the keys are the
+        directions, and the values are tuples containing the
+        preferred spatial and temporal frequencies and the peak response
+        amplitude, the best fit parameter values obtained from the Gaussian
+        fit, and the median-subtracted response matrix.
+
+        Args:
+            roi_id (int): The index of the ROI for which to calculate the best
+                fit parameters.
+
+        Returns:
+            dict: A dictionary with the best fit parameters for each direction.
+                The keys are the directions, and the values are tuples
+                containing the preferred spatial and temporal frequencies
+                and the peak response amplitude, the best fit parameter values
+                obtained from the Gaussian fit, and the median-subtracted
+                response matrix.
         """
         roi_data = {}
         for dir in self.data.directions:
@@ -556,6 +693,16 @@ class FrequencyResponsiveness:
         return roi_data
 
     def calculate_downsampled_gaussian(self) -> None:
+        """Calculate the 2D Gaussian fits for each ROI and direction using
+        the parameters obtained from fitting the 2D Gaussian model to the
+        median subtracted response matrix. Downsampled refers to the fact
+        that the Gaussian fit is calculated using the spatial and temporal
+        frequencies used in the original response matrix, rather than the
+        oversampled frequencies.
+
+        Returns:
+            None
+        """
         self.data.downsampled_gaussian = {}
         for roi_id in range(self.data.n_roi):
             for dir in self.data.directions:
@@ -570,6 +717,25 @@ class FrequencyResponsiveness:
     def calculate_oversampled_gaussian(
         self, oversampling_factor: int = 100
     ) -> None:
+        """Calculate an oversampled Gaussian fit for each ROI and
+        direction.
+
+        The method creates a two-dimensional Gaussian matrix with an
+        oversampling factor of 100, in both the spatial and temporal domains.
+        It uses the fitted parameters obtained from fit_2D_gaussian_to_data to
+        calculate the values of the Gaussian matrix. The spatial and temporal
+        frequency arrays used to create the matrix are generated using NumPy's
+        logspace method with a base of 2. This conversion from a linear to a
+        logarithmic scale is done to facilitate visualization of the matrix and
+        to move the representation out of the frequency domain. Using a
+        logarithmic scale makes it easier to display the low-frequency
+        information, where the fit is more sensitive, and reduces the number of
+        values needed to accurately represent the data.
+
+        The resulting Gaussian matrices are stored in the
+        "oversampled_gaussian" dictionary of the PhotonData object, with keys
+        corresponding to each ROI and direction.
+        """
         self.data.oversampled_gaussian = {}
         for roi_id in range(self.data.n_roi):
             for dir in self.data.directions:
