@@ -91,11 +91,11 @@ def generate_report(proportions, count_significance):
     report += " array are integers drawn from a Poisson distribution with an "
     report += "expected value that is randomly generated between 0 and 50 for "
     report += "each seed.\n\n"
-    report += "After generating the Poisson-distributed data, the sign of each "
-    report += "value is randomly flipped to create a more diverse set of "
-    report += "data.\n\n"
+    report += "After generating the Poisson-distributed data, the sign of "
+    report += "each value is randomly flipped to create a more diverse set "
+    report += "of data.\n\n"
 
-    report += f"## Proportions of Significant Results\n\n"
+    report += "## Proportions of Significant Results\n\n"
 
     report += (
         pd.DataFrame.from_dict(
@@ -110,7 +110,7 @@ def generate_report(proportions, count_significance):
         + "\n"
     )
 
-    report += f"## Count of Significant Results\n\n"
+    report += "## Count of Significant Results\n\n"
     report += (
         count_significance[
             [
