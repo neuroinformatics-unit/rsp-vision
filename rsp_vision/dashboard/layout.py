@@ -52,6 +52,36 @@ def get_sidebar(responsive_rois, rois, directions):
                 value="linear",
                 id="murakami-plot-scale",
             ),
+            html.Br(),
+            html.H3("Polar plot controller"),
+            html.H4(
+                "Show gaussian fit or original median subtracted response"
+            ),
+            dcc.RadioItems(
+                [
+                    {"label": "Show gaussian fit", "value": "gaussian"},
+                    {
+                        "label": "Show original median subtracted response",
+                        "value": "original",
+                    },
+                ],
+                value="original",
+                id="polar-plot-gaussian-or-original",
+            ),
+            html.Br(),
+            html.H4("Show mean, median or cumulative response"),
+            dcc.RadioItems(
+                [
+                    {"label": "Show mean response", "value": "mean"},
+                    {"label": "Show median response", "value": "median"},
+                    {
+                        "label": "Show cumulative response",
+                        "value": "cumulative",
+                    },
+                ],
+                value="mean",
+                id="polar-plot-mean-or-median-or-cumulative",
+            ),
         ],
         style=SIDEBAR_STYLE,
     )
