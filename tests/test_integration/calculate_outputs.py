@@ -29,6 +29,7 @@ def calculate_stats_outputs(seeds):
         data = response.data
 
         outputs[str(seed)] = {
+            "responses": data.responses.to_dict(),
             "p_values": data.p_values,
             "magnitude_over_medians": data.magnitude_over_medians.to_dict(),
             "responsive_rois": data.responsive_rois,

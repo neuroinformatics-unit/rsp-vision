@@ -1,10 +1,13 @@
 import numpy as np
 import pandas as pd
+import pytest
+from itertools import chain
 
 
-def test_get_response_and_baseline_windows(
-    get_variables, get_freq_response_instance
-):
+seeds = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11]
+
+
+def test_get_response_and_baseline_windows(experimental_variables, response):
     (
         _,
         n_roi,
@@ -12,13 +15,13 @@ def test_get_response_and_baseline_windows(
         n_stim,
         _,
         _,
-    ) = get_variables
+    ) = experimental_variables
 
-    response = get_freq_response_instance
+    _response = response(1)
     (
         window_mask_response,
         window_mask_baseline,
-    ) = response.get_response_and_baseline_windows()
+    ) = _response.get_response_and_baseline_windows()
 
     assert (
         len(window_mask_baseline)
@@ -27,33 +30,58 @@ def test_get_response_and_baseline_windows(
     )
 
 
-def test_calculate_mean_response_and_baseline(get_freq_response_instance):
-    response = get_freq_response_instance
-    response.calculate_mean_response_and_baseline()
+@pytest.mark.parametrize("seed", seeds)
+def test_calculate_mean_response_and_baseline(
+    response, expected_outputs, seed
+):
+    _response = response(seed)
+    _response.calculate_mean_response_and_baseline()
 
-    # based on random seed = 101
-    assert int(response.data.responses["subtracted"].values[1]) == 34
+    outputs = expected_outputs[str(seed)]
+
+    assert np.all(
+        np.around(
+            np.fromiter(
+                _response.data.responses["subtracted"].values, dtype=float
+            ),
+            decimals=3,
+        )
+        == np.around(
+            np.fromiter(
+                outputs["responses"]["subtracted"].values(), dtype=float
+            ),
+            decimals=3,
+        )
+    )
 
 
-def test_nonparam_anova_over_rois(get_freq_response_instance):
-    response = get_freq_response_instance
-    response.calculate_mean_response_and_baseline()
-    p_values = response.nonparam_anova_over_rois()
+@pytest.mark.parametrize("seed", seeds)
+def test_nonparam_anova_over_rois(response, expected_outputs, seed):
+    _response = response(seed)
+    _response.calculate_mean_response_and_baseline()
+    p_values = _response.nonparam_anova_over_rois()
 
     decimal_points = 3
     p_values = np.around(
         np.fromiter(p_values.values(), dtype=float), decimal_points
     )
-    # based on random seed = 101
-    p_values_seed_101 = np.array([0.055, 0.473, 0.324, 0.127, 0.653])
+    outputs = expected_outputs[str(seed)]
+    p_values_expected = np.around(
+        np.fromiter(
+            outputs["p_values"]["Kruskal-Wallis test"].values, dtype=float
+        ),
+        decimal_points,
+    )
+    assert np.all(
+        p_values == p_values_expected
+    )
 
-    assert np.all(p_values == p_values_seed_101)
 
-
-def test_perform_sign_tests(get_freq_response_instance):
-    response = get_freq_response_instance
-    response.calculate_mean_response_and_baseline()
-    p_st, p_wsrt = response.perform_sign_tests()
+@pytest.mark.parametrize("seed", seeds)
+def test_perform_sign_tests(response, expected_outputs, seed):
+    _response = response(seed)
+    _response.calculate_mean_response_and_baseline()
+    p_st, p_wsrt = _response.perform_sign_tests()
 
     decimal_points = 3
     p_st = np.around(np.fromiter(p_st.values(), dtype=float), decimal_points)
@@ -61,60 +89,46 @@ def test_perform_sign_tests(get_freq_response_instance):
         np.fromiter(p_wsrt.values(), dtype=float), decimal_points
     )
 
-    # based on random seed = 101
-    p_st_seed_101 = np.array([0.968, 0.924, 0.032, 0.271, 0.846])
-    p_wsrt_seed_101 = np.array([0.855, 0.928, 0.18, 0.195, 0.55])
+    outputs = expected_outputs[str(seed)]
+    p_st_expected = np.around(
+        np.fromiter(outputs["p_values"]["Sign test"].values, dtype=float), decimal_points
+    )
+    p_wsrt_expected = np.around(
+        np.fromiter(outputs["p_values"]["Wilcoxon signed rank test"].values, dtype=float), decimal_points
+    )
 
-    assert np.all(p_st == p_st_seed_101)
-    assert np.all(p_wsrt == p_wsrt_seed_101)
+    assert np.all(p_st == p_st_expected)
+    assert np.all(p_wsrt == p_wsrt_expected)
 
 
-def test_response_magnitude(get_freq_response_instance):
-    response = get_freq_response_instance
-    response.calculate_mean_response_and_baseline()
+@pytest.mark.parametrize("seed", seeds)
+def test_response_magnitude(response, expected_outputs, seed):
+    _response = response(seed)
+    _response.calculate_mean_response_and_baseline()
 
-    magnitude = response.response_magnitude()["magnitude"]
+    magnitude = _response.response_magnitude()["magnitude"]
 
     decimal_points = 3
     magnitude = np.around(np.fromiter(magnitude, dtype=float), decimal_points)
-    # based on random seed = 101
-    magnitude_seed_101 = np.array(
-        [
-            0.2,
-            -0.118,
-            0.163,
-            -0.282,
-            -0.179,
-            0.17,
-            -0.428,
-            -0.364,
-            -0.238,
-            0.356,
-            0.028,
-            0.089,
-            0.698,
-            -0.224,
-            0.302,
-            -0.049,
-            0.014,
-            0.346,
-            -0.315,
-            -0.062,
-        ]
+    outputs = expected_outputs[str(seed)]
+    magnitude_expected = np.around(
+        np.fromiter(outputs["magnitude_over_medians"]["magnitude"].values(), dtype=float), decimal_points
     )
 
-    assert np.all(magnitude == magnitude_seed_101)
+    assert np.all(magnitude == magnitude_expected)
 
 
-def test_find_significant_rois(get_freq_response_instance):
-    response = get_freq_response_instance
-    response.calculate_mean_response_and_baseline()
+@pytest.mark.parametrize("seed", seeds)
+def test_find_significant_rois(response, expected_outputs, seed):
+    _response = response(seed)
+    _response.calculate_mean_response_and_baseline()
     p_values = pd.DataFrame()
-    p_values["Kruskal-Wallis test"] = response.nonparam_anova_over_rois()
-    magnitude = response.response_magnitude()
+    p_values["Kruskal-Wallis test"] = _response.nonparam_anova_over_rois()
+    magnitude = _response.response_magnitude()
 
-    significant_rois = response.find_significant_rois(p_values, magnitude)
+    significant_rois = _response.find_significant_rois(p_values, magnitude)
 
-    # based on random seed = 101
-    # in this case, only the first ROI is significant
-    assert significant_rois == {0}
+    outputs = expected_outputs[str(seed)]
+    significant_rois_expected = set(outputs["responsive_rois"])
+
+    assert significant_rois == significant_rois_expected
