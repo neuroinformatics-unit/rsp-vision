@@ -579,20 +579,24 @@ class FrequencyResponsiveness:
         corresponding values. Each dictionary maps the following keys to their
         corresponding values:
 
-        - "peak_response": the peak response of the neuron in the given ROI
+        - "measured_preference": a tuple containing the preferred spatial
+            frequency, preferred temporal frequency, and peak response of the
+            neuron in the given ROI and SF-TF combination
+        - "fit_output": the result of the least-squares fit of the 2D Gaussian
+            to the response matrix for the given ROI and SF-TF combination.
+            It contains the following parameters:
+            - "peak_response": the peak response of the neuron in the given ROI
             and SF-TF combination
-        - "sf_0": the preferred spatial frequency of the neuron in the given
-            ROI and SF-TF combination
-        - "tf_0": the preferred temporal frequency of the neuron in the given
-            ROI and SF-TF combination
-        - "sigma_sf": the spatial frequency tuning width of the neuron in the
-            given ROI and SF-TF combination
-        - "sigma_tf": the temporal frequency tuning width of the neuron in the
-            given ROI and SF-TF combination
-        - "zeta": (𝜁) the power-law exponent that controls the dependence of
-            temporal frequency preference on spatial frequency
-        - "fit_result": the result of the least-squares fit of the 2D Gaussian
-            to the response matrix for the given ROI and SF-TF combination
+            - "sf_0": the preferred spatial frequency of the neuron in the
+                given ROI and SF-TF combination
+            - "tf_0": the preferred temporal frequency of the neuron in the
+                given ROI and SF-TF combination
+            - "sigma_sf": the spatial frequency tuning width of the neuron in
+                the given ROI and SF-TF combination
+            - "sigma_tf": the temporal frequency tuning width of the neuron in
+                the given ROI and SF-TF combination
+            - "zeta": (𝜁) the power-law exponent that controls the dependence
+                of temporal frequency preference on spatial frequency
         - "median_subtracted_response": the median-subtracted response matrix
             for the given ROI and SF-TF combination
 
