@@ -1,8 +1,10 @@
 import numpy as np
 import pytest
 
-from rsp_vision.analysis.spatial_freq_temporal_freq import FrequencyAnalysis
-from rsp_vision.analysis.utils import get_fps
+from rsp_vision.analysis.spatial_freq_temporal_freq import (
+    FrequencyResponsiveness,
+)
+from rsp_vision.load.config_switches import get_fps
 from rsp_vision.objects.data_raw import DataRaw
 from rsp_vision.objects.enums import PhotonType
 from rsp_vision.objects.photon_data import PhotonData
@@ -186,14 +188,13 @@ def get_photon_data(get_data_raw_object, get_config):
 
 
 @pytest.fixture
-def get_sf_tf_instance(get_config, get_data_raw_object):
+def get_freq_response_instance(get_config, get_data_raw_object):
     pt = PhotonType.TWO_PHOTON
-    yield FrequencyAnalysis(
+    yield FrequencyResponsiveness(
         PhotonData(
             data_raw=get_data_raw_object,
             photon_type=pt,
             config=get_config,
             deactivate_checks=True,
-        ),
-        photon_type=pt,
+        )
     )

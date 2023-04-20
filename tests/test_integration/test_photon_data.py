@@ -18,7 +18,12 @@ def test_make_signal_dataframe(
     signal = photon_data.make_signal_dataframe(get_data_raw_object)
     n_sessions, n_roi, len_session, _, _, _ = get_variables
 
-    assert signal.shape == (len_session * n_sessions * n_roi, 10)
+    number_of_columns = 12
+
+    assert signal.shape == (
+        len_session * n_sessions * n_roi,
+        number_of_columns,
+    )
 
 
 def test_get_stimuli(get_photon_data, get_data_raw_object, get_variables):
