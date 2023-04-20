@@ -1,10 +1,12 @@
-import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, dcc, html
 
-from rsp_vision.analysis.gaussians_calculations import fit_elliptical_gaussian
-from rsp_vision.dashboard.query_dataframes import get_dataframe_for_facet_plot
+from rsp_vision.dashboard.query_dataframes import (
+    fit_elliptical_gaussian,
+    get_dataframe_for_facet_plot,
+    get_median_subtracted_response,
+)
 
 
 def get_update_fig_all_sessions_callback(app: Dash, signal) -> None:
@@ -90,27 +92,11 @@ def get_responses_heatmap_callback(app: Dash, responses, data) -> None:
         ],
     )
     def responses_heatmap(roi_id, dir):
-        median_subtracted_response = (
-            responses[
-                (responses.roi_id == roi_id) & (responses.direction == dir)
-            ]
-            .groupby(["sf", "tf"])[["subtracted"]]
-            .median()
+        msr_for_plotting = get_median_subtracted_response(
+            responses, roi_id, dir, data._sf[::-1], data._tf
         )
-        sfs = data._sf[::-1]
-        tfs = data._tf
-
-        array = np.zeros((len(sfs), len(tfs)))
-        for i, sf in enumerate(sfs):
-            for j, tf in enumerate(tfs):
-                array[i, j] = median_subtracted_response.loc[(sf, tf)][
-                    "subtracted"
-                ]
-
-        y_labels = list(map(str, sfs.tolist()))
-        x_labels = list(map(str, tfs.tolist()))
-
-        fig = px.imshow(array, x=x_labels, y=y_labels)
+        x_labels, y_labels = get_labels(data, sf_inverted=True)
+        fig = px.imshow(msr_for_plotting, x=x_labels, y=y_labels)
 
         return html.Div(
             dcc.Graph(
@@ -132,8 +118,8 @@ def get_gaussian_plot_callback(app: Dash, responses, data) -> None:
         R = fit_elliptical_gaussian(
             data._sf[::-1], data._tf, responses, roi_id, data.config, dir
         )
-        y_labels = list(map(str, data._sf.tolist()))
-        x_labels = list(map(str, data._tf.tolist()))
+
+        x_labels, y_labels = get_labels(data, sf_inverted=True)
         fig = px.imshow(R, x=x_labels, y=y_labels, aspect="equal")
 
         return html.Div(
@@ -142,3 +128,13 @@ def get_gaussian_plot_callback(app: Dash, responses, data) -> None:
                 figure=fig,
             )
         )
+
+
+def get_labels(data, sf_inverted=True):
+    if sf_inverted:
+        y_labels = list(map(str, data._sf[::-1].tolist()))
+    else:
+        y_labels = list(map(str, data._sf.tolist()))
+    x_labels = list(map(str, data._tf.tolist()))
+
+    return x_labels, y_labels
