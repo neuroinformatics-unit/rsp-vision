@@ -5,9 +5,7 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 from dash import Dash, Input, Output, dcc, html
 
-from rsp_vision.dashboard.callbacks.plotting_helpers import (
-    fit_correlation,
-)
+from rsp_vision.dashboard.callbacks.plotting_helpers import fit_correlation
 
 
 def get_andermann_gaussian_plot_callback(

@@ -4,7 +4,6 @@ from typing import Dict, List, Set, Tuple
 import numpy as np
 import pandas as pd
 import plotly.express as px
-
 from dash import Dash, Input, Output, dcc, html
 
 from rsp_vision.dashboard.callbacks.plotting_helpers import (
