@@ -1,9 +1,11 @@
 include LICENSE
 include README.md
-
-recursive-include rsp_vision *.yml
-
 include *.py
+include *.yaml
+imclude *.yml
+
+recursive-include docs *.md
+recursive-include docs *.png
 
 exclude *.yml
 exclude *.cruft.json
@@ -11,6 +13,7 @@ exclude *.yaml
 exclude tox.ini
 exclude .flake8
 
+recursive-exclude rsp_vision/config *.yml
 recursive-exclude tests *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
