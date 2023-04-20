@@ -1,7 +1,6 @@
 import logging
 import pickle
 import sys
-from typing import Any, Tuple
 
 import rich
 from fancylog import fancylog
@@ -29,7 +28,7 @@ def exception_handler(func: object) -> object:
         decorated function
     """
 
-    def inner_function(*args: Tuple[Any], **kwargs: Any) -> None:
+    def inner_function(*args, **kwargs):
         try:
             func(*args, **kwargs)
         except Exception as e:
@@ -77,7 +76,7 @@ def analysis_pipeline() -> None:
         logging.info("Analysis saved")
 
 
-def start_logging(module: str = None) -> None:
+def start_logging(module=None):
     """Start logging to file and console.
 
     The log level to file is set to DEBUG, to console to INFO. The log file is
@@ -92,7 +91,7 @@ def start_logging(module: str = None) -> None:
     )
 
 
-def get_module_for_logging() -> str:
+def get_module_for_logging() -> object:
     """Get the name of the module for logging purposes.
 
     Returns
