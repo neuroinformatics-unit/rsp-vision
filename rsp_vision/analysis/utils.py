@@ -1,4 +1,4 @@
-from ..objects.enums import PhotonType
+from objects.enums import PhotonType
 
 
 def ascii_array_to_string(array):
