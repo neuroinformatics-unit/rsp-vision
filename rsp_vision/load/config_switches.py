@@ -1,7 +1,7 @@
 from ..objects.enums import PhotonType
 
 
-def get_fps(photon_type, config: dict):
+def get_fps(photon_type: PhotonType, config: dict):
     if photon_type == PhotonType.TWO_PHOTON:
         return config["fps_two_photon"]
     elif photon_type == PhotonType.THREE_PHOTON:
