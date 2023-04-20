@@ -129,7 +129,7 @@ def get_raw_data_dict_mock(
     }
 
 
-def get_data_raw_object_mock(seed_number):
+def get_data_raw_object_mock(seed_number=1):
     (
         n_sessions,
         n_roi,
@@ -154,7 +154,7 @@ def get_data_raw_object_mock(seed_number):
 
 
 # not sure I need this one
-def get_photon_data_mock(seed_number):
+def get_photon_data_mock(seed_number=1):
     photon_data = PhotonData.__new__(PhotonData)
     photon_data.using_real_data = False
     photon_data.photon_type = PhotonType.TWO_PHOTON

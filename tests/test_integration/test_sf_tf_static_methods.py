@@ -1,3 +1,10 @@
+#  these tests have their own small set of fixtures which
+#  are defined in this file. They are simpler than the one used in
+#  test_sf_tf.py because they only test the static methods of the
+#  FrequencyResponsiveness class. The static methods do not require
+#  the full complexity of the fixtures used in test_sf_tf.py
+
+
 import numpy as np
 import pandas as pd
 import pytest
