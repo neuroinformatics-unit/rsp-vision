@@ -1,8 +1,8 @@
 from dash import dcc, html
 
 from rsp_vision.dashboard.plotting_helpers import (
-    generate_figure,
     get_circle_coordinates,
+    get_direction_plot_for_controller,
 )
 from rsp_vision.dashboard.styles import SIDEBAR_STYLE
 
@@ -33,7 +33,7 @@ def get_sidebar(responsive_rois, rois, directions):
                     dcc.Graph(
                         id="directions-circle",
                         style={"height": "300px", "width": "300px"},
-                        figure=generate_figure(
+                        figure=get_direction_plot_for_controller(
                             directions, circle_x, circle_y, 90
                         ),
                     ),

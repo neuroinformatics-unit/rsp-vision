@@ -8,12 +8,13 @@ import plotly.subplots as sp
 from dash import Dash, Input, Output, State, dcc, html
 from plotly.subplots import make_subplots
 
-from rsp_vision.dashboard.layout import generate_figure
+from rsp_vision.dashboard.layout import get_direction_plot_for_controller
 from rsp_vision.dashboard.plotting_helpers import (
     find_peak_coordinates,
     fit_correlation,
     get_circle_coordinates,
     get_dataframe_for_facet_plot,
+    get_peaks_dataframe,
 )
 
 
@@ -24,7 +25,7 @@ def get_update_circle_figure_callback(app: Dash, directions) -> None:
     )
     def update_circle_figure(selected_direction):
         circle_x, circle_y = get_circle_coordinates(directions)
-        return generate_figure(
+        return get_direction_plot_for_controller(
             directions, circle_x, circle_y, selected_direction
         )
 
@@ -48,7 +49,7 @@ def get_update_radio_items_callback(app: Dash) -> None:
 
 def get_update_fig_all_sessions_callback(app: Dash, signal) -> None:
     @app.callback(
-        Output("example-graph", "children"),
+        Output("session-graph", "children"),
         Input("roi-choice-dropdown", "value"),
     )
     def update_fig_all_sessions(roi_id):
@@ -76,8 +77,9 @@ def get_update_fig_all_sessions_callback(app: Dash, signal) -> None:
                 )
             )
 
+        responses = signal[signal.stimulus_onset]
         scatterplot = px.scatter(
-            signal[signal.stimulus_onset],
+            responses,
             x="frames_id",
             y="sf",
         )
@@ -90,6 +92,7 @@ def get_update_fig_all_sessions_callback(app: Dash, signal) -> None:
             plot_bgcolor="rgba(0, 0, 0, 0)",
             paper_bgcolor="rgba(0, 0, 0, 0)",
             showlegend=False,
+            width=1500,
         )
 
         return html.Div(
@@ -159,6 +162,7 @@ def get_andermann_gaussian_plot_callback(
     )
     def gaussian_plot(roi_id, dir):
         dir = dir["value"]
+
         # Create subplots for the two Gaussian plots
         fig = sp.make_subplots(
             rows=1,
@@ -280,16 +284,6 @@ def get_andermann_gaussian_plot_callback(
         )
 
 
-def get_labels(data, sf_inverted=True):
-    if sf_inverted:
-        y_labels = list(map(str, data._sf[::-1].tolist()))
-    else:
-        y_labels = list(map(str, data._sf.tolist()))
-    x_labels = list(map(str, data._tf.tolist()))
-
-    return x_labels, y_labels
-
-
 def get_murakami_plot_callback(
     app: Dash,
     n_roi,
@@ -310,18 +304,17 @@ def get_murakami_plot_callback(
     )
     def murakami_plot(_roi_id, _dire, rois_to_show, scale):
         _dire = _dire["value"]
-        fig = go.Figure()
 
-        #  range of plotly colors equal to the length of n_roi
         colors = px.colors.qualitative.Light24[:n_roi]
 
-        def murakami_plot_tools(roi_id):
+        def figure_for_murakami_plot(roi_id):
+            fig = go.Figure()
+
             color = colors[roi_id]
             peaks = {
                 (roi_id, dire): find_peak_coordinates(
                     oversampled_gaussians[(roi_id, dire)], sfs, tfs
                 )
-                # for roi_id in range(n_roi)
                 for dire in directions
             }
 
@@ -335,13 +328,10 @@ def get_murakami_plot_callback(
                 for dire in directions
             )
 
-            # # Add median point for each ROI
             median_peaks = p.groupby("roi_id").median(
                 ["temporal_frequency", "spatial_frequency"]
             )
 
-            # connect with a line all blue dots with the
-            # red dot (median) one by one
             for i, d in enumerate(directions):
                 row = p[(p.roi_id == roi_id) & (p.direction == d)].iloc[0]
                 tf = row["temporal_frequency"]
@@ -381,14 +371,16 @@ def get_murakami_plot_callback(
                     )
                 )
 
+            return fig
+
         if rois_to_show == "choosen":
-            murakami_plot_tools(_roi_id)
+            fig = figure_for_murakami_plot(_roi_id)
         elif rois_to_show == "responsive":
             for roi_id in responsive_rois:
-                murakami_plot_tools(roi_id)
+                fig = figure_for_murakami_plot(roi_id)
         elif rois_to_show == "all":
             for roi_id in range(n_roi):
-                murakami_plot_tools(roi_id)
+                fig = figure_for_murakami_plot(roi_id)
 
         fig.update_layout(
             title="Murakami plot",
@@ -416,50 +408,6 @@ def get_murakami_plot_callback(
                 figure=fig,
             )
         )
-
-
-def get_corresponding_value(data, roi_id, dire, sf_idx, tf_idx):
-    # if I use the oversampled gaussian, I get a different result
-    # there is always a point in which the peak is very high
-    # therefore it does not give us much information on the preference
-    # of the neuron
-    matrix = data[(roi_id, dire)]
-    return matrix[tf_idx, sf_idx]
-
-
-def get_peaks_dataframe(
-    gaussian_or_original,
-    roi_id,
-    directions,
-    sfs,
-    tfs,
-    median_subtracted_responses,
-    downsampled_gaussians,
-):
-    if gaussian_or_original == "original":
-        data = median_subtracted_responses
-    elif gaussian_or_original == "gaussian":
-        data = downsampled_gaussians
-
-    p = pd.DataFrame(
-        {
-            "roi_id": roi_id,
-            "direction": dire,
-            "temporal_frequency": tfs[tf_idx],
-            "spatial_frequency": sfs[sf_idx],
-            "corresponding_value": get_corresponding_value(
-                data, roi_id, dire, sf_idx, tf_idx
-            ),
-        }
-        for dire in directions
-        for tf_idx, sf_idx in itertools.product(
-            range(len(tfs)), range(len(sfs))
-        )
-    )
-
-    p_sorted = p.sort_values(by="direction")
-
-    return p_sorted
 
 
 def get_polar_plot_callback(
