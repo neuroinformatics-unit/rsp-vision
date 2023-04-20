@@ -18,7 +18,7 @@ def get_sidebar(responsive_rois, rois, directions):
                     {"label": str(roi + 1), "value": roi} for roi in rois
                 ],
                 value=7,
-                id="demo-dropdown",
+                id="roi-choice-dropdown",
             ),
             html.Br(),
             html.H3("Directions"),
