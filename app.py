@@ -7,6 +7,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, dcc, html
 
+from rsp_vision.plots.utils import fit_elliptical_gaussian
+
 app = Dash(__name__)
 
 # LOAD DATA
@@ -49,8 +51,6 @@ def get_df_sf_tf_combo_plot():
 
 
 counts = get_df_sf_tf_combo_plot()
-# print(signal.head())
-
 directions = list(data.uniques["direction"])
 
 # LAYOUT
@@ -78,7 +78,7 @@ app.layout = html.Div(
                                     {"label": str(roi + 1), "value": roi}
                                     for roi in rois
                                 ],
-                                value=0,
+                                value=8,
                                 id="demo-dropdown",
                             ),
                         ),
@@ -92,15 +92,21 @@ app.layout = html.Div(
         html.Div(
             [
                 html.H3("Directions"),
-                dcc.Checklist(
+                dcc.RadioItems(
                     [{"label": str(dir), "value": dir} for dir in directions],
-                    [directions[0]],
+                    315.0,
                     id="directions-checkbox",
                 ),
             ]
         ),
         html.Div(
             id="sf_tf-graph",
+        ),
+        html.Div(
+            id="median-response-graph",
+        ),
+        html.Div(
+            id="gaussian-graph",
         ),
     ]
 )
@@ -146,7 +152,7 @@ def update_fig_all_sessions(roi_id):
     Output("sf_tf-graph", "children"),
     [Input("demo-dropdown", "value"), Input("directions-checkbox", "value")],
 )
-def sf_tf_grid(roi_id, dirs):
+def sf_tf_grid(roi_id, dir):
     this_roi_df = signal[
         (signal["roi_id"] == roi_id)
         & signal.sf.notnull()
@@ -168,45 +174,44 @@ def sf_tf_grid(roi_id, dirs):
     )
 
     for sf_tf in analysis.sf_tf_combinations:
-        for dir in dirs:
-            repetitions = this_roi_df[
-                (this_roi_df.sf == sf_tf[0])
-                & (this_roi_df.tf == sf_tf[1])
-                & (this_roi_df.direction == dir)
+        repetitions = this_roi_df[
+            (this_roi_df.sf == sf_tf[0])
+            & (this_roi_df.tf == sf_tf[1])
+            & (this_roi_df.direction == dir)
+        ]
+
+        df = repetitions.pivot(index="stimulus_frames", columns="session_id")[
+            "signal"
+        ]
+        cols = df.keys().values
+        df.rename(
+            columns={
+                cols[0]: "signal_rep_1",
+                cols[1]: "signal_rep_2",
+                cols[2]: "signal_rep_3",
+            },
+            inplace=True,
+        )
+        df["stimulus_frames"] = counts
+        df["sf"] = repetitions.sf.iloc[0]
+        df["tf"] = repetitions.tf.iloc[0]
+        df["dir"] = repetitions.direction.iloc[0]
+        df["mean_signal"] = df[
+            [
+                "signal_rep_1",
+                "signal_rep_2",
+                "signal_rep_3",
             ]
+        ].mean(axis=1)
+        df["median_signal"] = df[
+            [
+                "signal_rep_1",
+                "signal_rep_2",
+                "signal_rep_3",
+            ]
+        ].median(axis=1)
 
-            df = repetitions.pivot(
-                index="stimulus_frames", columns="session_id"
-            )["signal"]
-            cols = df.keys().values
-            df.rename(
-                columns={
-                    cols[0]: "signal_rep_1",
-                    cols[1]: "signal_rep_2",
-                    cols[2]: "signal_rep_3",
-                },
-                inplace=True,
-            )
-            df["stimulus_frames"] = counts
-            df["sf"] = repetitions.sf.iloc[0]
-            df["tf"] = repetitions.tf.iloc[0]
-            df["dir"] = repetitions.direction.iloc[0]
-            df["mean_signal"] = df[
-                [
-                    "signal_rep_1",
-                    "signal_rep_2",
-                    "signal_rep_3",
-                ]
-            ].mean(axis=1)
-            df["median_signal"] = df[
-                [
-                    "signal_rep_1",
-                    "signal_rep_2",
-                    "signal_rep_3",
-                ]
-            ].median(axis=1)
-
-            horizontal_df = pd.concat([horizontal_df, df], ignore_index=True)
+        horizontal_df = pd.concat([horizontal_df, df], ignore_index=True)
 
     vertical_df = pd.melt(
         horizontal_df,
@@ -227,7 +232,7 @@ def sf_tf_grid(roi_id, dirs):
         value_name="signal",
     )
 
-    print(vertical_df)
+    # print(vertical_df)
 
     fig = px.line(
         vertical_df,
@@ -250,6 +255,61 @@ def sf_tf_grid(roi_id, dirs):
     return html.Div(
         dcc.Graph(
             id="sf_tf_plot",
+            figure=fig,
+        )
+    )
+
+
+@app.callback(
+    Output("median-response-graph", "children"),
+    [Input("demo-dropdown", "value"), Input("directions-checkbox", "value")],
+)
+def responses_heatmap(roi_id, dir):
+    median_subtracted_response = (
+        responses[(responses.roi_id == roi_id) & (responses.direction == dir)]
+        .groupby(["sf", "tf"])[["subtracted"]]
+        .median()
+    )
+    sfs = np.sort(data.uniques["sf"])[::-1]
+    tfs = np.sort(data.uniques["tf"])
+
+    array = np.zeros((len(sfs), len(tfs)))
+    for i, sf in enumerate(sfs):
+        for j, tf in enumerate(tfs):
+            array[i, j] = median_subtracted_response.loc[(sf, tf)][
+                "subtracted"
+            ]
+
+    y_labels = list(map(str, sfs.tolist()))
+    x_labels = list(map(str, tfs.tolist()))
+
+    # array = median_subtracted_response["subtracted"].values.reshape(6, 6)
+
+    fig = px.imshow(array, x=x_labels, y=y_labels)
+
+    return html.Div(
+        dcc.Graph(
+            id="median_response_plot",
+            figure=fig,
+        )
+    )
+
+
+@app.callback(
+    Output("gaussian-graph", "children"),
+    [Input("demo-dropdown", "value"), Input("directions-checkbox", "value")],
+)
+def gaussian_plot(roi_id, dir):
+    R = fit_elliptical_gaussian(
+        data.uniques, responses, roi_id, data.config, dir
+    )
+    y_labels = list(map(str, np.sort(data.uniques["sf"]).tolist()))
+    x_labels = list(map(str, np.sort(data.uniques["tf"]).tolist()))
+    fig = px.imshow(R, x=x_labels, y=y_labels, aspect="equal")
+
+    return html.Div(
+        dcc.Graph(
+            id="gaussian_plot",
             figure=fig,
         )
     )
