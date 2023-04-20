@@ -49,15 +49,16 @@ def single_fit(params, sfs, tfs, response_matrix, lower_bounds, upper_bounds):
     return result
 
 
-def fit_2D_gaussian_to_data(sfs, tfs, response_matrix, parameters_to_fit):
-    jitter = np.array([parameters_to_fit]) * 0.1
+def fit_2D_gaussian_to_data(
+    sfs, tfs, response_matrix, parameters_to_fit, config
+):
+    jitter = np.array([parameters_to_fit]) * config["fitting"]["jitter"]
     best_result = None
     best_residuals = float("inf")
 
     # Loop 20 times and find the best fit
-    for _ in range(20):
+    for _ in range(config["fitting"]["iterations_to_fit"]):
         # Add jitter to the initial parameters
-        # perturbed_params = parameters_to_fit + jitter * np.random.rand(1)
         perturbation = np.random.randn(1) * jitter
         perturbed_params = np.maximum(
             0, parameters_to_fit + perturbation
@@ -66,8 +67,8 @@ def fit_2D_gaussian_to_data(sfs, tfs, response_matrix, parameters_to_fit):
         # Ensure sf_0 and tf_0 remain positive
         perturbed_params[1] = max(perturbed_params[1], 1e-5)
         perturbed_params[2] = max(perturbed_params[2], 1e-5)
-        lower_bounds = [-200, 0, 0, 0.01, 0.01, -np.inf]
-        upper_bounds = [np.inf, 20, 20, 4, 4, np.inf]
+        lower_bounds = config["fitting"]["lower_bounds"]
+        upper_bounds = config["fitting"]["upper_bounds"]
         perturbed_params = np.clip(
             perturbed_params, lower_bounds, upper_bounds
         )
