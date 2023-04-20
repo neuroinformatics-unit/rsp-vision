@@ -36,6 +36,7 @@ if __name__ == "__main__":
             "consider_only_positive": False,
             "only_positive_threshold": 0.05,
             "baseline": "static",
+            "fitting": {"tuning_width": 1.5, "power_law_exp": 0},
         }
 
         yaml.dump(content, f)

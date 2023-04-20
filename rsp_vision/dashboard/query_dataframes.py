@@ -1,7 +1,15 @@
+from math import log2
+
 import numpy as np
 import pandas as pd
+from scipy.stats import pearsonr
 
-from rsp_vision.analysis.gaussians_calculations import symmetric_2D_gaussian
+from rsp_vision.analysis.gaussians_calculations import (
+    create_gaussian_matrix,
+    elliptical_gaussian_andermann,
+    fit_2D_gaussian_to_data,
+    symmetric_2D_gaussian,
+)
 
 
 def get_df_sf_tf_combo_plot(signal, data):
@@ -136,7 +144,7 @@ def get_median_subtracted_response(responses, roi_id, dir, sfs_inverted, tfs):
     return msr_for_plotting
 
 
-def fit_elliptical_gaussian(sfs_inverted, tfs, responses, roi_id, config, dir):
+def fit_symmetric_gaussian(sfs_inverted, tfs, responses, roi_id, config, dir):
     sf_0, tf_0, peak_response = get_preferred_sf_tf(responses, roi_id, dir)
 
     # same tuning width for sf and tf
@@ -150,3 +158,72 @@ def fit_elliptical_gaussian(sfs_inverted, tfs, responses, roi_id, config, dir):
             )
 
     return R
+
+
+def elliptical_gaussian_from_params(params, sfs_inverted, tfs):
+    peak_response, sf_0, tf_0, sigma_sf, sigma_tf, 𝜻_power_law_exp = params
+    return elliptical_gaussian_andermann(
+        peak_response,
+        sfs_inverted,
+        tfs,
+        sf_0,
+        tf_0,
+        sigma_sf,
+        sigma_tf,
+        𝜻_power_law_exp,
+    )
+
+
+def fit_andermann_gaussian(sfs_inverted, tfs, responses, roi_id, config, dir):
+    print("starting the fit...")
+    sf_0, tf_0, peak_response = get_preferred_sf_tf(responses, roi_id, dir)
+    median_subtracted_response = get_median_subtracted_response(
+        responses, roi_id, dir, sfs_inverted, tfs
+    )
+
+    parameters_to_fit_starting_point = [
+        peak_response,
+        sf_0,
+        tf_0,
+        np.std(sfs_inverted, ddof=1),  # config["fitting"]["tuning_width"],
+        np.std(tfs, ddof=1),  # config["fitting"]["tuning_width"],
+        1,  # config["fitting"]["power_law_exp"],
+    ]
+
+    best_result = fit_2D_gaussian_to_data(
+        sfs_inverted,
+        tfs,
+        median_subtracted_response,
+        parameters_to_fit_starting_point,
+    )
+
+    𝜻_power_law_exp = best_result.x[-1]
+
+    # R is the fitted Gaussian with the same data points as the original data
+    R = create_gaussian_matrix(best_result.x, sfs_inverted, tfs)
+
+    # R_oversampled is the fitted Gaussian with more data points (oversampled)
+    oversampled_sfs_inverted = np.logspace(
+        log2(sfs_inverted.min()), log2(sfs_inverted.max()), num=100, base=2
+    )
+
+    oversampled_tfs = np.logspace(
+        log2(tfs.min()), log2(tfs.max()), num=100, base=2
+    )
+
+    R_oversampled = create_gaussian_matrix(
+        best_result.x, oversampled_sfs_inverted, oversampled_tfs
+    )
+
+    # Calculate the correlation coefficient between
+    # the original data and the fitted Gaussian
+    fit_corr, _ = pearsonr(median_subtracted_response.flatten(), R.flatten())
+
+    return (
+        R,
+        R_oversampled,
+        fit_corr,
+        𝜻_power_law_exp,
+        oversampled_sfs_inverted,
+        oversampled_tfs,
+    )
