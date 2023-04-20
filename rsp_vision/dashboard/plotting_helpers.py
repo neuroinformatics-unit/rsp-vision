@@ -1,8 +1,9 @@
+import math
+from typing import List
+
 import numpy as np
 import pandas as pd
 from scipy.stats import pearsonr
-
-from rsp_vision.analysis.gaussians_calculations import symmetric_2D_gaussian
 
 
 def get_df_sf_tf_combo_plot(signal, data):
@@ -26,7 +27,6 @@ def get_df_sf_tf_combo_plot(signal, data):
     return counts
 
 
-# a bit slow
 def get_dataframe_for_facet_plot(signal, data, counts, roi_id, dir):
     this_roi_df = signal[
         (signal["roi_id"] == roi_id)
@@ -110,49 +110,6 @@ def get_dataframe_for_facet_plot(signal, data, counts, roi_id, dir):
     return vertical_df
 
 
-def get_preferred_sf_tf(responses, roi_id, dir):
-    median_subtracted_response = (
-        responses[(responses.roi_id == roi_id) & (responses.direction == dir)]
-        .groupby(["sf", "tf"])[["subtracted"]]
-        .median()
-    )
-    sf_0, tf_0 = median_subtracted_response["subtracted"].idxmax()
-    peak_response = median_subtracted_response.loc[(sf_0, tf_0)]["subtracted"]
-    return sf_0, tf_0, peak_response
-
-
-def get_median_subtracted_response(responses, roi_id, dir, sfs_inverted, tfs):
-    median_subtracted_response = (
-        responses[(responses.roi_id == roi_id) & (responses.direction == dir)]
-        .groupby(["sf", "tf"])[["subtracted"]]
-        .median()
-    )
-    msr_for_plotting = np.zeros((len(sfs_inverted), len(tfs)))
-    for i, sf in enumerate(sfs_inverted):
-        for j, tf in enumerate(tfs):
-            msr_for_plotting[i, j] = median_subtracted_response.loc[(sf, tf)][
-                "subtracted"
-            ]
-
-    return msr_for_plotting
-
-
-def fit_symmetric_gaussian(sfs_inverted, tfs, responses, roi_id, config, dir):
-    sf_0, tf_0, peak_response = get_preferred_sf_tf(responses, roi_id, dir)
-
-    # same tuning width for sf and tf
-    sigma = config["fitting"]["tuning_width"]
-
-    R = np.zeros((len(sfs_inverted), len(tfs)))
-    for i, sf in enumerate(sfs_inverted):
-        for j, tf in enumerate(tfs):
-            R[i, j] = symmetric_2D_gaussian(
-                peak_response, sf, tf, sf_0, tf_0, sigma
-            )
-
-    return R
-
-
 def fit_correlation(gaussian, msr):
     fit_corr, _ = pearsonr(msr.flatten(), gaussian.flatten())
     return fit_corr
@@ -205,3 +162,61 @@ def from_frequency_to_octaves(frequency, min_frequency, max_frequency):
 
 def from_octaves_to_frequency(octaves):
     return 2**octaves
+
+
+def generate_figure(
+    directions: List[int],
+    circle_x: List[float],
+    circle_y: List[float],
+    selected_direction: int,
+) -> dict:
+    return {
+        "data": [
+            {
+                "type": "scatter",
+                "x": circle_x,
+                "y": circle_y,
+                "mode": "markers+text",
+                "text": [str(d) + "°" for d in directions],
+                "textposition": "bottom center",
+                "hoverinfo": "none",
+                "marker": {"size": 10},
+                "customdata": directions,
+                "textfont": {
+                    "color": [
+                        "red" if d == selected_direction else "black"
+                        for d in directions
+                    ],
+                    "size": [
+                        15 if d == selected_direction else 10
+                        for d in directions
+                    ],
+                    "weight": [
+                        "bold" if d == selected_direction else "normal"
+                        for d in directions
+                    ],
+                },
+            }
+        ],
+        "layout": {
+            "xaxis": {"range": [-1.2, 1.2], "visible": False},
+            "yaxis": {"range": [-1.2, 1.2], "visible": False},
+            "plot_bgcolor": "rgba(0, 0, 0, 0)",
+            "margin": {
+                "l": 0,
+                "r": 0,
+                "t": 0,
+                "b": 30,
+                "pad": 0,
+                "autoexpand": True,
+            },
+        },
+    }
+
+
+def get_circle_coordinates(
+    directions,
+):
+    circle_x = [math.cos(math.radians(d)) for d in directions]
+    circle_y = [math.sin(math.radians(d)) for d in directions]
+    return circle_x, circle_y

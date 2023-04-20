@@ -1,5 +1,4 @@
 import itertools
-import math
 
 import numpy as np
 import pandas as pd
@@ -10,23 +9,21 @@ from dash import Dash, Input, Output, State, dcc, html
 from plotly.subplots import make_subplots
 
 from rsp_vision.dashboard.layout import generate_figure
-from rsp_vision.dashboard.query_dataframes import (
+from rsp_vision.dashboard.plotting_helpers import (
     find_peak_coordinates,
     fit_correlation,
+    get_circle_coordinates,
     get_dataframe_for_facet_plot,
 )
 
 
-def get_update_circle_figure_callback(app: Dash) -> None:
+def get_update_circle_figure_callback(app: Dash, directions) -> None:
     @app.callback(
         Output("directions-circle", "figure"),
         Input("selected-direction", "children"),
     )
     def update_circle_figure(selected_direction):
-        directions = [0, 45, 90, 135, 180, 225, 270, 315]
-        circle_x = [math.cos(math.radians(d)) for d in directions]
-        circle_y = [math.sin(math.radians(d)) for d in directions]
-
+        circle_x, circle_y = get_circle_coordinates(directions)
         return generate_figure(
             directions, circle_x, circle_y, selected_direction
         )
