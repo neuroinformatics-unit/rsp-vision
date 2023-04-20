@@ -15,13 +15,13 @@ def get_sidebar(responsive_rois, rois, directions):
                 options=[
                     {"label": str(roi + 1), "value": roi} for roi in rois
                 ],
-                value=8,
+                value=7,
                 id="demo-dropdown",
             ),
             html.P("Directions"),
             dcc.RadioItems(
                 [{"label": str(dir), "value": dir} for dir in directions],
-                315.0,
+                90.0,
                 id="directions-checkbox",
             ),
         ],
