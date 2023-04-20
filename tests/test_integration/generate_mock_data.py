@@ -85,7 +85,13 @@ def get_stim_mock(
 
 def get_random_responses(seed_number, n_sessions, n_roi, len_session):
     np.random.seed(seed_number)
-    return np.random.randint(-200, 200, (n_sessions, n_roi, len_session))
+    np.random.seed(seed_number)
+    expected_value = np.abs(np.random.randint(50))  # use positive values only
+    data = np.random.poisson(
+        lam=expected_value, size=(n_sessions, n_roi, len_session)
+    )
+    data *= np.random.choice([-1, 1], size=data.shape)  # flip sign randomly
+    return data
 
 
 def get_raw_data_dict_mock(
