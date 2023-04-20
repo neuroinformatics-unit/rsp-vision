@@ -1,12 +1,12 @@
 import itertools
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.subplots as sp
-from plotly.subplots import make_subplots
-
 from dash import Dash, Input, Output, dcc, html
+from plotly.subplots import make_subplots
 
 from rsp_vision.dashboard.query_dataframes import (
     find_peak_coordinates,
@@ -283,7 +283,7 @@ def get_murakami_plot_callback(
         fig = go.Figure()
 
         #  range of plotly colors equal to the length of n_roi
-        colors =  px.colors.qualitative.Light24[:n_roi]
+        colors = px.colors.qualitative.Light24[:n_roi]
 
         def murakami_plot_tools(roi_id):
             color = colors[roi_id]
@@ -416,7 +416,6 @@ def get_polar_plot_callback(
             gaussian = downsampled_gaussians[(roi_id, dire)]
             return gaussian[tf_idx, sf_idx]
 
-        # Update the DataFrame construction with the get_corresponding_value function
         p = pd.DataFrame(
             {
                 "roi_id": roi_id,
@@ -435,17 +434,23 @@ def get_polar_plot_callback(
 
         p_sorted = p.sort_values(by="direction")
 
-        subplot_titles = ["Responses across sf/tf for each direction", "cumulative responses"]
+        subplot_titles = [
+            "Responses across sf/tf for each direction",
+            "cumulative responses",
+        ]
         fig = make_subplots(
-            rows = 1,
-            cols = 2,
+            rows=1,
+            cols=2,
             specs=[[{"type": "polar"}, {"type": "polar"}]],
             subplot_titles=subplot_titles,
         )
-        colors = px.colors.qualitative.Light24[:int(len(sfs))]
-       
+        colors = px.colors.qualitative.Light24[: int(len(sfs))]
+
         for i, (tf, sf) in enumerate(itertools.product(tfs, sfs)):
-            row = p_sorted[(p_sorted.temporal_frequency == tf) & (p_sorted.spatial_frequency == sf)]
+            row = p_sorted[
+                (p_sorted.temporal_frequency == tf)
+                & (p_sorted.spatial_frequency == sf)
+            ]
             color = colors[i % len(sfs)]
 
             r_values = row["corresponding_value"].tolist()
@@ -457,42 +462,43 @@ def get_polar_plot_callback(
                     mode="lines",
                     thetaunit="degrees",
                     line=dict(color=color, width=4),
-                    showlegend=False
+                    showlegend=False,
                 ),
                 row=1,
-                col=1
-
+                col=1,
             )
 
         # Find cumulative trace
-        pivot_table = p.pivot(index=[
-            "temporal_frequency", "spatial_frequency"
-        ], columns="direction", values="corresponding_value")
-        
+        pivot_table = p.pivot(
+            index=["temporal_frequency", "spatial_frequency"],
+            columns="direction",
+            values="corresponding_value",
+        )
+
         # normalize values to make all positive
         # pivot_table = pivot_table - pivot_table.min().min()
         # pivot_table = pivot_table / pivot_table.max().max()
-    
+
         total_values = pivot_table.median(axis=0)
         print(total_values)
 
-        
         fig.add_trace(
             go.Scatterpolar(
                 r=total_values.tolist() + [total_values.tolist()[0]],
-                theta=total_values.index.tolist() + [total_values.index.tolist()[0]],
+                theta=total_values.index.tolist()
+                + [total_values.index.tolist()[0]],
                 mode="lines",
                 thetaunit="degrees",
                 name="Cumulative",
                 line=dict(color="black", width=3),
-                showlegend=False
+                showlegend=False,
             ),
             row=1,
-            col=2
+            col=2,
         )
 
         # add subplot titles
-        
+
         fig.update_layout(
             polar=dict(radialaxis=dict(visible=True)),
             plot_bgcolor="rgba(0, 0, 0, 0)",
@@ -521,7 +527,6 @@ def get_polar_plot_facet_callback(
         Input("roi-choice-dropdown", "value"),
     )
     def polar_plot_facet(roi_id):
-
         def get_corresponding_value(
             downsampled_gaussians, roi_id, dire, sf_idx, tf_idx
         ):
@@ -532,7 +537,6 @@ def get_polar_plot_facet_callback(
             gaussian = downsampled_gaussians[(roi_id, dire)]
             return gaussian[tf_idx, sf_idx]
 
-        # Update the DataFrame construction with the get_corresponding_value function
         p = pd.DataFrame(
             {
                 "roi_id": roi_id,
@@ -623,7 +627,6 @@ def get_polar_plot_facet_callback(
             width=1500,
             height=1500,
         )
-        
 
         return html.Div(
             dcc.Graph(
