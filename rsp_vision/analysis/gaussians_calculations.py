@@ -1,22 +1,19 @@
 import numpy as np
 from numba import njit
-from scipy.optimize import least_squares
-
-
-def symmetric_2D_gaussian(peak_response, sf, tf, sf_0, tf_0, sigma):
-    r = (
-        peak_response
-        * np.exp(-((np.log2(sf) - np.log2(sf_0)) ** 2) / 2 * (sigma**2))
-        * np.exp(-((np.log2(tf) - np.log2(tf_0)) ** 2) / 2 * (sigma**2))
-    )
-
-    return r
+from scipy.optimize import OptimizeResult, least_squares
 
 
 @njit
 def elliptical_gaussian_andermann(
-    peak_response, sf, tf, sf_0, tf_0, sigma_sf, sigma_tf, 𝜻_power_law_exp
-):
+    peak_response: float,
+    sf: float,
+    tf: float,
+    sf_0: float,
+    tf_0: float,
+    sigma_sf: float,
+    sigma_tf: float,
+    𝜻_power_law_exp: float,
+) -> float:
     log_2_tf_pref_sf = 𝜻_power_law_exp * (
         np.log2(sf) - np.log2(sf_0)
     ) + np.log2(tf_0)
@@ -32,7 +29,14 @@ def elliptical_gaussian_andermann(
     return r
 
 
-def single_fit(params, sfs, tfs, response_matrix, lower_bounds, upper_bounds):
+def single_fit(
+    params: np.ndarray,
+    sfs: np.ndarray,
+    tfs: np.ndarray,
+    response_matrix: np.ndarray,
+    lower_bounds: np.ndarray,
+    upper_bounds: np.ndarray,
+) -> OptimizeResult:
     # Define the cost function
     def cost_function(params):
         model = create_gaussian_matrix(params, sfs, tfs)
@@ -50,8 +54,12 @@ def single_fit(params, sfs, tfs, response_matrix, lower_bounds, upper_bounds):
 
 
 def fit_2D_gaussian_to_data(
-    sfs, tfs, response_matrix, parameters_to_fit, config
-):
+    sfs: np.ndarray,
+    tfs: np.ndarray,
+    response_matrix: np.ndarray,
+    parameters_to_fit: np.ndarray,
+    config: dict,
+) -> OptimizeResult:
     jitter = np.array([parameters_to_fit]) * config["fitting"]["jitter"]
     best_result = None
     best_residuals = float("inf")
@@ -92,7 +100,11 @@ def fit_2D_gaussian_to_data(
     return best_result
 
 
-def create_gaussian_matrix(params, sfs, tfs):
+def create_gaussian_matrix(
+    params: np.ndarray,
+    sfs: np.ndarray,
+    tfs: np.ndarray,
+) -> np.ndarray:
     peak_response, sf_0, tf_0, sigma_sf, sigma_tf, 𝜻_power_law_exp = params
 
     gaussian_matrix = np.zeros((len(sfs), len(tfs)))

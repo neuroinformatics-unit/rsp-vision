@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from typing import Dict, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -21,6 +22,19 @@ class PhotonData:
     - DataFrames:
         * signal (pd.DataFrame) - the main dataframe containing all the
             information about the signal
+        * stimuli (pd.DataFrame) - the dataframe containing all the
+            information about the stimuli
+        * responses (pd.DataFrame) - the dataframe containing the
+            response of the ROIs to the stimuli - initialized as None
+        * magnitude_over_medians (pd.DataFrame) - the dataframe containing
+            the magnitude of the ROIs' response - initialized as None
+    - Strings:
+        * grey_or_static (str) - the type of stimulus
+    - Numpy arrays:
+        * day_stim (np.array) - the day of the stimulus
+        * screen_size (np.array) - the size of the screen
+        * stimulus_idxs (np.array) - the indexes of the frames that are
+            stimulus onsets
     - Arrays:
         * sf_tf_combinations (np.array) - the combinations of sf and tf
             that were used in the experiment
@@ -44,10 +58,25 @@ class PhotonData:
             that are done on the data
     - Dictionaries:
         * config (dict) - the configuration dictionary
+        * p_values (dict) - the p values obtained to determine if the
+            response of ROIs is significant in respoect to SF/TF combinations -
+            initialized as None
+        * measured_preference (dict) - the measured preference of ROIs in terms
+            of SF/TF combinations - initialized as None
+        * fit_output (dict) - the fit output parameters from the gaussian fit
+            operation - initialized as None
+        * median_subtracted_response (dict) - the median subtracted
+            response of the ROIs - initialized as None
+        * downsampled_gaussian (dict) - the downsampled gaussian calculated
+            with the fit output parameters - initialized as None
+        * oversampled_gaussian (dict) - the oversampled gaussian calculated
+            with the fit output parameters - initialized as None
     - Enums:
         * photon_type (PhotonType) - the type of photon data
     - Other:
         * data_raw (DataRaw) - the raw data object
+        * responsive_rois (Set[int]) - the set of responsive ROIs - initialized
+            as None
 
     """
 
@@ -67,12 +96,25 @@ class PhotonData:
         self.signal, self.stimuli = self.get_signal_and_stimuli_df(data_raw)
         self.set_post_data_extraction_variables()
 
+        self.initialize_analysis_output_variables()
+
         logging.info(
             "Some of the data extracted:\n"
             + f"{self.signal[self.signal['stimulus_onset']].head()}"
         )
 
-    def get_signal_and_stimuli_df(self, data_raw: DataRaw):
+    def initialize_analysis_output_variables(self) -> None:
+        self.responses: pd.DataFrame
+        self.p_values: dict
+        self.magnitude_over_medians: pd.DataFrame
+        self.responsive_rois: Set[int]
+        self.measured_preference: dict
+        self.fit_output: dict
+        self.median_subtracted_response: dict
+        self.downsampled_gaussian: Dict[Tuple[int, int], np.ndarray]
+        self.oversampled_gaussian: Dict[Tuple[int, int], np.ndarray]
+
+    def get_signal_and_stimuli_df(self, data_raw: DataRaw) -> pd.DataFrame:
         """The main function of this class, which returns the final
         `signal` dataframe. It will contain the following columns:
         * day (int) - the day of the experiment (1, 2, 3 or 4)
@@ -104,7 +146,7 @@ class PhotonData:
 
         return signal, stimuli
 
-    def set_general_variables(self, data_raw):
+    def set_general_variables(self, data_raw: DataRaw) -> None:
         """Set the general variables that will be used in the class,
         mostly using the same calculations as in the matlab codebase.
 
@@ -146,7 +188,7 @@ class PhotonData:
 
         self.calculations_to_find_start_frames()
 
-    def calculations_to_find_start_frames(self):
+    def calculations_to_find_start_frames(self) -> None:
         """Calculations to find the start frames of the stimuli,
         as in the matlab codebase.
         """
@@ -177,7 +219,7 @@ class PhotonData:
         )
         self.stimulus_start_frames = self.get_stimulus_start_frames()
 
-    def get_stimulus_start_frames(self):
+    def get_stimulus_start_frames(self) -> np.ndarray:
         # I assume the signal has been cut in the generation of
         # this summary data in order to allign perfectly
         # It needs to be checked with trigger information
@@ -201,7 +243,7 @@ class PhotonData:
 
         return frames_all_sessions
 
-    def make_signal_dataframe(self, data_raw):
+    def make_signal_dataframe(self, data_raw: DataRaw) -> pd.DataFrame:
         """Make the signal dataframe, which will be filled up with
         the stimulus information later on.
 
@@ -284,7 +326,7 @@ class PhotonData:
 
         return signal
 
-    def get_timing_array(self):
+    def get_timing_array(self) -> np.ndarray:
         """Get the timing array for the signal dataframe calculating it
         from the number of frames per session given a photon type.
 
@@ -297,7 +339,7 @@ class PhotonData:
         cumulative_sum = np.cumsum(np.repeat(td, self.n_frames_per_session))
         return datetime.today() + cumulative_sum
 
-    def get_stimuli(self, data_raw):
+    def get_stimuli(self, data_raw: DataRaw) -> pd.DataFrame:
         """Get the stimuli dataframe from the raw data object.
 
         Parameters
@@ -334,7 +376,7 @@ class PhotonData:
         self.check_consistency_of_stimuli_df(stimuli)
         return stimuli
 
-    def check_consistency_of_stimuli_df(self, stimuli):
+    def check_consistency_of_stimuli_df(self, stimuli: pd.DataFrame) -> None:
         """
         Check the consistency of stimuli dataframe with the expected
         number of stimuli and their combinations.
@@ -407,7 +449,9 @@ class PhotonData:
                     + "missing or duplicated"
                 )
 
-    def fill_up_with_stim_info(self, signal, stimuli):
+    def fill_up_with_stim_info(
+        self, signal: pd.DataFrame, stimuli: pd.DataFrame
+    ) -> pd.DataFrame:
         """Complete the signal dataframe with the stimulus information.
 
         Parameters
@@ -450,7 +494,7 @@ class PhotonData:
 
         return signal
 
-    def check_consistency_of_signal_df(self, signal):
+    def check_consistency_of_signal_df(self, signal: pd.DataFrame) -> None:
         """Check the consistency of the signal dataframe with the
         expected number of stimuli.
 
@@ -477,7 +521,7 @@ class PhotonData:
                     expercted:{expected}"
                 )
 
-    def set_post_data_extraction_variables(self):
+    def set_post_data_extraction_variables(self) -> None:
         self._sf = np.sort(self.stimuli.sf.unique())
         self._tf = np.sort(self.stimuli.tf.unique())
         self.sf_tf_combinations = np.array(
@@ -485,7 +529,6 @@ class PhotonData:
         ).T.reshape(-1, 2)
         self._dir = self.stimuli.direction.unique()
         self.stimulus_idxs = self.signal[self.signal["stimulus_onset"]].index
-        self.responses = None
 
-    def ascii_array_to_string(self, array):
+    def ascii_array_to_string(self, array: np.ndarray) -> str:
         return "".join([chr(int(i)) for i in array])

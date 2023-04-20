@@ -1,4 +1,5 @@
 import itertools
+from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -16,14 +17,15 @@ from rsp_vision.dashboard.plotting_helpers import (
     get_dataframe_for_facet_plot,
     get_peaks_dataframe,
 )
+from rsp_vision.objects.photon_data import PhotonData
 
 
-def get_update_circle_figure_callback(app: Dash, directions) -> None:
+def get_update_circle_figure_callback(app: Dash, directions: list) -> None:
     @app.callback(
         Output("directions-circle", "figure"),
         Input("selected-direction", "children"),
     )
-    def update_circle_figure(selected_direction):
+    def update_circle_figure(selected_direction: int) -> go.Figure:
         circle_x, circle_y = get_circle_coordinates(directions)
         return get_direction_plot_for_controller(
             directions, circle_x, circle_y, selected_direction
@@ -39,7 +41,7 @@ def get_update_radio_items_callback(app: Dash) -> None:
         Input("directions-circle", "clickData"),
         State("direction-store", "data"),
     )
-    def update_radio_items(clickData, current_data):
+    def update_radio_items(clickData: dict, current_data: dict) -> tuple:
         if clickData is not None:
             direction = clickData["points"][0]["customdata"]
             return {"value": direction}, direction
@@ -47,12 +49,14 @@ def get_update_radio_items_callback(app: Dash) -> None:
             return current_data, current_data["value"]
 
 
-def get_update_fig_all_sessions_callback(app: Dash, signal) -> None:
+def get_update_fig_all_sessions_callback(
+    app: Dash, signal: pd.DataFrame
+) -> None:
     @app.callback(
         Output("session-graph", "children"),
         Input("roi-choice-dropdown", "value"),
     )
-    def update_fig_all_sessions(roi_id):
+    def update_fig_all_sessions(roi_id: int) -> dcc.Graph:
         pastel_colors = [
             "#acd0f8",
             "#ace7d0",
@@ -103,7 +107,9 @@ def get_update_fig_all_sessions_callback(app: Dash, signal) -> None:
         )
 
 
-def get_sf_tf_grid_callback(app: Dash, signal, data, counts) -> None:
+def get_sf_tf_grid_callback(
+    app: Dash, signal: pd.DataFrame, data: PhotonData, counts: np.ndarray
+) -> None:
     @app.callback(
         Output("sf_tf-graph", "children"),
         [
@@ -111,7 +117,7 @@ def get_sf_tf_grid_callback(app: Dash, signal, data, counts) -> None:
             Input("direction-store", "data"),
         ],
     )
-    def sf_tf_grid(roi_id, dir):
+    def sf_tf_grid(roi_id: int, dir: dict) -> dcc.Graph:
         dir = dir["value"]
         vertical_df = get_dataframe_for_facet_plot(
             signal, data, counts, roi_id, dir
@@ -146,12 +152,12 @@ def get_sf_tf_grid_callback(app: Dash, signal, data, counts) -> None:
 
 def get_andermann_gaussian_plot_callback(
     app: Dash,
-    median_subtracted_responses,
-    downsampled_gaussians,
-    oversampled_gaussians,
-    fit_outputs,
-    sfs,
-    tfs,
+    median_subtracted_responses: np.ndarray,
+    downsampled_gaussians: Dict[Tuple[int, int], np.ndarray],
+    oversampled_gaussians: Dict[Tuple[int, int], np.ndarray],
+    fit_outputs: np.ndarray,
+    sfs: np.ndarray,
+    tfs: np.ndarray,
 ) -> None:
     @app.callback(
         Output("gaussian-graph-andermann", "children"),
@@ -160,8 +166,8 @@ def get_andermann_gaussian_plot_callback(
             Input("direction-store", "data"),
         ],
     )
-    def gaussian_plot(roi_id, dir):
-        dir = dir["value"]
+    def gaussian_plot(roi_id: int, _dir: dict) -> html.Div:
+        dir = _dir["value"]
 
         # Create subplots for the two Gaussian plots
         fig = sp.make_subplots(
@@ -286,12 +292,12 @@ def get_andermann_gaussian_plot_callback(
 
 def get_murakami_plot_callback(
     app: Dash,
-    n_roi,
-    directions,
-    sfs,
-    tfs,
-    oversampled_gaussians,
-    responsive_rois,
+    n_roi: int,
+    directions: List[int],
+    sfs: np.ndarray,
+    tfs: np.ndarray,
+    oversampled_gaussians: Dict[Tuple[int, int], np.ndarray],
+    responsive_rois: List[int],
 ) -> None:
     @app.callback(
         Output("murakami-plot", "children"),
@@ -302,7 +308,9 @@ def get_murakami_plot_callback(
             Input("murakami-plot-scale", "value"),
         ],
     )
-    def murakami_plot(_roi_id, _dire, rois_to_show, scale):
+    def murakami_plot(
+        _roi_id: int, _dire: dict, rois_to_show: list, scale: str
+    ) -> html.Div:
         _dire = _dire["value"]
 
         colors = px.colors.qualitative.Light24[:n_roi]
@@ -412,11 +420,11 @@ def get_murakami_plot_callback(
 
 def get_polar_plot_callback(
     app: Dash,
-    directions,
-    sfs,
-    tfs,
-    downsampled_gaussians,
-    median_subtracted_responses,
+    directions: List[int],
+    sfs: np.ndarray,
+    tfs: np.ndarray,
+    downsampled_gaussians: Dict[Tuple[int, int], np.ndarray],
+    median_subtracted_responses: Dict[Tuple[int, int], np.ndarray],
 ) -> None:
     @app.callback(
         Output("polar-plot", "children"),
@@ -426,7 +434,11 @@ def get_polar_plot_callback(
             Input("polar-plot-mean-or-median-or-cumulative", "value"),
         ],
     )
-    def polar_plot(roi_id, gaussian_or_original, mean_or_median_or_cumulative):
+    def polar_plot(
+        roi_id: int,
+        gaussian_or_original: str,
+        mean_or_median_or_cumulative: str,
+    ) -> html.Div:
         p_sorted = get_peaks_dataframe(
             gaussian_or_original,
             roi_id,
@@ -522,11 +534,11 @@ def get_polar_plot_callback(
 
 def get_polar_plot_facet_callback(
     app: Dash,
-    directions,
-    sfs,
-    tfs,
-    downsampled_gaussians,
-    median_subtracted_responses,
+    directions: List[int],
+    sfs: np.ndarray,
+    tfs: np.ndarray,
+    downsampled_gaussians: Dict[Tuple[int, int], np.ndarray],
+    median_subtracted_responses: Dict[Tuple[int, int], np.ndarray],
 ) -> None:
     @app.callback(
         Output("polar-plot-facet", "children"),
@@ -535,7 +547,7 @@ def get_polar_plot_facet_callback(
             Input("polar-plot-gaussian-or-original", "value"),
         ],
     )
-    def polar_plot_facet(roi_id, gaussian_or_original):
+    def polar_plot_facet(roi_id: int, gaussian_or_original: str) -> html.Div:
         sorted_sfs = sorted(sfs, reverse=True)
         sorted_tfs = sorted(tfs)
 

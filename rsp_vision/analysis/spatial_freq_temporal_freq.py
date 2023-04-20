@@ -1,7 +1,7 @@
 import logging
 from math import log2
 from multiprocessing import Pool
-from typing import Dict, Tuple
+from typing import Dict, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -24,7 +24,7 @@ class FrequencyResponsiveness:
         # modify the signal dataframe and responses dataframe in place
         self.data = data
 
-    def __call__(self):
+    def __call__(self) -> PhotonData:
         """
         Calculate the responsiveness of each ROI in the signal dataframe.
 
@@ -65,14 +65,14 @@ class FrequencyResponsiveness:
         ) = self.perform_sign_tests()
         logging.info(f"P-values for each roi:\n{self.data.p_values}")
 
-        self.data.magintude_over_medians = self.response_magnitude()
+        self.data.magnitude_over_medians = self.response_magnitude()
         logging.info(
             "Response magnitude calculated over median:\n"
-            + f"{self.data.magintude_over_medians.head()}"
+            + f"{self.data.magnitude_over_medians.head()}"
         )
 
         self.data.responsive_rois = self.find_significant_rois(
-            self.data.p_values, self.data.magintude_over_medians
+            self.data.p_values, self.data.magnitude_over_medians
         )
         logging.info(f"Responsive ROIs: {self.data.responsive_rois}")
 
@@ -81,7 +81,9 @@ class FrequencyResponsiveness:
         self.get_all_fits()
         self.calculate_downsampled_gaussian()
         self.calculate_oversampled_gaussian(
-            oversampling_factor=self.config["fitting"]["oversampling_factor"]
+            oversampling_factor=self.data.config["fitting"][
+                "oversampling_factor"
+            ]
         )
         logging.info("Gaussian fits calculated")
 
@@ -89,7 +91,7 @@ class FrequencyResponsiveness:
 
     def calculate_mean_response_and_baseline(
         self,
-    ):
+    ) -> None:
         """
         Calculate the mean response and mean baseline signals for each ROI
         in the signal dataframe.
@@ -158,7 +160,9 @@ class FrequencyResponsiveness:
         ]
         self.data.responses = self.data.responses.reset_index()
 
-    def get_response_and_baseline_windows(self):
+    def get_response_and_baseline_windows(
+        self,
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Get the window of indices corresponding to the response and
         baseline periods for each stimulus presentation.
@@ -316,7 +320,7 @@ class FrequencyResponsiveness:
 
         return p_st, p_wsrt
 
-    def response_magnitude(self):
+    def response_magnitude(self) -> pd.DataFrame:
         """
         Compute the response magnitude for each combination of spatial and
         temporal frequency and ROI.
@@ -334,7 +338,7 @@ class FrequencyResponsiveness:
                     (response_mean - baseline_mean) / baseline_std
         """
 
-        magintude_over_medians = pd.DataFrame(
+        magnitude_over_medians = pd.DataFrame(
             columns=[
                 "roi",
                 "sf",
@@ -394,13 +398,15 @@ class FrequencyResponsiveness:
                     index=[0],
                 )
 
-                magintude_over_medians = pd.concat(
-                    [magintude_over_medians, df], ignore_index=True
+                magnitude_over_medians = pd.concat(
+                    [magnitude_over_medians, df], ignore_index=True
                 )
 
-        return magintude_over_medians
+        return magnitude_over_medians
 
-    def find_significant_rois(self, p_values, magintude_over_medians):
+    def find_significant_rois(
+        self, p_values: Dict[str, float], magnitude_over_medians: pd.DataFrame
+    ) -> Set[int]:
         """
         Returns a set of ROIs that are significantly responsive, based on
         statistical tests and a response magnitude threshold.
@@ -428,13 +434,13 @@ class FrequencyResponsiveness:
         """
         sig_kw = set(
             np.where(
-                p_values["Kruskal-Wallis test"].values
+                p_values["Kruskal-Wallis test"]
                 < self.data.config["anova_threshold"]
             )[0].tolist()
         )
         sig_magnitude = set(
             np.where(
-                magintude_over_medians.groupby("roi").magnitude.max()
+                magnitude_over_medians.groupby("roi").magnitude.max()
                 > self.data.config["response_magnitude_threshold"]
             )[0].tolist()
         )
@@ -442,7 +448,7 @@ class FrequencyResponsiveness:
         if self.data.config["consider_only_positive"]:
             sig_positive = set(
                 np.where(
-                    p_values["Wilcoxon signed rank test"].values
+                    p_values["Wilcoxon signed rank test"]
                     < self.data.config["only_positive_threshold"]
                 )[0].tolist()
             )
@@ -451,7 +457,7 @@ class FrequencyResponsiveness:
         return sig_kw & sig_magnitude
 
     @staticmethod
-    def get_preferred_sf_tf(median_subtracted_response):
+    def get_preferred_sf_tf(median_subtracted_response: pd.DataFrame) -> tuple:
         sf_0, tf_0 = median_subtracted_response["subtracted"].idxmax()
         peak_response = median_subtracted_response.loc[(sf_0, tf_0)][
             "subtracted"
@@ -459,7 +465,9 @@ class FrequencyResponsiveness:
         return sf_0, tf_0, peak_response
 
     @staticmethod
-    def get_median_subtracted_response(responses, roi_id, dir):
+    def get_median_subtracted_response(
+        responses: pd.DataFrame, roi_id: int, dir: int
+    ) -> pd.DataFrame:
         median_subtracted_response = (
             responses[
                 (responses.roi_id == roi_id) & (responses.direction == dir)
@@ -471,8 +479,10 @@ class FrequencyResponsiveness:
 
     @staticmethod
     def get_median_subtracted_response_2d_matrix(
-        median_subtracted_response, sf, tf
-    ):
+        median_subtracted_response: pd.DataFrame,
+        sf: np.ndarray,
+        tf: np.ndarray,
+    ) -> np.ndarray:
         median_subtracted_response_2d_matrix = np.zeros((len(sf), len(tf)))
         for i, s in enumerate(sf):
             for j, t in enumerate(tf):
@@ -481,7 +491,7 @@ class FrequencyResponsiveness:
                 ] = median_subtracted_response.loc[(s, t)]["subtracted"]
         return median_subtracted_response_2d_matrix
 
-    def get_all_fits(self):
+    def get_all_fits(self) -> None:
         self.data.measured_preference = {}
         self.data.fit_output = {}
         self.data.median_subtracted_response = {}
@@ -501,7 +511,7 @@ class FrequencyResponsiveness:
                         (roi_id, key)
                     ] = roi_data[key][2]
 
-    def get_this_roi_fits_data(self, roi_id):
+    def get_this_roi_fits_data(self, roi_id: int) -> dict:
         """
         Returns a dictionary with the best fit parameters for each ROI and
         direction.
@@ -524,7 +534,7 @@ class FrequencyResponsiveness:
                 tf_0,
                 np.std(self.data._sf, ddof=1),
                 np.std(self.data._tf, ddof=1),
-                self.config["fitting"]["power_law_exp"],
+                self.data.config["fitting"]["power_law_exp"],
             ]
 
             best_result = fit_2D_gaussian_to_data(
@@ -532,7 +542,7 @@ class FrequencyResponsiveness:
                 self.data._tf,
                 msr_array,
                 parameters_to_fit_starting_point,
-                self.config,
+                self.data.config,
             )
 
             roi_data[dir] = (
@@ -542,7 +552,7 @@ class FrequencyResponsiveness:
             )
         return roi_data
 
-    def calculate_downsampled_gaussian(self):
+    def calculate_downsampled_gaussian(self) -> None:
         self.data.downsampled_gaussian = {}
         for roi_id in range(self.data.n_roi):
             for dir in self.data._dir:
@@ -554,7 +564,9 @@ class FrequencyResponsiveness:
                     self.data._tf,
                 )
 
-    def calculate_oversampled_gaussian(self, oversampling_factor=100):
+    def calculate_oversampled_gaussian(
+        self, oversampling_factor: int = 100
+    ) -> None:
         self.data.oversampled_gaussian = {}
         for roi_id in range(self.data.n_roi):
             for dir in self.data._dir:
