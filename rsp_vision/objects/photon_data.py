@@ -126,6 +126,7 @@ class PhotonData:
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         """The main function of this class, which returns the final
         `signal` dataframe. It will contain the following columns:
+
         * day (int) - the day of the experiment (1, 2, 3 or 4)
         * time from beginning (datetime) - the time from the beginning
             of the experiment
@@ -156,22 +157,23 @@ class PhotonData:
         return signal, stimuli
 
     def set_general_variables(self, data_raw: DataRaw) -> None:
-        """Set the general variables that will be used in the class,
-        mostly using the same calculations as in the matlab codebase.
+        """Set the general variables that will be used in the class, mostly
+        using the same calculations as in the matlab codebase.
 
         Parameters
         ----------
         data_raw : DataRaw
             The raw data object from which the data will be extracted
         """
-
         self.screen_size: float = data_raw.stim[0]["screen_size"]
         self.n_sessions: int = data_raw.frames.shape[0]
         self.n_roi: int = data_raw.frames[0].shape[0]
         self.n_frames_per_session: int = data_raw.frames[0].shape[1]
         self.day_stim: np.ndarray = data_raw.day["stimulus"]  # seems useless
-        grey_or_static = self.ascii_array_to_string(
+        grey_or_static = (
             data_raw.stim[0]["stimulus"]["grey_or_static"]
+            .tobytes()
+            .decode("utf-8")
         )
         if grey_or_static in [
             "grey_static_drift",
@@ -199,9 +201,8 @@ class PhotonData:
         self.calculations_to_find_start_frames()
 
     def calculations_to_find_start_frames(self) -> None:
-        """Calculations to find the start frames of the stimuli,
-        as in the matlab codebase.
-        """
+        """Calculations to find the start frames of the stimuli, as in the
+        matlab codebase."""
         self.n_frames_per_trigger = int(
             self.n_frames_per_session / self.n_all_triggers
         )
@@ -230,10 +231,17 @@ class PhotonData:
         self.stimulus_start_frames = self.get_stimulus_start_frames()
 
     def get_stimulus_start_frames(self) -> np.ndarray:
-        # I assume the signal has been cut in the generation of
-        # this summary data in order to allign perfectly
-        # It needs to be checked with trigger information
+        """Returns an array of frame indices corresponding to the start of
+        each stimulus presentation in the data. The stimuli are assumed to
+        be evenly spaced in time and the data is assumed to be preprocessed
+        to align with the stimulus triggers.
 
+        Returns:
+        -------
+        np.ndarray:
+            A 1D array of frame indices (integers) indicating the start of
+            each stimulus presentation across all sessions.
+        """
         frames_in_session = np.array(
             (
                 self.n_baseline_frames
@@ -254,8 +262,8 @@ class PhotonData:
         return frames_all_sessions
 
     def make_signal_dataframe(self, data_raw: DataRaw) -> pd.DataFrame:
-        """Make the signal dataframe, which will be filled up with
-        the stimulus information later on.
+        """Make the signal dataframe, which will be filled up with the
+        stimulus information later on.
 
         Parameters
         ----------
@@ -267,7 +275,6 @@ class PhotonData:
         signal : pd.DataFrame
             Initialized dataframe with only partial information
         """
-
         signal = pd.DataFrame(
             columns=[
                 "day",
@@ -386,8 +393,7 @@ class PhotonData:
         return stimuli
 
     def check_consistency_of_stimuli_df(self, stimuli: pd.DataFrame) -> None:
-        """
-        Check the consistency of stimuli dataframe with the expected
+        """Check the consistency of stimuli dataframe with the expected
         number of stimuli and their combinations.
 
         Parameters
@@ -502,8 +508,8 @@ class PhotonData:
         return signal
 
     def check_consistency_of_signal_df(self, signal: pd.DataFrame) -> None:
-        """Check the consistency of the signal dataframe with the
-        expected number of stimuli.
+        """Check the consistency of the signal dataframe with the expected
+        number of stimuli.
 
         Parameters
         ----------
@@ -529,6 +535,20 @@ class PhotonData:
                 )
 
     def set_post_data_extraction_variables(self) -> None:
+        """Sets instance variables for signal and stimuli data extraction.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        AssertionError
+            If the instance is using real data and the unique values of
+            spatial frequencies, temporal frequencies, and directions, as
+            well as their counts, do not match those specified in the
+            configuration dictionary.
+        """
         self.stimulus_idxs: pd.Series = self.signal[
             self.signal["stimulus_onset"]
         ].index
@@ -570,6 +590,8 @@ class PhotonData:
         )
 
     def initialize_analysis_output_variables(self) -> None:
+        """Initializes the analysis output variables used in the analysis
+        pipeline."""
         self.responses: pd.DataFrame
         self.p_values: dict
         self.magnitude_over_medians: pd.DataFrame
@@ -579,6 +601,3 @@ class PhotonData:
         self.median_subtracted_response: dict
         self.downsampled_gaussian: Dict[Tuple[int, int], np.ndarray]
         self.oversampled_gaussian: Dict[Tuple[int, int], np.ndarray]
-
-    def ascii_array_to_string(self, array: np.ndarray) -> str:
-        return "".join([chr(int(i)) for i in array])

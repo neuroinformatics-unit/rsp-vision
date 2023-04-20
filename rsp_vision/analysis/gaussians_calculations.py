@@ -14,6 +14,35 @@ def elliptical_gaussian_andermann(
     sigma_tf: float,
     𝜻_power_law_exp: float,
 ) -> float:
+    """Calculate the response of a neuron to a visual stimulus using a two-
+    dimensional elliptical Gaussian function, as described in Andermann et
+    al., 2011.
+
+    Parameters
+    ----------
+    peak_response : float
+        Peak response of the neuron.
+    sf : float
+        Spatial frequency of the stimulus.
+    tf : float
+        Temporal frequency of the stimulus.
+    sf_0 : float
+        Preferred spatial frequency of the neuron.
+    tf_0 : float
+        Preferred temporal frequency of the neuron.
+    sigma_sf : float
+        Spatial frequency tuning width of the neuron.
+    sigma_tf : float
+        Temporal frequency tuning width of the neuron.
+    𝜻_power_law_exp : float
+        Exponent for the power law that governs the temporal frequency
+        preference of the neuron with respect to spatial frequency.
+
+    Returns
+    -------
+    float
+        Response of the neuron to the stimulus.
+    """
     log_2_tf_pref_sf = 𝜻_power_law_exp * (
         np.log2(sf) - np.log2(sf_0)
     ) + np.log2(tf_0)
@@ -37,13 +66,37 @@ def single_fit(
     lower_bounds: np.ndarray,
     upper_bounds: np.ndarray,
 ) -> OptimizeResult:
-    # Define the cost function
+    """Fit a two-dimensional Gaussian model to a response matrix using
+    least squares optimization.
+
+    Parameters
+    ----------
+    params : np.ndarray
+        An array containing the initial values of the Gaussian model
+        parameters to be optimized.
+    sfs : np.ndarray
+        An array containing the spatial frequencies of the stimuli.
+    tfs : np.ndarray
+        An array containing the temporal frequencies of the stimuli.
+    response_matrix : np.ndarray
+        A matrix of recorded responses to the stimuli.
+    lower_bounds : np.ndarray
+        An array of lower bounds for the optimized parameters.
+    upper_bounds : np.ndarray
+        An array of upper bounds for the optimized parameters.
+
+    Returns
+    -------
+    OptimizeResult
+        A scipy.optimize.OptimizeResult object containing information about
+        the optimization procedure and results.
+    """
+
     def cost_function(params):
         model = create_gaussian_matrix(params, sfs, tfs)
         residuals = response_matrix - model
         return residuals.ravel()
 
-    # Fit the model using least_squares
     result = least_squares(
         cost_function,
         params,
@@ -60,11 +113,43 @@ def fit_2D_gaussian_to_data(
     parameters_to_fit: np.ndarray,
     config: dict,
 ) -> OptimizeResult:
+    """Fit a two-dimensional Gaussian model to a matrix of recorded
+    responses to visual stimuli.
+
+    Parameters
+    ----------
+    sfs : np.ndarray
+        An array of spatial frequencies of the stimuli.
+    tfs : np.ndarray
+        An array of temporal frequencies of the stimuli.
+    response_matrix : np.ndarray
+        A matrix of recorded responses to the stimuli.
+    parameters_to_fit : np.ndarray
+        An array of initial values for the parameters of the Gaussian model to
+        be optimized.
+    config : dict
+        A dictionary containing the configuration parameters for the fitting
+        procedure. The configuration parameters are:
+        - "fitting": a dictionary containing the following keys:
+            - "jitter": a float representing the scaling factor for perturbing
+            the initial parameters
+            - "iterations_to_fit": an integer representing the number of times
+            to run the optimization procedure
+            - "lower_bounds": an array of lower bounds for the optimized
+            parameters
+            - "upper_bounds": an array of upper bounds for the optimized
+            parameters
+
+    Returns
+    -------
+    OptimizeResult
+        A Scipy OptimizeResult object containing information about the
+        optimization procedure and results.
+    """
     jitter = np.array([parameters_to_fit]) * config["fitting"]["jitter"]
     best_result = None
     best_residuals = float("inf")
 
-    # Loop 20 times and find the best fit
     for _ in range(config["fitting"]["iterations_to_fit"]):
         # Add jitter to the initial parameters
         perturbation = np.random.randn(1) * jitter
@@ -105,6 +190,33 @@ def create_gaussian_matrix(
     sfs: np.ndarray,
     tfs: np.ndarray,
 ) -> np.ndarray:
+    """Create a matrix of Gaussian response amplitudes to a set of visual
+    stimuli.
+
+    Parameters
+    ----------
+    params : np.ndarray
+        An array of parameters for the elliptical Gaussian model.
+        The array must contain the following elements in the specified
+        order:
+        - peak_response: float, the peak response amplitude
+        - sf_0: float, the preferred spatial frequency
+        - tf_0: float, the preferred temporal frequency
+        - sigma_sf: float, the spatial frequency tuning width
+        - sigma_tf: float, the temporal frequency tuning width
+        - 𝜻_power_law_exp: float, the exponent controlling the dependence of
+        temporal frequency preference on spatial frequency
+    sfs : np.ndarray
+        An array of spatial frequencies of the stimuli.
+    tfs : np.ndarray
+        An array of temporal frequencies of the stimuli.
+
+    Returns
+    -------
+    np.ndarray
+        A 2D numpy array of Gaussian response amplitudes to the set of visual
+        stimuli.
+    """
     peak_response, sf_0, tf_0, sigma_sf, sigma_tf, 𝜻_power_law_exp = params
 
     gaussian_matrix = np.zeros((len(sfs), len(tfs)))

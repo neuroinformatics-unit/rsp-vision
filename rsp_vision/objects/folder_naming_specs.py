@@ -7,8 +7,9 @@ from .parsers2p.parser2pRSP import Parser2pRSP
 
 
 class FolderNamingSpecs:
-    """The class :class:`FolderNamingSpecs` represents the naming convention
-    of the files and folders in which the experimental data is stored.
+    """The class :class:`FolderNamingSpecs` represents the naming
+    convention of the files and folders in which the experimental data is
+    stored.
 
     Attributes
     ----------
@@ -76,9 +77,10 @@ class FolderNamingSpecs:
         self.allen_dff_file_path = self._parser.get_path_to_allen_dff_file()
 
     def parse_name(self) -> None:
-        """Parses the folder name and evaluates the parameters `mouse_line`,
-        `mouse_id`, `hemisphere`, `brain_region`, `monitor_position.
-        Other parameters might be parsed depending on the project.
+        """Parses the folder name and evaluates the parameters
+        `mouse_line`, `mouse_id`, `hemisphere`, `brain_region`,
+        `monitor_position. Other parameters might be parsed depending on
+        the project.
 
         Raises
         ------
@@ -86,7 +88,6 @@ class FolderNamingSpecs:
             if the parser specified in the config file is
         not implemented
         """
-
         if self.original_config["parser"] == "Parser2pRSP":
             logging.debug("Parsing folder name using Parser2pRSP")
             self._parser = Parser2pRSP(self.folder_name, self.original_config)
@@ -101,8 +102,8 @@ class FolderNamingSpecs:
             )
 
     def extract_all_file_names(self) -> None:
-        """Recursively searches files in the given folder.
-        It also locates the allen_dff file and the serial2p files.
+        """Recursively searches files in the given folder. It also locates
+        the allen_dff file and the serial2p files.
 
         Raises:
             FileNotFoundError: if the allen_dff is not present
@@ -152,8 +153,8 @@ class FolderNamingSpecs:
             )
 
     def search_file_paths(self, path: Path) -> None:
-        """Recursively searches files in the given folder.
-        Saves file path in self.all_files only if the DataType is found.
+        """Recursively searches files in the given folder. Saves file path
+        in self.all_files only if the DataType is found.
 
         Parameters
         ----------
