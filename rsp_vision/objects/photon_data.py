@@ -1,3 +1,4 @@
+import itertools
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Set, Tuple
@@ -35,12 +36,16 @@ class PhotonData:
         * screen_size (np.array) - the size of the screen
         * stimulus_idxs (np.array) - the indexes of the frames that are
             stimulus onsets
+        * spatial_frequencies (np.array) - the spatial frequencies
+            used in the experiment
+        * temporal_frequencies (np.array) - the temporal frequencies
+            used in the experiment
+        * sf_tf_combinations (np.array) - the combinations of sf and tf
+            that were used in the experiment
+        * directions (np.array) - the directions used in the experiment
     - Arrays:
         * sf_tf_combinations (np.array) - the combinations of sf and tf
             that were used in the experiment
-    - Lists:
-        * stimulus_idxs (list) - the indexes of the frames that are
-            stimulus onsets
     - Integers:
         * n_frames_per_stim (int) - the number of frames per stimulus
         * n_frames_per_trigger (int) - the number of frames per trigger
@@ -103,17 +108,6 @@ class PhotonData:
             + f"{self.signal[self.signal['stimulus_onset']].head()}"
         )
 
-    def initialize_analysis_output_variables(self) -> None:
-        self.responses: pd.DataFrame
-        self.p_values: dict
-        self.magnitude_over_medians: pd.DataFrame
-        self.responsive_rois: Set[int]
-        self.measured_preference: dict
-        self.fit_output: dict
-        self.median_subtracted_response: dict
-        self.downsampled_gaussian: Dict[Tuple[int, int], np.ndarray]
-        self.oversampled_gaussian: Dict[Tuple[int, int], np.ndarray]
-
     def get_signal_and_stimuli_df(self, data_raw: DataRaw) -> pd.DataFrame:
         """The main function of this class, which returns the final
         `signal` dataframe. It will contain the following columns:
@@ -155,6 +149,22 @@ class PhotonData:
         data_raw : DataRaw
             The raw data object from which the data will be extracted
         """
+        self.n_spatial_frequencies = self.config["n_spatial_frequencies"]
+        self.n_temporal_frequencies = self.config["n_temporal_frequencies"]
+        self.n_directions = self.config["n_directions"]
+        self.spatial_frequencies = np.array(
+            self.config["spatial_frequencies"], dtype=float
+        )
+        self.temporal_frequencies = np.array(
+            self.config["temporal_frequencies"], dtype=float
+        )
+        self.directions = np.array(self.config["directions"], dtype=int)
+        self.sf_tf_combinations = list(
+            itertools.product(
+                self.spatial_frequencies, self.temporal_frequencies
+            )
+        )
+
         self.screen_size = data_raw.stim[0]["screen_size"]
         self.n_sessions = data_raw.frames.shape[0]
         self.n_roi = data_raw.frames[0].shape[0]
@@ -431,9 +441,9 @@ class PhotonData:
 
             if (
                 len(pivot_table)
-                != self.config["n_sf"]
-                * self.config["n_tf"]
-                * self.config["n_dir"]
+                != self.n_spatial_frequencies
+                * self.n_temporal_frequencies
+                * self.n_directions
             ):
                 logging.error(f"Pivot table: {pivot_table}")
                 logging.error(f"Pivot table length: {len(pivot_table)}")
@@ -522,13 +532,20 @@ class PhotonData:
                 )
 
     def set_post_data_extraction_variables(self) -> None:
-        self._sf = np.sort(self.stimuli.sf.unique())
-        self._tf = np.sort(self.stimuli.tf.unique())
-        self.sf_tf_combinations = np.array(
-            np.meshgrid(self._sf, self._tf)
-        ).T.reshape(-1, 2)
-        self._dir = self.stimuli.direction.unique()
-        self.stimulus_idxs = self.signal[self.signal["stimulus_onset"]].index
+        self.stimulus_idxs: pd.Series = self.signal[
+            self.signal["stimulus_onset"]
+        ].index
+
+    def initialize_analysis_output_variables(self) -> None:
+        self.responses: pd.DataFrame
+        self.p_values: dict
+        self.magnitude_over_medians: pd.DataFrame
+        self.responsive_rois: Set[int]
+        self.measured_preference: dict
+        self.fit_output: dict
+        self.median_subtracted_response: dict
+        self.downsampled_gaussian: Dict[Tuple[int, int], np.ndarray]
+        self.oversampled_gaussian: Dict[Tuple[int, int], np.ndarray]
 
     def ascii_array_to_string(self, array: np.ndarray) -> str:
         return "".join([chr(int(i)) for i in array])
