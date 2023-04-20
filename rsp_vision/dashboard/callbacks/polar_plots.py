@@ -7,9 +7,7 @@ import plotly.graph_objects as go
 from dash import Dash, Input, Output, dcc, html
 from plotly.subplots import make_subplots
 
-from rsp_vision.dashboard.callbacks.plotting_helpers import (
-    get_peaks_dataframe,
-)
+from rsp_vision.dashboard.callbacks.plotting_helpers import get_peaks_dataframe
 
 
 def get_polar_plot_callback(

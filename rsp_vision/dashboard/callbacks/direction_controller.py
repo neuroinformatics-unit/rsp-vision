@@ -1,7 +1,9 @@
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, State
-from rsp_vision.dashboard.callbacks.plotting_helpers import get_circle_coordinates
 
+from rsp_vision.dashboard.callbacks.plotting_helpers import (
+    get_circle_coordinates,
+)
 from rsp_vision.dashboard.layout import get_direction_plot_for_controller
 
 
