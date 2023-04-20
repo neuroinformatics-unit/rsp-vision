@@ -1,14 +1,16 @@
+import logging
+import pickle
+
 from rich.prompt import Prompt
 
-from analysis.spatial_freq_temporal_freq import FrequencyAnalysis
-from load.load_data import load_data
-from objects.enums import PhotonType
-from objects.photon_data import PhotonData
-from plots.plotter import Plotter
-from utils import exception_handler, start_logging
+from rsp_vision.analysis.spatial_freq_temporal_freq import FrequencyAnalysis
+from rsp_vision.load.load_data import load_data
+from rsp_vision.objects.enums import PhotonType
+from rsp_vision.objects.photon_data import PhotonData
+from rsp_vision.utils import exception_handler, start_logging
 
 
-
+@exception_handler
 def main():
     """Entry point of the program. CLI or GUI functionality is added here."""
     # pipeline draft
@@ -23,20 +25,6 @@ def main():
         📁"
     )
 
-    pipeline(folder_name)
-    
-    # Plots
-    # plotter = Plotter(analysis)
-
-    # plotter.murakami_plot()
-    # plotter.anova_window_plot()
-    # plotter.polar_grid()
-    # plotter.response_map()
-    # plotter.sftf_fit()
-    # plotter.traceplot()
-
-@exception_handler
-def pipeline(folder_name):
     photon_type = PhotonType.TWO_PHOTON
     # load data
     data, config = load_data(folder_name)
@@ -48,5 +36,8 @@ def pipeline(folder_name):
     analysis = FrequencyAnalysis(photon_data, photon_type)
 
     # calculate responsiveness and display it in a nice way
-    responsiveness = analysis.responsiveness()
-    print(responsiveness)  # TODO: nice appearance
+    analysis.responsiveness()
+
+    with open(f"{folder_name}_analysis.pickle", "wb") as f:
+        pickle.dump(analysis, f)
+        logging.info("Analysis saved")
