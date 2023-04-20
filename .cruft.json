@@ -1,0 +1,22 @@
+{
+  "template": "https://github.com/neuroinformatics-unit/python-cookiecutter",
+  "commit": "6fe2e3986fb26ca0e288cee6f182db63973f5607",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "full_name": "Laura Porta",
+      "email": "ucqflpo@ucl.ac.uk",
+      "github_username_or_organization": "neuroinformatics-unit",
+      "package_name": "rsp-vision",
+      "github_repository_url": "provide later",
+      "module_name": "rsp_vision",
+      "short_description": "Analysis tools and data exploration for RSP neurons - photon microscopy",
+      "license": "BSD-3",
+      "_copy_without_render": [
+        ".github/*"
+      ],
+      "_template": "https://github.com/neuroinformatics-unit/python-cookiecutter"
+    }
+  },
+  "directory": null
+}
