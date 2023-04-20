@@ -117,10 +117,10 @@ def get_sf_tf_grid_callback(
             Input("direction-store", "data"),
         ],
     )
-    def sf_tf_grid(roi_id: int, dir: dict) -> dcc.Graph:
-        dir = dir["value"]
+    def sf_tf_grid(roi_id: int, direction_input: dict) -> dcc.Graph:
+        direction = direction_input["value"]
         vertical_df = get_dataframe_for_facet_plot(
-            signal, data, counts, roi_id, dir
+            signal, data, counts, roi_id, direction
         )
 
         fig = px.line(
@@ -132,7 +132,10 @@ def get_sf_tf_grid_callback(
             width=1500,
             height=800,
             color="signal_kind",
-            category_orders={"sf": data._sf[::-1], "tf": data._tf},
+            category_orders={
+                "sf": data.spatial_frequencies[::-1],
+                "tf": data.temporal_frequencies,
+            },
         )
 
         fig.update_layout(
@@ -156,8 +159,8 @@ def get_andermann_gaussian_plot_callback(
     downsampled_gaussians: Dict[Tuple[int, int], np.ndarray],
     oversampled_gaussians: Dict[Tuple[int, int], np.ndarray],
     fit_outputs: np.ndarray,
-    sfs: np.ndarray,
-    tfs: np.ndarray,
+    spatial_frequencies: np.ndarray,
+    temporal_frequencies: np.ndarray,
 ) -> None:
     @app.callback(
         Output("gaussian-graph-andermann", "children"),
@@ -166,8 +169,8 @@ def get_andermann_gaussian_plot_callback(
             Input("direction-store", "data"),
         ],
     )
-    def gaussian_plot(roi_id: int, _dir: dict) -> html.Div:
-        dir = _dir["value"]
+    def gaussian_plot(roi_id: int, direction_input: dict) -> html.Div:
+        direction = direction_input["value"]
 
         # Create subplots for the two Gaussian plots
         fig = sp.make_subplots(
@@ -179,12 +182,12 @@ def get_andermann_gaussian_plot_callback(
                 "Oversampled Gaussian",
             ),
         )
-        uniform_sfs = uniform_tfs = np.arange(0, len(sfs), 1)
+        uniform_sfs = uniform_tfs = np.arange(0, len(spatial_frequencies), 1)
 
         #  Add the heatmap for the median subtracted response
         fig.add_trace(
             go.Heatmap(
-                z=median_subtracted_responses[(roi_id, dir)],
+                z=median_subtracted_responses[(roi_id, direction)],
                 x=uniform_tfs,
                 y=uniform_sfs,
                 colorscale="Viridis",
@@ -197,7 +200,7 @@ def get_andermann_gaussian_plot_callback(
         # Add the heatmap for the original Gaussian
         fig.add_trace(
             go.Heatmap(
-                z=downsampled_gaussians[(roi_id, dir)],
+                z=downsampled_gaussians[(roi_id, direction)],
                 x=uniform_tfs,
                 y=uniform_sfs,
                 colorscale="Viridis",
@@ -218,7 +221,7 @@ def get_andermann_gaussian_plot_callback(
 
         fig.add_trace(
             go.Heatmap(
-                z=oversampled_gaussians[(roi_id, dir)],
+                z=oversampled_gaussians[(roi_id, direction)],
                 x=uniform_oversampled_tfs,
                 y=uniform_oversampled_sfs,
                 colorscale="Viridis",
@@ -229,22 +232,22 @@ def get_andermann_gaussian_plot_callback(
         )
 
         log_sfs = np.logspace(
-            np.log2(min(sfs)),
-            np.log2(max(sfs)),
+            np.log2(min(spatial_frequencies)),
+            np.log2(max(spatial_frequencies)),
             num=oversampling_factor,
             base=2,
         )
 
         log_tfs = np.logspace(
-            np.log2(min(tfs)),
-            np.log2(max(tfs)),
+            np.log2(min(temporal_frequencies)),
+            np.log2(max(temporal_frequencies)),
             num=oversampling_factor,
             base=2,
         )
 
         fit_corr = fit_correlation(
-            downsampled_gaussians[(roi_id, dir)],
-            median_subtracted_responses[(roi_id, dir)],
+            downsampled_gaussians[(roi_id, direction)],
+            median_subtracted_responses[(roi_id, direction)],
         )
 
         # Update layout to maintain the aspect ratio
@@ -255,13 +258,21 @@ def get_andermann_gaussian_plot_callback(
             margin=dict(t=50, b=50, l=50, r=50),
             showlegend=False,
             title_text=f"Fit Correlation: {fit_corr:.2f}, \
-                𝜁: {fit_outputs[(roi_id, dir)][-1]:.2f}",
+                𝜁: {fit_outputs[(roi_id, direction)][-1]:.2f}",
         )
 
-        fig.update_xaxes(tickvals=uniform_tfs, ticktext=tfs, row=1, col=1)
-        fig.update_yaxes(tickvals=uniform_sfs, ticktext=sfs, row=1, col=1)
-        fig.update_xaxes(tickvals=uniform_tfs, ticktext=tfs, row=1, col=2)
-        fig.update_yaxes(tickvals=uniform_sfs, ticktext=sfs, row=1, col=2)
+        fig.update_xaxes(
+            tickvals=uniform_tfs, ticktext=temporal_frequencies, row=1, col=1
+        )
+        fig.update_yaxes(
+            tickvals=uniform_sfs, ticktext=spatial_frequencies, row=1, col=1
+        )
+        fig.update_xaxes(
+            tickvals=uniform_tfs, ticktext=temporal_frequencies, row=1, col=2
+        )
+        fig.update_yaxes(
+            tickvals=uniform_sfs, ticktext=spatial_frequencies, row=1, col=2
+        )
         fig.update_yaxes(
             tickvals=uniform_oversampled_sfs[::10],
             ticktext=np.round(log_sfs[::10], 2),
@@ -294,8 +305,8 @@ def get_murakami_plot_callback(
     app: Dash,
     n_roi: int,
     directions: List[int],
-    sfs: np.ndarray,
-    tfs: np.ndarray,
+    spatial_frequencies: np.ndarray,
+    temporal_frequencies: np.ndarray,
     oversampled_gaussians: Dict[Tuple[int, int], np.ndarray],
     responsive_rois: Set[int],
     config: dict,
@@ -310,9 +321,9 @@ def get_murakami_plot_callback(
         ],
     )
     def murakami_plot(
-        _roi_id: int, _dire: dict, rois_to_show: str, scale: str
+        roi_id_input: int, direction_input: dict, rois_to_show: str, scale: str
     ) -> html.Div:
-        _dire = _dire["value"]
+        direction_input = direction_input["value"]
 
         colors = px.colors.qualitative.Light24[:n_roi]
 
@@ -322,7 +333,10 @@ def get_murakami_plot_callback(
             color = colors[roi_id]
             peaks = {
                 (roi_id, dire): find_peak_coordinates(
-                    oversampled_gaussians[(roi_id, dire)], sfs, tfs, config
+                    oversampled_gaussians[(roi_id, dire)],
+                    spatial_frequencies,
+                    temporal_frequencies,
+                    config,
                 )
                 for dire in directions
             }
@@ -365,8 +379,11 @@ def get_murakami_plot_callback(
                     )
                 )
 
-            if roi_id == _roi_id:
-                row = p[(p.roi_id == _roi_id) & (p.direction == _dire)].iloc[0]
+            if roi_id == roi_id_input:
+                row = p[
+                    (p.roi_id == roi_id_input)
+                    & (p.direction == direction_input)
+                ].iloc[0]
                 tf = row["temporal_frequency"]
                 sf = row["spatial_frequency"]
 
@@ -383,7 +400,7 @@ def get_murakami_plot_callback(
             return fig
 
         if rois_to_show == "choosen":
-            fig = figure_for_murakami_plot(_roi_id)
+            fig = figure_for_murakami_plot(roi_id_input)
         elif rois_to_show == "responsive":
             for roi_id in responsive_rois:
                 fig = figure_for_murakami_plot(roi_id)
@@ -422,8 +439,8 @@ def get_murakami_plot_callback(
 def get_polar_plot_callback(
     app: Dash,
     directions: List[int],
-    sfs: np.ndarray,
-    tfs: np.ndarray,
+    spatial_frequencies: np.ndarray,
+    temporal_frequencies: np.ndarray,
     downsampled_gaussians: Dict[Tuple[int, int], np.ndarray],
     median_subtracted_responses: Dict[Tuple[int, int], np.ndarray],
 ) -> None:
@@ -444,8 +461,8 @@ def get_polar_plot_callback(
             gaussian_or_original,
             roi_id,
             directions,
-            sfs,
-            tfs,
+            spatial_frequencies,
+            temporal_frequencies,
             median_subtracted_responses,
             downsampled_gaussians,
         )
@@ -478,14 +495,16 @@ def get_polar_plot_callback(
             specs=[[{"type": "polar"}, {"type": "polar"}]],
             subplot_titles=subplot_titles,
         )
-        colors = px.colors.qualitative.Light24[: int(len(sfs))]
+        colors = px.colors.qualitative.Light24[: int(len(spatial_frequencies))]
 
-        for i, (tf, sf) in enumerate(itertools.product(tfs, sfs)):
+        for i, (tf, sf) in enumerate(
+            itertools.product(temporal_frequencies, spatial_frequencies)
+        ):
             row = p_sorted[
                 (p_sorted.temporal_frequency == tf)
                 & (p_sorted.spatial_frequency == sf)
             ]
-            color = colors[i % len(sfs)]
+            color = colors[i % len(spatial_frequencies)]
 
             r_values = row["corresponding_value"].tolist()
             theta_values = row["direction"].tolist()
@@ -536,8 +555,8 @@ def get_polar_plot_callback(
 def get_polar_plot_facet_callback(
     app: Dash,
     directions: List[int],
-    sfs: np.ndarray,
-    tfs: np.ndarray,
+    spatial_frequencies: np.ndarray,
+    temporal_frequencies: np.ndarray,
     downsampled_gaussians: Dict[Tuple[int, int], np.ndarray],
     median_subtracted_responses: Dict[Tuple[int, int], np.ndarray],
 ) -> None:
@@ -549,8 +568,8 @@ def get_polar_plot_facet_callback(
         ],
     )
     def polar_plot_facet(roi_id: int, gaussian_or_original: str) -> html.Div:
-        sorted_sfs = sorted(sfs, reverse=True)
-        sorted_tfs = sorted(tfs)
+        sorted_sfs = sorted(spatial_frequencies, reverse=True)
+        sorted_tfs = sorted(temporal_frequencies)
 
         p_sorted = get_peaks_dataframe(
             gaussian_or_original,
