@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 import numpy as np
 import pandas as pd
 
-from rsp_vision.analysis.utils import ascii_array_to_string, get_fps
+from rsp_vision.load.config_switches import get_fps
 from rsp_vision.objects.data_raw import DataRaw
 from rsp_vision.objects.enums import PhotonType
 
@@ -16,6 +16,39 @@ class PhotonData:
     the information that would be useful for plotting.
     It does not include padding calculations, which I would like it
     to be done dynamically while browsing the data.
+
+    Full list of attributes created running init:
+    - DataFrames:
+        * signal (pd.DataFrame) - the main dataframe containing all the
+            information about the signal
+    - Arrays:
+        * sf_tf_combinations (np.array) - the combinations of sf and tf
+            that were used in the experiment
+    - Lists:
+        * stimulus_idxs (list) - the indexes of the frames that are
+            stimulus onsets
+    - Integers:
+        * n_frames_per_stim (int) - the number of frames per stimulus
+        * n_frames_per_trigger (int) - the number of frames per trigger
+        * n_triggers_per_stimulus (int) - the number of triggers per
+            stimulus
+        * n_stimuli (int) - the number of stimuli
+        * n_stimuli_per_session (int) - the number of stimuli per session
+        * n_sessions (int) - the number of sessions
+        * n_rois (int) - the number of rois
+        * n_frames (int) - the number of frames
+    - Floats:
+        * fps (float) - the frames per second of the experiment
+    - Booleans:
+        * deactivate_checks (bool) - whether to deactivate the checks
+            that are done on the data
+    - Dictionaries:
+        * config (dict) - the configuration dictionary
+    - Enums:
+        * photon_type (PhotonType) - the type of photon data
+    - Other:
+        * data_raw (DataRaw) - the raw data object
+
     """
 
     def __init__(
@@ -28,15 +61,18 @@ class PhotonData:
         self.deactivate_checks = deactivate_checks
         self.photon_type = photon_type
         self.config = config
+
         self.fps = get_fps(self.photon_type, self.config)
         self.set_general_variables(data_raw)
-        self.signal = self.get_signal_df(data_raw)
+        self.signal, self.stimuli = self.get_signal_and_stimuli_df(data_raw)
+        self.set_post_data_extraction_variables()
+
         logging.info(
             "Some of the data extracted:\n"
             + f"{self.signal[self.signal['stimulus_onset']].head()}"
         )
 
-    def get_signal_df(self, data_raw: DataRaw):
+    def get_signal_and_stimuli_df(self, data_raw: DataRaw):
         """The main function of this class, which returns the final
         `signal` dataframe. It will contain the following columns:
         * day (int) - the day of the experiment (1, 2, 3 or 4)
@@ -66,7 +102,7 @@ class PhotonData:
         stimuli = self.get_stimuli(data_raw)
         signal = self.fill_up_with_stim_info(signal, stimuli)
 
-        return signal
+        return signal, stimuli
 
     def set_general_variables(self, data_raw):
         """Set the general variables that will be used in the class,
@@ -82,7 +118,7 @@ class PhotonData:
         self.n_roi = data_raw.frames[0].shape[0]
         self.n_frames_per_session = data_raw.frames[0].shape[1]
         self.day_stim = data_raw.day["stimulus"]  # seems useless
-        self.grey_or_static = ascii_array_to_string(
+        self.grey_or_static = self.ascii_array_to_string(
             data_raw.stim[0]["stimulus"]["grey_or_static"]
         )
         if self.grey_or_static in [
@@ -239,6 +275,11 @@ class PhotonData:
 
                 signal = pd.concat([signal, df], ignore_index=True)
 
+        # columns initialized to nan that will be
+        # filled when performing the analysis
+        signal["mean_response"] = np.nan
+        signal["mean_baseline"] = np.nan
+
         logging.info("Signal dataframe created")
 
         return signal
@@ -291,12 +332,6 @@ class PhotonData:
             stimuli = pd.concat([stimuli, df])
 
         self.check_consistency_of_stimuli_df(stimuli)
-
-        self.uniques = {
-            "sf": stimuli.sf.unique(),
-            "tf": stimuli.tf.unique(),
-            "direction": stimuli.direction.unique(),
-        }
         return stimuli
 
     def check_consistency_of_stimuli_df(self, stimuli):
@@ -441,3 +476,16 @@ class PhotonData:
                     with stimulus information.\nPivot table:{pivot_table}, \
                     expercted:{expected}"
                 )
+
+    def set_post_data_extraction_variables(self):
+        self._sf = np.sort(self.stimuli.sf.unique())
+        self._tf = np.sort(self.stimuli.tf.unique())
+        self.sf_tf_combinations = np.array(
+            np.meshgrid(self._sf, self._tf)
+        ).T.reshape(-1, 2)
+        self._dir = self.stimuli.direction.unique()
+        self.stimulus_idxs = self.signal[self.signal["stimulus_onset"]].index
+        self.responses = None
+
+    def ascii_array_to_string(self, array):
+        return "".join([chr(int(i)) for i in array])

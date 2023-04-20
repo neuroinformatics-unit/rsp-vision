@@ -5,41 +5,20 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 
-from rsp_vision.analysis.utils import get_fps
-from rsp_vision.objects.enums import PhotonType
 from rsp_vision.objects.photon_data import PhotonData
 
 
-class FrequencyAnalysis:
+class FrequencyResponsiveness:
     """
     Class for analyzing responses to stimuli with different
     spatial and temporal frequencies.
     """
 
-    def __init__(self, data: PhotonData, photon_type: PhotonType):
+    def __init__(self, data: PhotonData):
+        # modify the signal dataframe and responses dataframe in place
         self.data = data
-        self.photon_type = photon_type
-        self.fps = get_fps(photon_type, data.config)
 
-        self.padding_start = int(data.config["padding"][0])
-        self.padding_end = int(data.config["padding"][1])
-
-        self.stimulus_idxs = self.data.signal[
-            self.data.signal["stimulus_onset"]
-        ].index
-
-        self._sf = np.sort(self.data.uniques["sf"])
-        self._tf = np.sort(self.data.uniques["tf"])
-        self.sf_tf_combinations = np.array(
-            np.meshgrid(self._sf, self._tf)
-        ).T.reshape(-1, 2)
-        self._dir = self.data.uniques["direction"]
-
-        self.signal = self.data.signal
-        self.signal["mean_response"] = np.nan
-        self.signal["mean_baseline"] = np.nan
-
-    def responsiveness(self):
+    def __call__(self):
         """
         Calculate the responsiveness of each ROI in the signal dataframe.
 
@@ -61,9 +40,9 @@ class FrequencyAnalysis:
         responsiveness based on the results of the statistical tests.
         """
         self.calculate_mean_response_and_baseline()
-        logging.info(f"Edited signal dataframe:{self.responses.head()}")
+        logging.info(f"Edited signal dataframe:{self.data.responses.head()}")
 
-        self.p_values = pd.DataFrame(
+        p_values = pd.DataFrame(
             columns=[
                 "Kruskal-Wallis test",
                 "Sign test",
@@ -71,21 +50,25 @@ class FrequencyAnalysis:
             ]
         )
 
-        self.p_values["Kruskal-Wallis test"] = self.nonparam_anova_over_rois()
+        p_values["Kruskal-Wallis test"] = self.nonparam_anova_over_rois()
         (
-            self.p_values["Sign test"],
-            self.p_values["Wilcoxon signed rank test"],
+            p_values["Sign test"],
+            p_values["Wilcoxon signed rank test"],
         ) = self.perform_sign_tests()
-        logging.info(f"P-values for each roi:\n{self.p_values}")
+        logging.info(f"P-values for each roi:\n{p_values}")
 
-        self.magintude_over_medians = self.response_magnitude()
+        magintude_over_medians = self.response_magnitude()
         logging.info(
             "Response magnitude calculated over median:\n"
-            + f"{self.magintude_over_medians.head()}"
+            + f"{magintude_over_medians.head()}"
         )
 
-        self.responsive_rois = self.find_significant_rois()
-        logging.info(f"Responsive ROIs: {self.responsive_rois}")
+        self.data.responsive_rois = self.find_significant_rois(
+            p_values, magintude_over_medians
+        )
+        logging.info(f"Responsive ROIs: {self.data.responsive_rois}")
+
+        return self.data
 
     def calculate_mean_response_and_baseline(
         self,
@@ -117,26 +100,33 @@ class FrequencyAnalysis:
 
         # add calculated values in the row corresponding to
         # the startframe of every stimulus
-        self.signal.loc[self.stimulus_idxs, "mean_response"] = [
+        self.data.signal.loc[self.data.stimulus_idxs, "mean_response"] = [
             np.mean(
-                self.signal.iloc[self.window_mask_response[i]].signal.values
+                self.data.signal.iloc[
+                    self.window_mask_response[i]
+                ].signal.values
             )
             for i in range(len(self.window_mask_response))
         ]
 
-        self.signal.loc[self.stimulus_idxs, "mean_baseline"] = [
+        self.data.signal.loc[self.data.stimulus_idxs, "mean_baseline"] = [
             np.mean(
-                self.signal.iloc[self.window_mask_baseline[i]].signal.values
+                self.data.signal.iloc[
+                    self.window_mask_baseline[i]
+                ].signal.values
             )
             for i in range(len(self.window_mask_baseline))
         ]
 
-        self.signal["subtracted"] = (
-            self.signal["mean_response"] - self.signal["mean_baseline"]
+        self.data.signal["subtracted"] = (
+            self.data.signal["mean_response"]
+            - self.data.signal["mean_baseline"]
         )
 
         #  new summary dataframe, more handy
-        self.responses = self.signal[self.signal["stimulus_onset"]][
+        self.data.responses = self.data.signal[
+            self.data.signal["stimulus_onset"]
+        ][
             [
                 "frames_id",
                 "roi_id",
@@ -149,7 +139,7 @@ class FrequencyAnalysis:
                 "subtracted",
             ]
         ]
-        self.responses = self.responses.reset_index()
+        self.data.responses = self.data.responses.reset_index()
 
     def get_response_and_baseline_windows(self):
         """
@@ -180,13 +170,13 @@ class FrequencyAnalysis:
 
         # Identify the rows in the window of each stimulus onset
         window_start_response = (
-            self.stimulus_idxs
+            self.data.stimulus_idxs
             + (self.data.n_frames_per_trigger * response_start)
-            + (self.fps * 0.5)  # ignore first 0.5s
+            + (self.data.fps * 0.5)  # ignore first 0.5s
             - 1
         )
         window_end_response = (
-            self.stimulus_idxs
+            self.data.stimulus_idxs
             + (self.data.n_frames_per_trigger * (response_start + 1))
             - 1
         )
@@ -200,13 +190,13 @@ class FrequencyAnalysis:
         )
 
         window_start_baseline = (
-            self.stimulus_idxs
+            self.data.stimulus_idxs
             + (self.data.n_frames_per_trigger * baseline_start)
-            + (self.fps * 1.5)  # ignore first 1.5s
+            + (self.data.fps * 1.5)  # ignore first 1.5s
             - 1
         )
         window_end_baseline = (
-            self.stimulus_idxs
+            self.data.stimulus_idxs
             + (self.data.n_frames_per_trigger * (baseline_start + 1))
             - 1
         )
@@ -245,19 +235,19 @@ class FrequencyAnalysis:
         p_values = {}
         for roi in range(self.data.n_roi):
             roi_responses = pd.melt(
-                self.responses[self.responses.roi_id == roi],
+                self.data.responses[self.data.responses.roi_id == roi],
                 id_vars=["sf", "tf"],
                 value_vars=["subtracted"],
             )
 
             samples = np.zeros(
                 (
-                    len(self._dir) * self.data.n_triggers_per_stimulus,
-                    len(self.sf_tf_combinations),
+                    len(self.data._dir) * self.data.n_triggers_per_stimulus,
+                    len(self.data.sf_tf_combinations),
                 )
             )
 
-            for i, sf_tf in enumerate(self.sf_tf_combinations):
+            for i, sf_tf in enumerate(self.data.sf_tf_combinations):
                 # samples are each presentation of an sf/tf combination,
                 # regardless of direction and repetition
                 samples[:, i] = roi_responses[
@@ -290,7 +280,9 @@ class FrequencyAnalysis:
         p_st = {}
         p_wsrt = {}
         for roi in range(self.data.n_roi):
-            roi_responses = self.responses[self.responses.roi_id == roi]
+            roi_responses = self.data.responses[
+                self.data.responses.roi_id == roi
+            ]
 
             # Sign test (implemented with binomial test)
             p_st[roi] = ss.binomtest(
@@ -338,11 +330,11 @@ class FrequencyAnalysis:
         )
 
         for roi in range(self.data.n_roi):
-            for i, sf_tf in enumerate(self.sf_tf_combinations):
-                sf_tf_idx = self.responses[
-                    (self.responses.sf == sf_tf[0])
-                    & (self.responses.tf == sf_tf[1])
-                    & (self.responses.roi_id == roi)
+            for i, sf_tf in enumerate(self.data.sf_tf_combinations):
+                sf_tf_idx = self.data.responses[
+                    (self.data.responses.sf == sf_tf[0])
+                    & (self.data.responses.tf == sf_tf[1])
+                    & (self.data.responses.roi_id == roi)
                 ].index
                 r_windows = self.window_mask_response[sf_tf_idx]
                 b_windows = self.window_mask_baseline[sf_tf_idx]
@@ -355,12 +347,12 @@ class FrequencyAnalysis:
                 )
 
                 for i, w in enumerate(r_windows):
-                    responses_dir_and_reps[i, :] = self.signal.iloc[
+                    responses_dir_and_reps[i, :] = self.data.signal.iloc[
                         w
                     ].signal.values
 
                 for i, w in enumerate(b_windows):
-                    baseline_dir_and_reps[i, :] = self.signal.iloc[
+                    baseline_dir_and_reps[i, :] = self.data.signal.iloc[
                         w
                     ].signal.values
 
@@ -391,7 +383,7 @@ class FrequencyAnalysis:
 
         return magintude_over_medians
 
-    def find_significant_rois(self):
+    def find_significant_rois(self, p_values, magintude_over_medians):
         """
         Returns a set of ROIs that are significantly responsive, based on
         statistical tests and a response magnitude threshold.
@@ -419,13 +411,13 @@ class FrequencyAnalysis:
         """
         sig_kw = set(
             np.where(
-                self.p_values["Kruskal-Wallis test"].values
+                p_values["Kruskal-Wallis test"].values
                 < self.data.config["anova_threshold"]
             )[0].tolist()
         )
         sig_magnitude = set(
             np.where(
-                self.magintude_over_medians.groupby("roi").magnitude.max()
+                magintude_over_medians.groupby("roi").magnitude.max()
                 > self.data.config["response_magnitude_threshold"]
             )[0].tolist()
         )
@@ -433,45 +425,10 @@ class FrequencyAnalysis:
         if self.data.config["consider_only_positive"]:
             sig_positive = set(
                 np.where(
-                    self.p_values["Wilcoxon signed rank test"].values
+                    p_values["Wilcoxon signed rank test"].values
                     < self.data.config["only_positive_threshold"]
                 )[0].tolist()
             )
             sig_kw = sig_kw & sig_positive
 
         return sig_kw & sig_magnitude
-
-    def get_fit_parameters(self):
-        # calls _fit_two_dimensional_elliptical_gaussian
-        raise NotImplementedError("This method is not implemented yet")
-
-    def get_preferred_direction_all_rois(self):
-        raise NotImplementedError("This method is not implemented yet")
-
-    def _fit_two_dimensional_elliptical_gaussian(self):
-        # as described by Priebe et al. 2006
-        # add the variations added by Andermann et al. 2011 / 2013
-        # calls _2d_gaussian
-        # calls _get_response_map
-        raise NotImplementedError("This method is not implemented yet")
-
-
-class Gaussian2D:
-    # a 2D gaussian function
-    # also used by plotting functions
-    def __init__(self):
-        # different kinds of 2D gaussians:
-        # - 2D gaussian
-        # - 2D gaussian Andermann
-        # - 2D gaussian Priebe
-        raise NotImplementedError("This method is not implemented yet")
-
-
-class ResponseMap:
-    # also used by plotting functions
-    def _get_response_map(self):
-        # calls _get_preferred_direction
-        raise NotImplementedError("This method is not implemented yet")
-
-    def _get_preferred_direction(self):
-        raise NotImplementedError("This method is not implemented yet")
