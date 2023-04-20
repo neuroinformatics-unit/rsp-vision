@@ -7,7 +7,9 @@ from rsp_vision.dashboard.plotting_helpers import (
 from rsp_vision.dashboard.styles import SIDEBAR_STYLE
 
 
-def get_sidebar(responsive_rois, rois, directions):
+def get_sidebar(
+    responsive_rois: set, rois: list, directions: list
+) -> html.Div:
     circle_x, circle_y = get_circle_coordinates(directions)
 
     sidebar = html.Div(

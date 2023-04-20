@@ -15,13 +15,13 @@ class DataRaw:
         if is_allen:
             logging.info("Loading Allen data, starting to unpack...")
 
-            self.day = self._unpack_data(data["day"], data)
+            self.day: dict = self._unpack_data(data["day"], data)
             logging.info("Unpacked day")
 
             self.imaging = self._unpack_data(data["imaging"], data)
             logging.info("Unpacked imaging")
 
-            self.frames = self._unpack_data(data["f"], data)
+            self.frames: np.ndarray = self._unpack_data(data["f"], data)
             logging.info("Unpacked f")
 
             self.is_cell = self._unpack_data(data["is_cell"], data)
@@ -30,7 +30,7 @@ class DataRaw:
             self.neuropil_coeficient = self._unpack_data(data["r_neu"], data)
             logging.info("Unpacked r_neu")
 
-            self.stim = self._unpack_data(data["stim"], data)
+            self.stim: np.ndarray = self._unpack_data(data["stim"], data)
             logging.info("Unpacked stim")
 
             self.trig = self._unpack_data(data["trig"], data)
