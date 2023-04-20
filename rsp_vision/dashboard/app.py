@@ -3,18 +3,32 @@ import pickle
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
-from rsp_vision.dashboard.callbacks import (
-    get_andermann_gaussian_plot_callback,
-    get_murakami_plot_callback,
-    get_polar_plot_callback,
-    get_polar_plot_facet_callback,
-    get_sf_tf_grid_callback,
+from rsp_vision.dashboard.callbacks.direction_controller import (
     get_update_circle_figure_callback,
-    get_update_fig_all_sessions_callback,
     get_update_radio_items_callback,
 )
+from rsp_vision.dashboard.callbacks.session_plot import (
+    get_update_fig_all_sessions_callback,
+)
+from rsp_vision.dashboard.callbacks.sf_tf_facet_plot import (
+    get_sf_tf_grid_callback,
+)
+from rsp_vision.dashboard.callbacks.murakami_plot import (
+    get_murakami_plot_callback,
+)
+from rsp_vision.dashboard.callbacks.polar_plots import (
+    get_polar_plot_callback,
+    get_polar_plot_facet_callback,
+)
+from rsp_vision.dashboard.callbacks.gaussian_plots import (
+    get_andermann_gaussian_plot_callback,
+)
+
+
 from rsp_vision.dashboard.layout import get_sidebar
-from rsp_vision.dashboard.plotting_helpers import get_df_sf_tf_combo_plot
+from rsp_vision.dashboard.callbacks.plotting_helpers import (
+    get_df_sf_tf_combo_plot,
+)
 from rsp_vision.objects.photon_data import PhotonData
 
 

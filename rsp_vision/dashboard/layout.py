@@ -1,6 +1,6 @@
 from dash import dcc, html
 
-from rsp_vision.dashboard.plotting_helpers import (
+from rsp_vision.dashboard.callbacks.plotting_helpers import (
     get_circle_coordinates,
     get_direction_plot_for_controller,
 )
