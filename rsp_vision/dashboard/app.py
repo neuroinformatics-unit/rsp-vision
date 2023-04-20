@@ -84,7 +84,13 @@ def get_app():
         fit_outputs,
     )
     get_murakami_plot_callback(
-        app, n_roi, directions, sfs, tfs, downsapled_gaussians
+        app,
+        n_roi,
+        directions,
+        sfs,
+        tfs,
+        oversampled_gaussians,
+        responsive_rois,
     )
 
     return app
