@@ -542,6 +542,32 @@ def get_polar_plot_callback(
             paper_bgcolor="rgba(0, 0, 0, 0)",
             width=1600,
             height=800,
+            title=dict(
+                text="Analysis of responses across sf/tf for each direction",
+                font=dict(size=24, color="black", family="Arial, bold"),
+                xanchor="center",
+                yanchor="top",
+                x=0.5,
+                y=1,
+            ),
+            annotations=[
+                dict(
+                    font=dict(size=18, color="black", family="Arial, bold"),
+                    xanchor="center",
+                    yanchor="top",
+                    x=0.22,
+                    y=1.08,
+                    showarrow=False,
+                ),
+                dict(
+                    font=dict(size=18, color="black", family="Arial, bold"),
+                    xanchor="center",
+                    yanchor="top",
+                    x=0.78,
+                    y=1.08,
+                    showarrow=False,
+                ),
+            ],
         )
 
         return html.Div(
