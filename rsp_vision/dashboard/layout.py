@@ -1,66 +1,15 @@
-import math
-from typing import List
-
 from dash import dcc, html
 
+from rsp_vision.dashboard.plotting_helpers import (
+    generate_figure,
+    get_circle_coordinates,
+)
 from rsp_vision.dashboard.styles import SIDEBAR_STYLE
-
-directions = [0, 45, 90, 135, 180, 225, 270, 315]
-circle_x = [math.cos(math.radians(d)) for d in directions]
-circle_y = [math.sin(math.radians(d)) for d in directions]
-
-
-def generate_figure(
-    directions: List[int],
-    circle_x: List[float],
-    circle_y: List[float],
-    selected_direction: int,
-) -> dict:
-    return {
-        "data": [
-            {
-                "type": "scatter",
-                "x": circle_x,
-                "y": circle_y,
-                "mode": "markers+text",
-                "text": [str(d) + "°" for d in directions],
-                "textposition": "bottom center",
-                "hoverinfo": "none",
-                "marker": {"size": 10},
-                "customdata": directions,
-                "textfont": {
-                    "color": [
-                        "red" if d == selected_direction else "black"
-                        for d in directions
-                    ],
-                    "size": [
-                        15 if d == selected_direction else 10
-                        for d in directions
-                    ],
-                    "weight": [
-                        "bold" if d == selected_direction else "normal"
-                        for d in directions
-                    ],
-                },
-            }
-        ],
-        "layout": {
-            "xaxis": {"range": [-1.2, 1.2], "visible": False},
-            "yaxis": {"range": [-1.2, 1.2], "visible": False},
-            "plot_bgcolor": "rgba(0, 0, 0, 0)",  # Transparent background
-            "margin": {
-                "l": 0,
-                "r": 0,
-                "t": 0,
-                "b": 30,  # Increase the bottom margin to accommodate the text
-                "pad": 0,
-                "autoexpand": True,
-            },
-        },
-    }
 
 
 def get_sidebar(responsive_rois, rois, directions):
+    circle_x, circle_y = get_circle_coordinates(directions)
+
     sidebar = html.Div(
         [
             html.H1("RSP vision"),
