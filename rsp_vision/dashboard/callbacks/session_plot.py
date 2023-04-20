@@ -1,6 +1,3 @@
-import itertools
-from typing import Dict, List, Set, Tuple
-
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
