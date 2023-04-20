@@ -6,10 +6,10 @@ from dash import Dash, dcc, html
 from rsp_vision.dashboard.callbacks import (
     get_andermann_gaussian_plot_callback,
     get_murakami_plot_callback,
-    get_sf_tf_grid_callback,
-    get_update_fig_all_sessions_callback,
     get_polar_plot_callback,
     get_polar_plot_facet_callback,
+    get_sf_tf_grid_callback,
+    get_update_fig_all_sessions_callback,
 )
 from rsp_vision.dashboard.layout import get_sidebar
 from rsp_vision.dashboard.query_dataframes import get_df_sf_tf_combo_plot
