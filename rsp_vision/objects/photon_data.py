@@ -22,7 +22,7 @@ class PhotonData:
     -----------------
     Full list of attributes created running init:
 
-    * deactivate_checks (bool) - whether to deactivate the checks, useful
+    * using_real_data (bool) - whether to deactivate the checks, useful
         to spot bugs in new datasets
     * photon_type (PhotonType) - the photon type, two or three photon
     * config (dict) - the config dictionary
@@ -100,9 +100,9 @@ class PhotonData:
         data_raw: DataRaw,
         photon_type: PhotonType,
         config: dict,
-        deactivate_checks=False,
+        using_real_data=True,
     ):
-        self.deactivate_checks: bool = deactivate_checks
+        self.using_real_data: bool = using_real_data
         self.photon_type: PhotonType = photon_type
         self.config: dict = config
 
@@ -112,6 +112,8 @@ class PhotonData:
         self.signal, self.stimuli = self.get_signal_and_stimuli_df(data_raw)
 
         self.set_post_data_extraction_variables()
+        self.check_consistency_of_stimuli_df(self.stimuli)
+        self.check_consistency_of_signal_df(self.signal)
         self.initialize_analysis_output_variables()
 
         logging.info(
@@ -162,23 +164,6 @@ class PhotonData:
         data_raw : DataRaw
             The raw data object from which the data will be extracted
         """
-        self.n_spatial_frequencies: int = self.config["n_spatial_frequencies"]
-        self.n_temporal_frequencies: int = self.config[
-            "n_temporal_frequencies"
-        ]
-        self.n_directions: int = self.config["n_directions"]
-        self.spatial_frequencies = np.array(
-            self.config["spatial_frequencies"], dtype=float
-        )
-        self.temporal_frequencies = np.array(
-            self.config["temporal_frequencies"], dtype=float
-        )
-        self.directions = np.array(self.config["directions"], dtype=int)
-        self.sf_tf_combinations = list(
-            itertools.product(
-                self.spatial_frequencies, self.temporal_frequencies
-            )
-        )
 
         self.screen_size: float = data_raw.stim[0]["screen_size"]
         self.n_sessions: int = data_raw.frames.shape[0]
@@ -398,7 +383,6 @@ class PhotonData:
             )
             stimuli = pd.concat([stimuli, df])
 
-        self.check_consistency_of_stimuli_df(stimuli)
         return stimuli
 
     def check_consistency_of_stimuli_df(self, stimuli: pd.DataFrame) -> None:
@@ -438,7 +422,7 @@ class PhotonData:
         consistent across all stimuli combinations in the pivot table.
         If not, it raises a RuntimeError and logs an error message.
         """
-        if not self.deactivate_checks:
+        if self.using_real_data:
             if len(stimuli) != self.n_of_stimuli_across_all_sessions:
                 logging.error(
                     f"Len of stimuli table: {len(stimuli)}, calculated "
@@ -502,7 +486,7 @@ class PhotonData:
             # starting frames and stimuli are alligned in source data
             stimulus = stimuli.iloc[stimulus_index]
 
-            if len(signal_idxs) != self.n_roi and not self.deactivate_checks:
+            if len(signal_idxs) != self.n_roi and self.using_real_data:
                 raise RuntimeError(
                     f"Number of instances for stimulus {stimulus} is wrong."
                 )
@@ -512,8 +496,6 @@ class PhotonData:
             signal.loc[mask, "tf"] = stimulus["tf"]
             signal.loc[mask, "direction"] = stimulus["direction"]
             signal.loc[mask, "stimulus_onset"] = True
-
-        self.check_consistency_of_signal_df(signal)
 
         logging.info("Stimulus information added to signal dataframe")
 
@@ -534,7 +516,7 @@ class PhotonData:
             If the signal table was not populated correctly with
             stimulus information.
         """
-        if not self.deactivate_checks:
+        if self.using_real_data:
             pivot_table = signal[signal.stimulus_onset].pivot_table(
                 index=["sf", "tf", "direction"], aggfunc="size"
             )
@@ -550,6 +532,42 @@ class PhotonData:
         self.stimulus_idxs: pd.Series = self.signal[
             self.signal["stimulus_onset"]
         ].index
+
+        self.spatial_frequencies = np.sort(self.stimuli.sf.unique())
+        self.temporal_frequencies = np.sort(self.stimuli.tf.unique())
+        self.directions = np.sort(self.stimuli.direction.unique())
+        self.n_spatial_frequencies = len(self.spatial_frequencies)
+        self.n_temporal_frequencies = len(self.temporal_frequencies)
+        self.n_directions = len(self.directions)
+
+        if self.using_real_data:
+            assert np.all(
+                self.spatial_frequencies
+                == np.array(self.config["spatial_frequencies"], dtype=float)
+            )
+            assert np.all(
+                self.temporal_frequencies
+                == np.array(self.config["temporal_frequencies"], dtype=float)
+            )
+            assert np.all(
+                self.directions
+                == np.array(self.config["directions"], dtype=float)
+            )
+            assert (
+                self.n_spatial_frequencies
+                == self.config["n_spatial_frequencies"]
+            )
+            assert (
+                self.n_temporal_frequencies
+                == self.config["n_temporal_frequencies"]
+            )
+            assert self.n_directions == self.config["n_directions"]
+
+        self.sf_tf_combinations = list(
+            itertools.product(
+                self.spatial_frequencies, self.temporal_frequencies
+            )
+        )
 
     def initialize_analysis_output_variables(self) -> None:
         self.responses: pd.DataFrame
