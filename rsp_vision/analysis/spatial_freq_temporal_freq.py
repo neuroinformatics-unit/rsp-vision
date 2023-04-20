@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 
-from objects.enums import PhotonType
-from objects.photon_data import PhotonData
-from analysis.utils import get_fps
+from rsp_vision.analysis.utils import get_fps
+from rsp_vision.objects.enums import PhotonType
+from rsp_vision.objects.photon_data import PhotonData
 
 
 class FrequencyAnalysis:
