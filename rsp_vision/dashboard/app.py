@@ -94,7 +94,7 @@ def get_app():
         [
             html.Div([dcc.Location(id="url"), sidebar]),
             html.Div(
-                id="example-graph",
+                id="session-graph",
             ),
             html.Div(
                 id="sf_tf-graph",
