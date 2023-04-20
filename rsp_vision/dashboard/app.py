@@ -50,38 +50,38 @@ def get_app():
     get_update_fig_all_sessions_callback(app, signal)
     get_sf_tf_grid_callback(app, signal, data, counts)
     get_andermann_gaussian_plot_callback(
-        app,
-        median_subtracted_responses,
-        downsampled_gaussians,
-        oversampled_gaussians,
-        fit_outputs,
-        sfs,
-        tfs,
+        app=app,
+        median_subtracted_responses=median_subtracted_responses,
+        downsampled_gaussians=downsampled_gaussians,
+        oversampled_gaussians=oversampled_gaussians,
+        fit_outputs=fit_outputs,
+        sfs=sfs,
+        tfs=tfs,
     )
     get_murakami_plot_callback(
-        app,
-        n_roi,
-        directions,
-        sfs,
-        tfs,
-        oversampled_gaussians,
-        responsive_rois,
+        app=app,
+        n_roi=n_roi,
+        directions=directions,
+        sfs=sfs,
+        tfs=tfs,
+        oversampled_gaussians=oversampled_gaussians,
+        responsive_rois=responsive_rois,
     )
     get_polar_plot_callback(
-        app,
-        directions,
-        sfs,
-        tfs,
-        downsampled_gaussians,
-        median_subtracted_responses,
+        app=app,
+        directions=directions,
+        sfs=sfs,
+        tfs=tfs,
+        downsampled_gaussians=downsampled_gaussians,
+        median_subtracted_responses=median_subtracted_responses,
     )
     get_polar_plot_facet_callback(
-        app,
-        directions,
-        sfs,
-        tfs,
-        downsampled_gaussians,
-        median_subtracted_responses,
+        app=app,
+        directions=directions,
+        sfs=sfs,
+        tfs=tfs,
+        downsampled_gaussians=downsampled_gaussians,
+        median_subtracted_responses=median_subtracted_responses,
     )
     get_update_radio_items_callback(app)
     get_update_circle_figure_callback(app)
