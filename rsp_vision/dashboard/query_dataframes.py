@@ -1,9 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from rsp_vision.analysis.gaussians_calculations import (
-    elliptical_gaussian_adermann,
-)
+from rsp_vision.analysis.gaussians_calculations import symmetric_2D_gaussian
 
 
 def get_df_sf_tf_combo_plot(signal, data):
@@ -147,7 +145,7 @@ def fit_elliptical_gaussian(sfs_inverted, tfs, responses, roi_id, config, dir):
     R = np.zeros((len(sfs_inverted), len(tfs)))
     for i, sf in enumerate(sfs_inverted):
         for j, tf in enumerate(tfs):
-            R[i, j] = elliptical_gaussian_adermann(
+            R[i, j] = symmetric_2D_gaussian(
                 peak_response, sf, tf, sf_0, tf_0, sigma
             )
 
