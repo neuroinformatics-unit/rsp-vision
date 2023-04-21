@@ -121,6 +121,48 @@ def get_dataframe_for_facet_plot(
     return vertical_df
 
 
+def get_dataframe_for_facet_plot_pooled_directions(
+    signal: pd.DataFrame,
+    roi_id: int,
+) -> pd.DataFrame:
+    this_roi_df = signal[
+        (signal["roi_id"] == roi_id)
+        & signal.sf.notnull()
+        & signal.tf.notnull()
+    ]
+
+    this_roi_df["session_direction"] = (
+        this_roi_df["session_id"].astype(str)
+        + "_"
+        + this_roi_df["direction"].astype(str)
+    )
+    this_roi_df.drop(columns=["session_id", "direction"], inplace=True)
+    this_roi_df = this_roi_df[
+        ["stimulus_frames", "signal", "sf", "tf", "session_direction"]
+    ]
+    print(this_roi_df)
+
+    mean_df = (
+        this_roi_df.groupby(["sf", "tf", "stimulus_frames"])
+        .agg({"signal": "mean"})
+        .reset_index()
+    )
+    mean_df["session_direction"] = "mean"
+    combined_df = pd.concat([this_roi_df, mean_df], ignore_index=True)
+
+    median_df = (
+        this_roi_df.groupby(["sf", "tf", "stimulus_frames"])
+        .agg({"signal": "median"})
+        .reset_index()
+    )
+    median_df["session_direction"] = "median"
+    combined_df = pd.concat([combined_df, median_df], ignore_index=True)
+
+    print(combined_df)
+
+    return combined_df
+
+
 def fit_correlation(
     gaussian: np.ndarray, median_subtracted_response: np.ndarray
 ) -> float:
