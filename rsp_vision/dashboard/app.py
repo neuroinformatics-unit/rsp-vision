@@ -25,7 +25,6 @@ from rsp_vision.dashboard.callbacks.session_plot import (
 )
 from rsp_vision.dashboard.callbacks.sf_tf_facet_plot import (
     get_sf_tf_grid_callback,
-    get_sf_tf_grid_callback_pooled_dir,
 )
 from rsp_vision.dashboard.layout import get_sidebar
 from rsp_vision.objects.photon_data import PhotonData
@@ -101,12 +100,6 @@ def get_app() -> Dash:
     get_update_radio_items_callback(app)
     get_update_circle_figure_callback(app, directions)
 
-    get_sf_tf_grid_callback_pooled_dir(
-        app=app,
-        signal=signal,
-        data=data,
-    )
-
     # LAYOUT
     # =============================================================================
     sidebar = get_sidebar(responsive_rois, rois, directions)
@@ -119,9 +112,6 @@ def get_app() -> Dash:
             ),
             html.Div(
                 id="sf_tf-graph",
-            ),
-            html.Div(
-                id="sf_tf-graph-pooled",
             ),
             html.Div(
                 id="gaussian-graph-andermann",
