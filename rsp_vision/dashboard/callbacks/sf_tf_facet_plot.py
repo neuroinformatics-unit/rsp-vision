@@ -86,6 +86,27 @@ def all_directions_plot(
         title=f"SF TF traces for roi {roi_id + 1}",
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
+        showlegend=False,
+    )
+
+    fig.add_annotation(
+        x=0.9,
+        y=0.97,
+        xref="paper",
+        yref="paper",
+        text="mean",
+        showarrow=False,
+        font=dict(size=15, color="black"),
+    )
+
+    fig.add_annotation(
+        x=0.95,
+        y=0.97,
+        xref="paper",
+        yref="paper",
+        text="median",
+        showarrow=False,
+        font=dict(size=15, color="red"),
     )
 
     return fig
