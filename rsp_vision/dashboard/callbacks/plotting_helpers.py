@@ -237,48 +237,65 @@ def get_direction_plot_for_controller(
     circle_y: List[float],
     selected_direction: int,
 ) -> dict:
-    return {
-        "data": [
-            {
-                "type": "scatter",
-                "x": circle_x,
-                "y": circle_y,
-                "mode": "markers+text",
-                "text": [str(d) + "°" for d in directions],
-                "textposition": "bottom center",
-                "hoverinfo": "none",
-                "marker": {"size": 10},
-                "customdata": directions,
-                "textfont": {
-                    "color": [
-                        "red" if d == selected_direction else "black"
-                        for d in directions
-                    ],
-                    "size": [
-                        15 if d == selected_direction else 10
-                        for d in directions
-                    ],
-                    "weight": [
-                        "bold" if d == selected_direction else "normal"
-                        for d in directions
-                    ],
-                },
-            }
-        ],
-        "layout": {
-            "xaxis": {"range": [-1.2, 1.2], "visible": False},
-            "yaxis": {"range": [-1.2, 1.2], "visible": False},
-            "plot_bgcolor": "rgba(0, 0, 0, 0)",
-            "margin": {
-                "l": 0,
-                "r": 0,
-                "t": 0,
-                "b": 30,
-                "pad": 0,
-                "autoexpand": True,
+    data = [
+        {
+            "type": "scatter",
+            "x": circle_x,
+            "y": circle_y,
+            "mode": "markers+text",
+            "text": [str(d) + "°" for d in directions],
+            "textposition": "bottom center",
+            "hoverinfo": "none",
+            "marker": {"size": 10},
+            "customdata": directions,
+            "textfont": {
+                "color": [
+                    "red" if d == selected_direction else "black"
+                    for d in directions
+                ],
+                "size": [
+                    15 if d == selected_direction else 10 for d in directions
+                ],
+                "weight": [
+                    "bold" if d == selected_direction else "normal"
+                    for d in directions
+                ],
             },
         },
+        # Add the 'ALL' text at the center of the circle
+        {
+            "type": "scatter",
+            "x": [0],
+            "y": [0],
+            "mode": "text",
+            "text": ["ALL"],
+            "textposition": "middle center",
+            "textfont": {
+                "color": "red" if selected_direction == "all" else "black",
+                "weight": "bold" if selected_direction == "all" else "normal",
+                "size": 15,
+            },
+            "showlegend": False,
+            "hoverinfo": "none",
+        },
+    ]
+
+    layout = {
+        "showlegend": False,
+        "xaxis": {"range": [-1.2, 1.2], "visible": False},
+        "yaxis": {"range": [-1.2, 1.2], "visible": False},
+        "plot_bgcolor": "rgba(0, 0, 0, 0)",
+        "margin": {
+            "l": 0,
+            "r": 0,
+            "t": 0,
+            "b": 30,
+            "pad": 0,
+            "autoexpand": True,
+        },
     }
+
+    return {"data": data, "layout": layout}
 
 
 def get_circle_coordinates(
