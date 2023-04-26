@@ -27,6 +27,9 @@ def get_andermann_gaussian_plot_callback(
     def gaussian_plot(roi_id: int, direction_input: dict) -> html.Div:
         direction = direction_input["value"]
 
+        if not isinstance(direction, int):
+            direction = gaussian_plot.cached_direction
+
         # Create subplots for the two Gaussian plots
         fig = sp.make_subplots(
             rows=1,
@@ -112,7 +115,8 @@ def get_andermann_gaussian_plot_callback(
             height=400,
             margin=dict(t=50, b=50, l=50, r=50),
             showlegend=False,
-            title_text=f"Fit Correlation: {fit_corr:.2f}, \
+            title_text=f"Direction (can be cached):{direction}.\n"
+            + f"Fit Correlation: {fit_corr:.2f}, \
                 𝜁: {fit_outputs[(roi_id, direction)][-1]:.2f}",
         )
 
@@ -147,6 +151,8 @@ def get_andermann_gaussian_plot_callback(
         fig.update_xaxes(title_text="Temporal Frequency", row=1, col=2)
         fig.update_yaxes(title_text="Spatial Frequency", row=1, col=3)
         fig.update_xaxes(title_text="Temporal Frequency", row=1, col=3)
+
+        gaussian_plot.cached_direction = direction
 
         return html.Div(
             dcc.Graph(
