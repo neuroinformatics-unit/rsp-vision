@@ -1,6 +1,7 @@
 import pickle
 
 import dash_bootstrap_components as dbc
+import dash_loading_spinners as dls
 from dash import Dash, dcc, html
 
 from rsp_vision.dashboard.callbacks.direction_controller import (
@@ -107,23 +108,35 @@ def get_app() -> Dash:
     app.layout = dbc.Container(
         [
             html.Div([dcc.Location(id="url"), sidebar]),
-            html.Div(
-                id="session-graph",
+            dls.GridFade(
+                html.Div(
+                    id="session-graph",
+                ),
             ),
-            html.Div(
-                id="sf_tf-graph",
+            dls.GridFade(
+                html.Div(
+                    id="sf_tf-graph",
+                ),
             ),
-            html.Div(
-                id="gaussian-graph-andermann",
+            dls.GridFade(
+                html.Div(
+                    id="gaussian-graph-andermann",
+                ),
             ),
-            html.Div(
-                id="murakami-plot",
+            dls.GridFade(
+                html.Div(
+                    id="murakami-plot",
+                ),
             ),
-            html.Div(
-                id="polar-plot",
+            dls.GridFade(
+                html.Div(
+                    id="polar-plot",
+                ),
             ),
-            html.Div(
-                id="polar-plot-facet",
+            dls.GridFade(
+                html.Div(
+                    id="polar-plot-facet",
+                ),
             ),
         ]
     )
