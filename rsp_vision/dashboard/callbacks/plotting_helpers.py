@@ -140,7 +140,6 @@ def get_dataframe_for_facet_plot_pooled_directions(
     this_roi_df = this_roi_df[
         ["stimulus_frames", "signal", "sf", "tf", "session_direction"]
     ]
-    print(this_roi_df)
 
     mean_df = (
         this_roi_df.groupby(["sf", "tf", "stimulus_frames"])
@@ -157,8 +156,6 @@ def get_dataframe_for_facet_plot_pooled_directions(
     )
     median_df["session_direction"] = "median"
     combined_df = pd.concat([combined_df, median_df], ignore_index=True)
-
-    print(combined_df)
 
     return combined_df
 
@@ -314,7 +311,7 @@ def get_corresponding_value(
     # therefore it does not give us much information on the preference
     # of the neuron
     matrix = data[(roi_id, direction)]
-    return matrix[tf_idx, sf_idx]
+    return matrix[sf_idx, tf_idx]
 
 
 def get_peaks_dataframe(
@@ -338,7 +335,11 @@ def get_peaks_dataframe(
             "temporal_frequency": temporal_frequencies[tf_idx],
             "spatial_frequency": spatial_frequencies[sf_idx],
             "corresponding_value": get_corresponding_value(
-                data, roi_id, dire, sf_idx, tf_idx
+                data=data,
+                roi_id=roi_id,
+                direction=dire,
+                sf_idx=sf_idx,
+                tf_idx=tf_idx,
             ),
         }
         for dire in directions
