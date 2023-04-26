@@ -34,6 +34,8 @@ def get_murakami_plot_callback(
         roi_id_input: int, direction_input: dict, rois_to_show: str, scale: str
     ) -> html.Div:
         direction_input = direction_input["value"]
+        if not isinstance(direction_input, int):
+            direction_input = murakami_plot.cached_direction
 
         colors = px.colors.qualitative.Light24[:n_roi]
 
@@ -119,7 +121,7 @@ def get_murakami_plot_callback(
                 fig = figure_for_murakami_plot(roi_id)
 
         fig.update_layout(
-            title="Murakami plot",
+            title=f"Murakami plot, direction {direction_input}",
             yaxis_title="Spatial frequency (cycles/deg)",
             xaxis_title="Temporal frequency (Hz)",
             legend_title="ROI",
@@ -137,6 +139,8 @@ def get_murakami_plot_callback(
         else:
             fig.update_yaxes(type="linear")
             fig.update_xaxes(type="linear")
+
+        murakami_plot.cached_direction = direction_input
 
         return html.Div(
             dcc.Graph(
