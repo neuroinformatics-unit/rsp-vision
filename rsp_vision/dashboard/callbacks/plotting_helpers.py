@@ -131,14 +131,14 @@ def get_dataframe_for_facet_plot_pooled_directions(
         & signal.tf.notnull()
     ]
 
-    this_roi_df["session_direction"] = (
+    this_roi_df["signal_kind"] = (
         this_roi_df["session_id"].astype(str)
         + "_"
         + this_roi_df["direction"].astype(str)
     )
     this_roi_df.drop(columns=["session_id", "direction"], inplace=True)
     this_roi_df = this_roi_df[
-        ["stimulus_frames", "signal", "sf", "tf", "session_direction"]
+        ["stimulus_frames", "signal", "sf", "tf", "signal_kind"]
     ]
 
     mean_df = (
@@ -146,7 +146,7 @@ def get_dataframe_for_facet_plot_pooled_directions(
         .agg({"signal": "mean"})
         .reset_index()
     )
-    mean_df["session_direction"] = "mean"
+    mean_df["signal_kind"] = "mean"
     combined_df = pd.concat([this_roi_df, mean_df], ignore_index=True)
 
     median_df = (
@@ -154,7 +154,7 @@ def get_dataframe_for_facet_plot_pooled_directions(
         .agg({"signal": "median"})
         .reset_index()
     )
-    median_df["session_direction"] = "median"
+    median_df["signal_kind"] = "median"
     combined_df = pd.concat([combined_df, median_df], ignore_index=True)
 
     return combined_df
