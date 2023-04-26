@@ -190,7 +190,7 @@ def get_polar_plot_facet_callback(
             f"sf: {sf}, tf: {tf}"
             for sf, tf in itertools.product(sorted_sfs, sorted_tfs)
         ]
-        print(subplot_titles)
+
         fig = make_subplots(
             rows=nrows,
             cols=ncols,
@@ -203,11 +203,9 @@ def get_polar_plot_facet_callback(
         for sf_idx, tf_idx in itertools.product(
             range(len(sorted_sfs)), range(len(sorted_tfs))
         ):
-            print("__________")
-            print(sf_idx, tf_idx)
+
             tf = sorted_tfs[tf_idx]
-            sf = sorted_sfs[sf_idx]
-            print(sf, tf)
+            sf = sorted_sfs[(sf_idx + 1) * -1]
 
             subset = p_sorted[
                 (p_sorted["temporal_frequency"] == tf)
@@ -233,7 +231,6 @@ def get_polar_plot_facet_callback(
                 row=sf_idx + 1,
                 col=tf_idx + 1,
             )
-            print(f"row: {sf_idx + 1}, col: {tf_idx + 1}")
 
             subplot_name = f"polar{tf_idx * ncols + sf_idx + 1}"
             fig.update_layout(
