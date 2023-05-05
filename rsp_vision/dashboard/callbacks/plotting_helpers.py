@@ -180,48 +180,30 @@ def find_peak_coordinates(
         np.argmax(oversampled_gaussian), oversampled_gaussian.shape
     )
 
-    # normalize the peak indices to the range [0,1]
-    peak_norm = np.array(peak_indices) / np.array(oversampled_gaussian.shape)
-
-    # Replace 0 frequency with a small value (min_frequency / 100)
-    small_sf = (
-        spatial_frequencies.min() / config["fitting"]["oversampling_factor"]
+    spatial_freq_linspace = np.linspace(
+        spatial_frequencies.min(),
+        spatial_frequencies.max(),
+        config["fitting"]["oversampling_factor"],
     )
-    small_tf = (
-        temporal_frequencies.min() / config["fitting"]["oversampling_factor"]
-    )
-    peak_norm[0] = peak_norm[0] if peak_norm[0] != 0 else small_sf
-    peak_norm[1] = peak_norm[1] if peak_norm[1] != 0 else small_tf
-
-    # map the normalized indices to octaves using
-    # the min and max sf and tf values
-    octaves = np.array(
-        [
-            from_frequency_to_octaves(
-                peak_norm[0],
-                spatial_frequencies.min(),
-                spatial_frequencies.max(),
-            ),
-            from_frequency_to_octaves(
-                peak_norm[1],
-                temporal_frequencies.min(),
-                temporal_frequencies.max(),
-            ),
-        ]
+    temporal_freq_linspace = np.linspace(
+        temporal_frequencies.min(),
+        temporal_frequencies.max(),
+        config["fitting"]["oversampling_factor"],
     )
 
-    # convert octaves to frequency values
-    peak = from_octaves_to_frequency(octaves)
+    sf = spatial_freq_linspace[peak_indices[0]]
+    tf = temporal_freq_linspace[peak_indices[1]]
+    return tf, sf
 
-    return peak
 
-
-def from_frequency_to_octaves(
-    frequency: float, min_frequency: float, max_frequency: float
+def map_oversampling_factor_to_correct_octave(
+    index: float, min_frequency: float, max_frequency: float
 ) -> float:
-    return np.log2(frequency / min_frequency) - np.log2(
-        max_frequency / min_frequency
-    )
+    log_start = np.log2(min_frequency)
+    log_end = np.log2(max_frequency)
+    octave_values = np.logspace(log_start, log_end, num=100, base=2)
+    octave = octave_values[index]
+    return octave
 
 
 def from_octaves_to_frequency(octaves: float) -> float:

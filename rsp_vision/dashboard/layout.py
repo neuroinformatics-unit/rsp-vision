@@ -46,15 +46,20 @@ def get_sidebar(
                 ]
             ),
             html.Br(),
-            html.Div([
-                dcc.Checklist(
-                    id='toggle-traces',
-                    options=[
-                        {'label': 'Show directions traces', 'value': 'ALL'},
-                    ],
-                    value=['ALL']
-                )
-            ]),
+            html.Div(
+                [
+                    dcc.Checklist(
+                        id="toggle-traces",
+                        options=[
+                            {
+                                "label": "Show directions traces",
+                                "value": "ALL",
+                            },
+                        ],
+                        value=["ALL"],
+                    )
+                ]
+            ),
             html.H3("Murakami plot controller"),
             html.H4("Choose which ROIs to show in the Murakami plot"),
             dcc.RadioItems(

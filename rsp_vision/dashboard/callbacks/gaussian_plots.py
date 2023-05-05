@@ -1,4 +1,4 @@
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
 import plotly.graph_objects as go
@@ -11,8 +11,8 @@ from rsp_vision.dashboard.callbacks.plotting_helpers import fit_correlation
 def get_andermann_gaussian_plot_callback(
     app: Dash,
     median_subtracted_responses: np.ndarray,
-    downsampled_gaussians: Dict[Tuple[int, int], np.ndarray],
-    oversampled_gaussians: Dict[Tuple[int, int], np.ndarray],
+    downsampled_gaussians: Dict[Tuple[int, Union[int, str]], np.ndarray],
+    oversampled_gaussians: Dict[Tuple[int, Union[int, str]], np.ndarray],
     fit_outputs: np.ndarray,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
@@ -27,9 +27,6 @@ def get_andermann_gaussian_plot_callback(
     def gaussian_plot(roi_id: int, direction_input: dict) -> html.Div:
         direction = direction_input["value"]
 
-        if not isinstance(direction, int):
-            direction = gaussian_plot.cached_direction
-
         # Create subplots for the two Gaussian plots
         fig = sp.make_subplots(
             rows=1,
@@ -42,72 +39,143 @@ def get_andermann_gaussian_plot_callback(
         )
         uniform_sfs = uniform_tfs = np.arange(0, len(spatial_frequencies), 1)
 
-        #  Add the heatmap for the median subtracted response
-        fig.add_trace(
-            go.Heatmap(
-                z=median_subtracted_responses[(roi_id, direction)],
-                x=uniform_tfs,
-                y=uniform_sfs,
-                colorscale="Viridis",
-                showscale=False,
-            ),
-            row=1,
-            col=1,
+        if isinstance(direction, int) and direction != "all":
+            #  Add the heatmap for the median subtracted response
+            fig.add_trace(
+                go.Heatmap(
+                    z=median_subtracted_responses[(roi_id, direction)],
+                    x=uniform_tfs,
+                    y=uniform_sfs,
+                    colorscale="Viridis",
+                    showscale=False,
+                ),
+                row=1,
+                col=1,
+            )
+
+            # Add the heatmap for the original Gaussian
+            fig.add_trace(
+                go.Heatmap(
+                    z=downsampled_gaussians[(roi_id, direction)],
+                    x=uniform_tfs,
+                    y=uniform_sfs,
+                    colorscale="Viridis",
+                    showscale=False,
+                ),
+                row=1,
+                col=2,
+            )
+
+            # Add the heatmap for the oversampled Gaussian
+            # I tried with the log plot, it does not look good
+            oversampling_factor = 100
+            uniform_oversampled_sfs = np.linspace(
+                0, oversampling_factor - 1, oversampling_factor
+            )
+            uniform_oversampled_tfs = np.linspace(
+                0, oversampling_factor - 1, oversampling_factor
+            )
+
+            fig.add_trace(
+                go.Heatmap(
+                    z=oversampled_gaussians[(roi_id, direction)],
+                    x=uniform_oversampled_tfs,
+                    y=uniform_oversampled_sfs,
+                    colorscale="Viridis",
+                    showscale=False,
+                ),
+                row=1,
+                col=3,
+            )
+
+            log_sfs = np.linspace(
+                min(spatial_frequencies),
+                max(spatial_frequencies),
+                num=oversampling_factor,
+            )
+
+            log_tfs = np.linspace(
+                min(temporal_frequencies),
+                max(temporal_frequencies),
+                num=oversampling_factor,
+            )
+
+            fit_corr = fit_correlation(
+                downsampled_gaussians[(roi_id, direction)],
+                median_subtracted_responses[(roi_id, direction)],
+            )
+        else:
+            #  Add the heatmap for the median subtracted response
+            fig.add_trace(
+                go.Heatmap(
+                    z=median_subtracted_responses[(roi_id, "pooled")],
+                    x=uniform_tfs,
+                    y=uniform_sfs,
+                    colorscale="Viridis",
+                    showscale=False,
+                ),
+                row=1,
+                col=1,
+            )
+
+            # Add the heatmap for the original Gaussian
+            fig.add_trace(
+                go.Heatmap(
+                    z=downsampled_gaussians[(roi_id, "pooled")],
+                    x=uniform_tfs,
+                    y=uniform_sfs,
+                    colorscale="Viridis",
+                    showscale=False,
+                ),
+                row=1,
+                col=2,
+            )
+
+            # Add the heatmap for the oversampled Gaussian
+            oversampling_factor = 100
+            uniform_oversampled_sfs = np.linspace(
+                0, oversampling_factor - 1, oversampling_factor
+            )
+            uniform_oversampled_tfs = np.linspace(
+                0, oversampling_factor - 1, oversampling_factor
+            )
+
+            fig.add_trace(
+                go.Heatmap(
+                    z=oversampled_gaussians[(roi_id, "pooled")],
+                    x=uniform_oversampled_tfs,
+                    y=uniform_oversampled_sfs,
+                    colorscale="Viridis",
+                    showscale=False,
+                ),
+                row=1,
+                col=3,
+            )
+
+            log_sfs = np.linspace(
+                min(spatial_frequencies),
+                max(spatial_frequencies),
+                num=oversampling_factor,
+            )
+
+            log_tfs = np.linspace(
+                min(temporal_frequencies),
+                max(temporal_frequencies),
+                num=oversampling_factor,
+            )
+
+            fit_corr = fit_correlation(
+                downsampled_gaussians[(roi_id, "pooled")],
+                median_subtracted_responses[(roi_id, "pooled")],
+            )
+
+        fit_value = (
+            fit_outputs[(roi_id, direction)][-1]
+            if isinstance(direction, int) and direction != "all"
+            else fit_outputs[(roi_id, "pooled")][-1]
         )
 
-        # Add the heatmap for the original Gaussian
-        fig.add_trace(
-            go.Heatmap(
-                z=downsampled_gaussians[(roi_id, direction)],
-                x=uniform_tfs,
-                y=uniform_sfs,
-                colorscale="Viridis",
-                showscale=False,
-            ),
-            row=1,
-            col=2,
-        )
-
-        # Add the heatmap for the oversampled Gaussian
-        oversampling_factor = 100
-        uniform_oversampled_sfs = np.linspace(
-            0, oversampling_factor - 1, oversampling_factor
-        )
-        uniform_oversampled_tfs = np.linspace(
-            0, oversampling_factor - 1, oversampling_factor
-        )
-
-        fig.add_trace(
-            go.Heatmap(
-                z=oversampled_gaussians[(roi_id, direction)],
-                x=uniform_oversampled_tfs,
-                y=uniform_oversampled_sfs,
-                colorscale="Viridis",
-                showscale=False,
-            ),
-            row=1,
-            col=3,
-        )
-
-        log_sfs = np.logspace(
-            np.log2(min(spatial_frequencies)),
-            np.log2(max(spatial_frequencies)),
-            num=oversampling_factor,
-            base=2,
-        )
-
-        log_tfs = np.logspace(
-            np.log2(min(temporal_frequencies)),
-            np.log2(max(temporal_frequencies)),
-            num=oversampling_factor,
-            base=2,
-        )
-
-        fit_corr = fit_correlation(
-            downsampled_gaussians[(roi_id, direction)],
-            median_subtracted_responses[(roi_id, direction)],
-        )
-
+        print(fit_value)
         # Update layout to maintain the aspect ratio
         fig.update_layout(
             autosize=False,
@@ -115,9 +183,7 @@ def get_andermann_gaussian_plot_callback(
             height=400,
             margin=dict(t=50, b=50, l=50, r=50),
             showlegend=False,
-            title_text=f"Direction (can be cached):{direction}.\n"
-            + f"Fit Correlation: {fit_corr:.2f}, \
-                𝜁: {fit_outputs[(roi_id, direction)][-1]:.2f}",
+            title_text=f"Fit Correlation: {fit_corr:.2f}, 𝜁: {fit_value:.2f}",
         )
 
         fig.update_xaxes(
@@ -151,8 +217,6 @@ def get_andermann_gaussian_plot_callback(
         fig.update_xaxes(title_text="Temporal Frequency", row=1, col=2)
         fig.update_yaxes(title_text="Spatial Frequency", row=1, col=3)
         fig.update_xaxes(title_text="Temporal Frequency", row=1, col=3)
-
-        gaussian_plot.cached_direction = direction
 
         return html.Div(
             dcc.Graph(
