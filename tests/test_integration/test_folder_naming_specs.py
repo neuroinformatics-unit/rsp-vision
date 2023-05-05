@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from load_suite2p import folder_naming_specs
+from rsp_vision.objects import folder_naming_specs
 
 # Mocks
 
@@ -25,8 +25,13 @@ folder_test_list = [
 ]
 
 config = {
-    "parser": "Parser01",
-    "paths": {"imaging": "test_data/"},
+    "parser": "Parser2pRSP",
+    "paths": {
+        "imaging": "test_data/",
+        "allen-dff": "test_data/allen_dff/",
+        "serial2p": "test_data/serial2p/",
+        "stimulus-ai-schedule": "test_data/stimulus_ai_schedule/",
+    },
 }
 
 for fs in folder_test_list:
