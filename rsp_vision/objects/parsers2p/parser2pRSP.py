@@ -6,8 +6,8 @@ from .parser2p import Parser2p
 
 class Parser2pRSP(Parser2p):
     """Parses the folder name and evaluates the parameters `mouse_line`,
-    `mouse_id`, `hemisphere`, `brain_region`, `monitor_position, `fov`
-    and `cre`.
+    `mouse_id`, `hemisphere`, `brain_region`, `monitor_position, `fov` and
+    `cre`.
 
     Attributes
     ----------
@@ -36,9 +36,9 @@ class Parser2pRSP(Parser2p):
         super().__init__(folder_name, config)
 
     def _parse(self) -> dict:
-        """Parses the folder name and evaluates the parameters `mouse_line`,
-        `mouse_id`, `hemisphere`, `brain_region`, `monitor_position, `fov`
-        and `cre`.
+        """Parses the folder name and evaluates the parameters
+        `mouse_line`, `mouse_id`, `hemisphere`, `brain_region`,
+        `monitor_position, `fov` and `cre`.
 
         Returns
         -------
@@ -54,7 +54,6 @@ class Parser2pRSP(Parser2p):
             if the parser failed in identifying the
             parameter `monitor_position`
         """
-
         info = {}
 
         splitted = self._folder_name.split("_")
@@ -119,10 +118,10 @@ class Parser2pRSP(Parser2p):
 
     def get_path_to_experimental_folder(self) -> Path:
         """Returns the path to the folder containing the experimental data.
-        Reads the server location from the config file and appends the
-        parent folder and the given folder name.
-        """
 
+        Reads the server location from the config file and appends the parent
+        folder and the given folder name.
+        """
         return (
             Path(self._config["paths"]["imaging"])
             / Path(self._get_parent_folder_name())
@@ -131,8 +130,9 @@ class Parser2pRSP(Parser2p):
 
     def get_path_to_allen_dff_file(self) -> Path:
         """Returns the path to the folder containing the allen dff files.
-        Reads the server location from the config file and appends the
-        parent folder and the given folder name.
+
+        Reads the server location from the config file and appends the parent
+        folder and the given folder name.
         """
         filename = self._folder_name + "_sf_tf_allen_dff.mat"
 
@@ -140,21 +140,21 @@ class Parser2pRSP(Parser2p):
 
     def get_path_to_serial2p(self) -> Path:
         """Returns the path to the folder containing the serial2p files.
-        Reads the server location from the config file and appends the
-        parent folder and the given folder name.
-        """
 
+        Reads the server location from the config file and appends the parent
+        folder and the given folder name.
+        """
         return Path(self._config["paths"]["serial2p"]) / Path(
             "CT_" + self._get_parent_folder_name()
         )
 
     def get_path_to_stimulus_analog_input_schedule_files(self) -> Path:
-        """Returns the path to the folder containing the stimulus
-        AI schedule files.
-        Reads the server location from the config file and appends the
-        parent folder and the given folder name.
-        """
+        """Returns the path to the folder containing the stimulus AI
+        schedule files.
 
+        Reads the server location from the config file and appends the parent
+        folder and the given folder name.
+        """
         return Path(self._config["paths"]["stimulus-ai-schedule"]) / Path(
             self._folder_name
         )
