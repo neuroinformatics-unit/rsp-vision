@@ -81,3 +81,12 @@ venv/
 
 # written by setuptools_scm
 **/_version.py
+
+# config specific
+**/config.yml
+.env
+
+# other
+*.hdf5
+*.pickle
+*.obsidian
