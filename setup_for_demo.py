@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import yaml
 
 if __name__ == "__main__":
@@ -26,16 +27,27 @@ if __name__ == "__main__":
             "padding": [25, 50],
             "drift_order": 2,
             "fps_two_photon": 30,
-            "fps_tree_photon": 15,
-            "n_sf": 6,
-            "n_tf": 6,
-            "n_dir": 8,
+            "fps_tree_photon": 6.74,
+            "spatial_frequencies": [0.01, 0.02, 0.04, 0.08, 0.16, 0.32],
+            "temporal_frequencies": [0.5, 1, 2, 4, 8, 16],
+            "directions": [0, 45, 90, 135, 180, 225, 270, 315],
+            "n_spatial_frequencies": 6,
+            "n_temporal_frequencies": 6,
+            "n_directions": 8,
             "trigger_interval_s": 2.5,
             "anova_threshold": 0.0005,
             "response_magnitude_threshold": 2.7,
             "consider_only_positive": False,
             "only_positive_threshold": 0.05,
             "baseline": "static",
+            "fitting": {
+                "power_law_exp": 1,
+                "lower_bounds": [-200, 0, 0, 0.01, 0.01, -np.inf],
+                "upper_bounds": [np.inf, 20, 20, 4, 4, np.inf],
+                "iterations_to_fit": 20,
+                "jitter": 0.1,
+                "oversampling_factor": 100,
+            },
         }
 
         yaml.dump(content, f)

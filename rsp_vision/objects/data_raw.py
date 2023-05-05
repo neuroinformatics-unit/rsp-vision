@@ -7,21 +7,22 @@ import numpy as np
 
 class DataRaw:
     """Class to load and contain the raw data.
-    It can load data from Allen or from
-    a list of Paths. Only the Allen case is implemented so far.
+
+    It can load data from Allen or from a list of Paths. Only the Allen case is
+    implemented so far.
     """
 
     def __init__(self, data: dict, is_allen: bool = True):
         if is_allen:
             logging.info("Loading Allen data, starting to unpack...")
 
-            self.day = self._unpack_data(data["day"], data)
+            self.day: dict = self._unpack_data(data["day"], data)
             logging.info("Unpacked day")
 
             self.imaging = self._unpack_data(data["imaging"], data)
             logging.info("Unpacked imaging")
 
-            self.frames = self._unpack_data(data["f"], data)
+            self.frames: np.ndarray = self._unpack_data(data["f"], data)
             logging.info("Unpacked f")
 
             self.is_cell = self._unpack_data(data["is_cell"], data)
@@ -30,7 +31,7 @@ class DataRaw:
             self.neuropil_coeficient = self._unpack_data(data["r_neu"], data)
             logging.info("Unpacked r_neu")
 
-            self.stim = self._unpack_data(data["stim"], data)
+            self.stim: np.ndarray = self._unpack_data(data["stim"], data)
             logging.info("Unpacked stim")
 
             self.trig = self._unpack_data(data["trig"], data)
@@ -58,17 +59,15 @@ class DataRaw:
     ) -> Union[np.ndarray, dict]:
         """This method unpack a complex MATLAB datastructure and returns a
         nested dictionary or numpy array. Only the relevant subset (Dataset
-        and Groups) of the possible datastructures is implemented.
-        Datasets can be mapped to arrays. Groups can be mapped to
-        dictionaries, and each entry can be a Dataset or another Group.
-        An array might contain numbers or point to other Arrays or Groups
-        through References.
-        References are a HDF5 type that can point either to an array or
-        to a group.
-        They need to be resolved in order to get the data. They are resolved
-        by calling the methods ref_dataset_to_array.
-        If element is a Group, its content is unpacked recursively.
-
+        and Groups) of the possible datastructures is implemented. Datasets
+        can be mapped to arrays. Groups can be mapped to dictionaries, and
+        each entry can be a Dataset or another Group. An array might
+        contain numbers or point to other Arrays or Groups through
+        References. References are a HDF5 type that can point either to an
+        array or to a group. They need to be resolved in order to get the
+        data. They are resolved by calling the methods
+        ref_dataset_to_array. If element is a Group, its content is
+        unpacked recursively.
 
         Example of folder structure:
         . (root)
@@ -147,8 +146,8 @@ class DataRaw:
     @classmethod
     def _group_to_dict_recursive(cls, group: h5py._hl.group.Group) -> dict:
         """Takes a Group and resolves its content. If the Group contains
-        other Groups, it calls itself recursively.
-        It assumes there are no more References.
+        other Groups, it calls itself recursively. It assumes there are no
+        more References.
 
         Args:
             group (h5py._hl.group.Group):

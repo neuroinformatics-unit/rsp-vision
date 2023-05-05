@@ -1,9 +1,9 @@
 include LICENSE
 include README.md
-
-recursive-include rsp_vision *.yml
-
 include *.py
+
+recursive-include docs *.md
+recursive-include docs *.png
 
 exclude *.yml
 exclude *.cruft.json

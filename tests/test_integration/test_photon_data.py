@@ -1,6 +1,5 @@
-def test_set_general_variables(get_variables, get_photon_data):
-    n_sessions, n_roi, len_session, n_stim, _, _ = get_variables
-    photon_data = get_photon_data
+def test_set_general_variables(experimental_variables, photon_data):
+    n_sessions, n_roi, len_session, n_stim, _, _ = experimental_variables
 
     assert photon_data.n_sessions == n_sessions
     assert photon_data.n_roi == n_roi
@@ -11,28 +10,29 @@ def test_set_general_variables(get_variables, get_photon_data):
     )
 
 
-def test_make_signal_dataframe(
-    get_photon_data, get_data_raw_object, get_variables
-):
-    photon_data = get_photon_data
-    signal = photon_data.make_signal_dataframe(get_data_raw_object)
-    n_sessions, n_roi, len_session, _, _, _ = get_variables
+def test_make_signal_dataframe(photon_data, data_raw, experimental_variables):
+    signal = photon_data.make_signal_dataframe(data_raw)
+    n_sessions, n_roi, len_session, _, _, _ = experimental_variables
 
-    assert signal.shape == (len_session * n_sessions * n_roi, 10)
+    number_of_columns = 12
+
+    assert signal.shape == (
+        len_session * n_sessions * n_roi,
+        number_of_columns,
+    )
 
 
-def test_get_stimuli(get_photon_data, get_data_raw_object, get_variables):
-    _, _, _, n_stim, _, _ = get_variables
-    photon_data = get_photon_data
-    stimuli = photon_data.get_stimuli(get_data_raw_object)
+def test_get_stimuli(photon_data, data_raw, experimental_variables):
+    _, _, _, n_stim, _, _ = experimental_variables
+
+    stimuli = photon_data.get_stimuli(data_raw)
 
     assert stimuli.shape == (n_stim, 4)
 
 
-def test_fill_up_with_stim_info(get_photon_data, get_data_raw_object):
-    photon_data = get_photon_data
-    signal = photon_data.make_signal_dataframe(get_data_raw_object)
-    stimuli = photon_data.get_stimuli(get_data_raw_object)
+def test_fill_up_with_stim_info(photon_data, data_raw):
+    signal = photon_data.make_signal_dataframe(data_raw)
+    stimuli = photon_data.get_stimuli(data_raw)
     signal = photon_data.fill_up_with_stim_info(signal, stimuli)
 
     frames = set(signal[signal["stimulus_onset"]].frames_id)

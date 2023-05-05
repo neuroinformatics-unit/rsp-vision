@@ -3,12 +3,12 @@ from pathlib import Path
 from typing import Tuple
 
 import h5py
+import yaml
 from decouple import config
 
 from ..objects.data_raw import DataRaw
 from ..objects.enums import AnalysisType, DataType
 from ..objects.folder_naming_specs import FolderNamingSpecs
-from .read_config import read
 
 CONFIG_PATH = config("CONFIG_PATH")
 config_path = Path(__file__).parents[1] / CONFIG_PATH
@@ -28,16 +28,17 @@ def load_data(folder_name: str) -> Tuple[DataRaw, dict]:
         specs: specs object
         data_raw: list containing all raw data
     """
-
-    config = read(config_path)
+    config = read_config_file(config_path)
     folder_naming = FolderNamingSpecs(folder_name, config)
     folder_naming.extract_all_file_names()
-    data_raw = load(folder_naming, config)
+    data_raw = load_data_from_filename(folder_naming, config)
 
     return data_raw, config
 
 
-def load(folder_naming: FolderNamingSpecs, config: dict) -> DataRaw:
+def load_data_from_filename(
+    folder_naming: FolderNamingSpecs, config: dict
+) -> DataRaw:
     if config["use-allen-dff"]:
         if config["analysis-type"] == "sf_tf":
             allen_data_files = [
@@ -64,3 +65,23 @@ def load(folder_naming: FolderNamingSpecs, config: dict) -> DataRaw:
         raise NotImplementedError(
             "Only loading for summary data is implemented"
         )
+
+
+def read_config_file(config_path: Path) -> dict:
+    """Reads the configuration file and returns the content as a
+    dictionary.
+
+    Parameters
+    ----------
+    config_path : Path
+        Path to the configuration file
+    Returns
+    -------
+    dict
+        content of the configuration file
+    """
+    with open(config_path, "r") as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+        logging.debug(f"Config file read from {config_path}")
+        logging.debug(f"Config file content: {config}")
+    return config
