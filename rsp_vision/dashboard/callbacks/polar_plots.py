@@ -203,7 +203,6 @@ def get_polar_plot_facet_callback(
         for sf_idx, tf_idx in itertools.product(
             range(len(sorted_sfs)), range(len(sorted_tfs))
         ):
-
             tf = sorted_tfs[tf_idx]
             sf = sorted_sfs[(sf_idx + 1) * -1]
 
