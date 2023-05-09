@@ -47,13 +47,15 @@ def analysis_pipeline() -> None:
     # pipeline draft
     start_logging()
 
-    # TODO: add TUI or GUI fuctionality to get input from user
     folder_name = Prompt.ask(
         " \
         Please provide the experimental folder name.\n \
         Format: Mouse_Id_Hemisphere_BrainRegion_Monitor_position.\n \
         Example (1 day): AK_1111739_hL_RSPd_monitor_front\n \
         Example (2 days): BY_IAA_1117276_hR_RSPg_monitor_front\n \
+        Example (1 day, BIG): AS_1112809_hL_V1_monitor_front-right_low\n \
+        Example (2 days, big file): CX_1112654_hL_RSPd_monitor_front\n \
+        Example (2 days, big file): CX_1112837_hL_RSPd_monitor_front\n \
         📁"
     )
 
