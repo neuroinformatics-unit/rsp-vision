@@ -175,7 +175,6 @@ def get_andermann_gaussian_plot_callback(
             else fit_outputs[(roi_id, "pooled")][-1]
         )
 
-        print(fit_value)
         # Update layout to maintain the aspect ratio
         fig.update_layout(
             autosize=False,

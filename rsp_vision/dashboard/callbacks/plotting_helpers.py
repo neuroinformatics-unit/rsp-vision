@@ -45,18 +45,35 @@ def get_dataframe_for_facet_plot(
         & signal.tf.notnull()
     ]
 
-    horizontal_df = pd.DataFrame(
-        columns=[
-            "stimulus_frames",
-            "signal_rep_1",
-            "signal_rep_2",
-            "signal_rep_3",
-            "mean_signal",
-            "median_signal",
-            "sf",
-            "tf",
-            "dir",
+    columns = [
+        "stimulus_frames",
+        "mean_signal",
+        "median_signal",
+        "sf",
+        "tf",
+        "dir",
+    ]
+    reps = [
+        "signal_rep_1",
+        "signal_rep_2",
+        "signal_rep_3",
+    ]
+    if data.total_n_days > 1:
+        reps += [
+            "signal_rep_4",
+            "signal_rep_5",
+            "signal_rep_6",
         ]
+    if data.total_n_days > 2:
+        reps += [
+            "signal_rep_7",
+            "signal_rep_8",
+            "signal_rep_9",
+        ]
+    columns += reps
+
+    horizontal_df = pd.DataFrame(
+        columns=columns,
     )
 
     for sf_tf in data.sf_tf_combinations:
@@ -70,32 +87,17 @@ def get_dataframe_for_facet_plot(
             "signal"
         ]
         cols = df.keys().values
+
         df.rename(
-            columns={
-                cols[0]: "signal_rep_1",
-                cols[1]: "signal_rep_2",
-                cols[2]: "signal_rep_3",
-            },
+            columns=dict(zip(cols, reps)),
             inplace=True,
         )
         df["stimulus_frames"] = counts
         df["sf"] = repetitions.sf.iloc[0]
         df["tf"] = repetitions.tf.iloc[0]
         df["dir"] = repetitions.direction.iloc[0]
-        df["mean_signal"] = df[
-            [
-                "signal_rep_1",
-                "signal_rep_2",
-                "signal_rep_3",
-            ]
-        ].mean(axis=1)
-        df["median_signal"] = df[
-            [
-                "signal_rep_1",
-                "signal_rep_2",
-                "signal_rep_3",
-            ]
-        ].median(axis=1)
+        df["mean_signal"] = df[reps].mean(axis=1)
+        df["median_signal"] = df[reps].median(axis=1)
 
         horizontal_df = pd.concat([horizontal_df, df], ignore_index=True)
 
@@ -107,10 +109,8 @@ def get_dataframe_for_facet_plot(
             "tf",
             "dir",
         ],
-        value_vars=[
-            "signal_rep_1",
-            "signal_rep_2",
-            "signal_rep_3",
+        value_vars=reps
+        + [
             "mean_signal",
             "median_signal",
         ],
