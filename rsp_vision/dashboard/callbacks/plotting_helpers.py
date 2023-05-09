@@ -121,6 +121,45 @@ def get_dataframe_for_facet_plot(
     return vertical_df
 
 
+def get_dataframe_for_facet_plot_pooled_directions(
+    signal: pd.DataFrame,
+    roi_id: int,
+) -> pd.DataFrame:
+    this_roi_df = signal[
+        (signal["roi_id"] == roi_id)
+        & signal.sf.notnull()
+        & signal.tf.notnull()
+    ]
+
+    this_roi_df["signal_kind"] = (
+        this_roi_df["session_id"].astype(str)
+        + "_"
+        + this_roi_df["direction"].astype(str)
+    )
+    this_roi_df.drop(columns=["session_id", "direction"], inplace=True)
+    this_roi_df = this_roi_df[
+        ["stimulus_frames", "signal", "sf", "tf", "signal_kind"]
+    ]
+
+    mean_df = (
+        this_roi_df.groupby(["sf", "tf", "stimulus_frames"])
+        .agg({"signal": "mean"})
+        .reset_index()
+    )
+    mean_df["signal_kind"] = "mean"
+    combined_df = pd.concat([this_roi_df, mean_df], ignore_index=True)
+
+    median_df = (
+        this_roi_df.groupby(["sf", "tf", "stimulus_frames"])
+        .agg({"signal": "median"})
+        .reset_index()
+    )
+    median_df["signal_kind"] = "median"
+    combined_df = pd.concat([combined_df, median_df], ignore_index=True)
+
+    return combined_df
+
+
 def fit_correlation(
     gaussian: np.ndarray, median_subtracted_response: np.ndarray
 ) -> float:
@@ -141,48 +180,30 @@ def find_peak_coordinates(
         np.argmax(oversampled_gaussian), oversampled_gaussian.shape
     )
 
-    # normalize the peak indices to the range [0,1]
-    peak_norm = np.array(peak_indices) / np.array(oversampled_gaussian.shape)
-
-    # Replace 0 frequency with a small value (min_frequency / 100)
-    small_sf = (
-        spatial_frequencies.min() / config["fitting"]["oversampling_factor"]
+    spatial_freq_linspace = np.linspace(
+        spatial_frequencies.min(),
+        spatial_frequencies.max(),
+        config["fitting"]["oversampling_factor"],
     )
-    small_tf = (
-        temporal_frequencies.min() / config["fitting"]["oversampling_factor"]
-    )
-    peak_norm[0] = peak_norm[0] if peak_norm[0] != 0 else small_sf
-    peak_norm[1] = peak_norm[1] if peak_norm[1] != 0 else small_tf
-
-    # map the normalized indices to octaves using
-    # the min and max sf and tf values
-    octaves = np.array(
-        [
-            from_frequency_to_octaves(
-                peak_norm[0],
-                spatial_frequencies.min(),
-                spatial_frequencies.max(),
-            ),
-            from_frequency_to_octaves(
-                peak_norm[1],
-                temporal_frequencies.min(),
-                temporal_frequencies.max(),
-            ),
-        ]
+    temporal_freq_linspace = np.linspace(
+        temporal_frequencies.min(),
+        temporal_frequencies.max(),
+        config["fitting"]["oversampling_factor"],
     )
 
-    # convert octaves to frequency values
-    peak = from_octaves_to_frequency(octaves)
+    sf = spatial_freq_linspace[peak_indices[0]]
+    tf = temporal_freq_linspace[peak_indices[1]]
+    return tf, sf
 
-    return peak
 
-
-def from_frequency_to_octaves(
-    frequency: float, min_frequency: float, max_frequency: float
+def map_oversampling_factor_to_correct_octave(
+    index: float, min_frequency: float, max_frequency: float
 ) -> float:
-    return np.log2(frequency / min_frequency) - np.log2(
-        max_frequency / min_frequency
-    )
+    log_start = np.log2(min_frequency)
+    log_end = np.log2(max_frequency)
+    octave_values = np.logspace(log_start, log_end, num=100, base=2)
+    octave = octave_values[index]
+    return octave
 
 
 def from_octaves_to_frequency(octaves: float) -> float:
@@ -195,48 +216,65 @@ def get_direction_plot_for_controller(
     circle_y: List[float],
     selected_direction: int,
 ) -> dict:
-    return {
-        "data": [
-            {
-                "type": "scatter",
-                "x": circle_x,
-                "y": circle_y,
-                "mode": "markers+text",
-                "text": [str(d) + "°" for d in directions],
-                "textposition": "bottom center",
-                "hoverinfo": "none",
-                "marker": {"size": 10},
-                "customdata": directions,
-                "textfont": {
-                    "color": [
-                        "red" if d == selected_direction else "black"
-                        for d in directions
-                    ],
-                    "size": [
-                        15 if d == selected_direction else 10
-                        for d in directions
-                    ],
-                    "weight": [
-                        "bold" if d == selected_direction else "normal"
-                        for d in directions
-                    ],
-                },
-            }
-        ],
-        "layout": {
-            "xaxis": {"range": [-1.2, 1.2], "visible": False},
-            "yaxis": {"range": [-1.2, 1.2], "visible": False},
-            "plot_bgcolor": "rgba(0, 0, 0, 0)",
-            "margin": {
-                "l": 0,
-                "r": 0,
-                "t": 0,
-                "b": 30,
-                "pad": 0,
-                "autoexpand": True,
+    data = [
+        {
+            "type": "scatter",
+            "x": circle_x,
+            "y": circle_y,
+            "mode": "markers+text",
+            "text": [str(d) + "°" for d in directions],
+            "textposition": "bottom center",
+            "hoverinfo": "none",
+            "marker": {"size": 10},
+            "customdata": directions,
+            "textfont": {
+                "color": [
+                    "red" if d == selected_direction else "black"
+                    for d in directions
+                ],
+                "size": [
+                    15 if d == selected_direction else 10 for d in directions
+                ],
+                "weight": [
+                    "bold" if d == selected_direction else "normal"
+                    for d in directions
+                ],
             },
         },
+        # Add the 'ALL' text at the center of the circle
+        {
+            "type": "scatter",
+            "x": [0],
+            "y": [0],
+            "mode": "text",
+            "text": ["ALL"],
+            "textposition": "middle center",
+            "textfont": {
+                "color": "red" if selected_direction == "all" else "black",
+                "weight": "bold" if selected_direction == "all" else "normal",
+                "size": 15,
+            },
+            "showlegend": False,
+            "hoverinfo": "none",
+        },
+    ]
+
+    layout = {
+        "showlegend": False,
+        "xaxis": {"range": [-1.2, 1.2], "visible": False},
+        "yaxis": {"range": [-1.2, 1.2], "visible": False},
+        "plot_bgcolor": "rgba(0, 0, 0, 0)",
+        "margin": {
+            "l": 0,
+            "r": 0,
+            "t": 0,
+            "b": 30,
+            "pad": 0,
+            "autoexpand": True,
+        },
     }
+
+    return {"data": data, "layout": layout}
 
 
 def get_circle_coordinates(
@@ -255,7 +293,7 @@ def get_corresponding_value(
     # therefore it does not give us much information on the preference
     # of the neuron
     matrix = data[(roi_id, direction)]
-    return matrix[tf_idx, sf_idx]
+    return matrix[sf_idx, tf_idx]
 
 
 def get_peaks_dataframe(
@@ -279,7 +317,11 @@ def get_peaks_dataframe(
             "temporal_frequency": temporal_frequencies[tf_idx],
             "spatial_frequency": spatial_frequencies[sf_idx],
             "corresponding_value": get_corresponding_value(
-                data, roi_id, dire, sf_idx, tf_idx
+                data=data,
+                roi_id=roi_id,
+                direction=dire,
+                sf_idx=sf_idx,
+                tf_idx=tf_idx,
             ),
         }
         for dire in directions

@@ -22,6 +22,7 @@ def test_get_response_and_baseline_windows(experimental_variables, response):
         _,
     ) = experimental_variables
 
+    # using any seed, it does not matter for this test
     _response = response(1)
     (
         window_mask_response,

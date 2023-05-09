@@ -10,7 +10,7 @@
 # RSP vision
 TODO: Add a description of the project
 
-## Demo Usage
+## Analyse Data
 To test the functionalities that have been implemented so far, request the pre-processed data and store it locally in a folder called `allen_dff`.
 
 Second, set up the environmental variables and the config file by executing:
@@ -19,13 +19,7 @@ python3 setup_for_demo.py
 ```
 Then edit the config file with the correct paths to the data by overwriting `/path/to/`. The only path that matters at this stage is the `allen_dff` path, which should point to the folder where you stored the pre-processed data.
 
-Finally, run the following commands with IPython:
-```python
-from rsp_vision.main import main
-main()
-```
-
-This script will call the `main()` method and ask you for the name of the folder containing the data you want to analyse, which corresponds to a portion of the name of the data file.
+Finally, run `python3 demo_cli.py` to run the analysis. The script will create a file containing the analysis output which will then be used by the dashboard.
 
 ## Data processing
 

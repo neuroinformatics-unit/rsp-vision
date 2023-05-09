@@ -30,7 +30,14 @@ def get_update_radio_items_callback(app: Dash) -> None:
     )
     def update_radio_items(clickData: dict, current_data: dict) -> tuple:
         if clickData is not None:
-            direction = clickData["points"][0]["customdata"]
+            clicked_point = clickData["points"][0]
+            if "customdata" in clicked_point:
+                direction = clicked_point["customdata"]
+            elif "text" in clicked_point and clicked_point["text"] == "ALL":
+                direction = "all"
+            else:
+                return current_data, current_data["value"]
+
             return {"value": direction}, direction
         else:
             return current_data, current_data["value"]
