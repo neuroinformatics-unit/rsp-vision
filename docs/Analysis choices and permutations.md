@@ -1,4 +1,4 @@
-## Responsive 
+## Responsive
 - Static chosen as baseline, Grey could also be choosen
 - Length and position of the windows to consider in the baseline and response period
 - Mean or median of the window?
