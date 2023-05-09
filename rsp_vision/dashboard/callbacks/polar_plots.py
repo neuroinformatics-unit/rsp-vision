@@ -1,5 +1,5 @@
 import itertools
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import plotly.express as px
@@ -15,8 +15,8 @@ def get_polar_plot_callback(
     directions: List[int],
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    downsampled_gaussians: Dict[Tuple[int, int], np.ndarray],
-    median_subtracted_responses: Dict[Tuple[int, int], np.ndarray],
+    downsampled_gaussians: Dict[Tuple[int, Union[int, str]], Any],
+    median_subtracted_responses: Dict[Tuple[int, Union[int, str]], Any],
 ) -> None:
     @app.callback(
         Output("polar-plot", "children"),
@@ -157,8 +157,8 @@ def get_polar_plot_facet_callback(
     directions: List[int],
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    downsampled_gaussians: Dict[Tuple[int, int], np.ndarray],
-    median_subtracted_responses: Dict[Tuple[int, int], np.ndarray],
+    downsampled_gaussians: Dict[Tuple[int, Union[int, str]], Any],
+    median_subtracted_responses: Dict[Tuple[int, Union[int, str]], Any],
 ) -> None:
     @app.callback(
         Output("polar-plot-facet", "children"),

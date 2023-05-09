@@ -1,4 +1,4 @@
-from typing import Dict, List, Set, Tuple
+from typing import Any, Dict, List, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -17,7 +17,7 @@ def get_murakami_plot_callback(
     directions: List[int],
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    oversampled_gaussians: Dict[Tuple[int, int], np.ndarray],
+    oversampled_gaussians: Dict[Tuple[int, Union[int, str]], Any],
     responsive_rois: Set[int],
     config: dict,
 ) -> None:
