@@ -38,7 +38,7 @@ def get_app() -> Dash:
 
     # LOAD DATA
     # =============================================================================
-    with open("AK_1111739_hL_RSPd_monitor_front_data.pickle", "rb") as f:
+    with open("BY_IAA_1117276_hR_RSPg_monitor_front_data.pickle", "rb") as f:
         data: PhotonData = pickle.load(f)
 
     # Unpack data
