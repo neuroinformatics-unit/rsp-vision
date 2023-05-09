@@ -1,5 +1,4 @@
 import logging
-from math import log2
 from multiprocessing import Pool
 from typing import Dict, Set, Tuple
 
@@ -457,115 +456,147 @@ class FrequencyResponsiveness:
         return sig_kw & sig_magnitude
 
     @staticmethod
-    def get_preferred_sf_tf(median_subtracted_response: pd.DataFrame) -> tuple:
-        """Compute the preferred spatial and temporal frequency and peak
-        response.
-
-        This method computes the preferred spatial frequency, preferred
-        temporal frequency, and peak response of a neuron from its
-        median-subtracted response matrix. The preferred spatial and
-        temporal frequencies are the indices of the maximum value of the
-        matrix. The peak response is the value of the matrix at the preferred
-        spatial and temporal frequencies.
-
-        Parameters
-        ----------
-        median_subtracted_response : pd.DataFrame
-            A Pandas DataFrame containing the median-subtracted response
-            matrix for a neuron, where the rows correspond to spatial
-            frequencies and the columns correspond to temporal frequencies.
-
-        Returns
-        -------
-        tuple
-            A tuple containing the preferred spatial frequency, preferred
-            temporal frequency, and peak response of the neuron.
-        """
-        sf_0, tf_0 = median_subtracted_response["subtracted"].idxmax()
-        peak_response = median_subtracted_response.loc[(sf_0, tf_0)][
-            "subtracted"
-        ]
-        return sf_0, tf_0, peak_response
-
-    @staticmethod
-    def get_median_subtracted_response(
-        responses: pd.DataFrame, roi_id: int, dir: int
+    def get_median_subtracted_response_and_params(
+        responses: pd.DataFrame,
+        roi_id: int,
+        dir: int,
+        sf: np.ndarray,
+        tf: np.ndarray,
+        single_directions: bool = True,
     ) -> pd.DataFrame:
-        """Compute the median-subtracted response matrix for a neuron.
-
-        This method computes the median-subtracted response matrix for a
-        neuron, given its responses to a set of drifting gratings of different
-        spatial frequencies, temporal frequencies, and directions. The
-        median-subtracted response matrix is computed by subtracting the
-        median baseline signal from the median response signal for each
-        combination of spatial frequency and temporal frequency.
-
-        Parameters
-        ----------
-        responses : pd.DataFrame
-            A Pandas DataFrame containing the responses of a neuron to a set
-            of drifting gratings.
-        roi_id : int
-            The index of the neuron in the responses DataFrame.
-        direction : int
-            The direction of the drifting gratings (0 or 1).
-
-        Returns
-        -------
-        pd.DataFrame
-            A Pandas DataFrame containing the median-subtracted response
-            matrix for the neuron, where the rows correspond to spatial
-            frequencies and the columns correspond to temporal frequencies.
-        """
         median_subtracted_response = (
             responses[
                 (responses.roi_id == roi_id) & (responses.direction == dir)
+                if single_directions
+                else (responses.roi_id == roi_id)
             ]
             .groupby(["sf", "tf"])[["subtracted"]]
             .median()
         )
-        return median_subtracted_response
 
-    @staticmethod
-    def get_median_subtracted_response_2d_matrix(
-        median_subtracted_response: pd.DataFrame,
-        sf: np.ndarray,
-        tf: np.ndarray,
-    ) -> np.ndarray:
-        """This method converts the median-subtracted response DataFrame to
-        a 2D matrix, where each row corresponds to a spatial frequency and
-        each column corresponds to a temporal frequency. The values in the
-        matrix correspond to the median-subtracted response for each
-        combination of spatial frequency and temporal frequency.
-
-        Parameters
-        ----------
-        median_subtracted_response : pd.DataFrame
-            A Pandas DataFrame containing the median-subtracted response
-            matrix for a neuron, where the rows correspond to spatial
-            frequencies and the columns correspond to temporal frequencies.
-        sf : np.ndarray
-            An array containing the spatial frequencies used in the
-            experiment.
-        tf : np.ndarray
-            An array containing the temporal frequencies used in the
-            experiment.
-
-        Returns
-        -------
-        np.ndarray
-            A 2D NumPy array containing the median-subtracted response for
-            each combination of spatial frequency and temporal frequency,
-            where the rows correspond to spatial frequencies and the columns
-            correspond to temporal frequencies.
-        """
+        sf_0, tf_0 = median_subtracted_response["subtracted"].idxmax()
+        peak_response = median_subtracted_response.loc[(sf_0, tf_0)][
+            "subtracted"
+        ]
         median_subtracted_response_2d_matrix = np.zeros((len(sf), len(tf)))
+
         for i, s in enumerate(sf):
             for j, t in enumerate(tf):
                 median_subtracted_response_2d_matrix[
                     i, j
                 ] = median_subtracted_response.loc[(s, t)]["subtracted"]
-        return median_subtracted_response_2d_matrix
+
+        return median_subtracted_response_2d_matrix, sf_0, tf_0, peak_response
+
+    def get_this_roi_fits_data(self, roi_id: int) -> dict:
+        """Calculate the best fit parameters for each ROI and direction.
+        This method takes as input the ROI index, and loops over the
+        directions to calculate the best fit parameters for each spatial
+        and temporal frequency. First, it calls the
+        get_median_subtracted_response method to obtain the median-
+        subtracted response matrix for the given ROI and direction. Next,
+        it calculates the preferred spatial and temporal frequencies, as
+        well as the peak response, using the get_preferred_sf_tf method.
+        Then, it constructs a 2D matrix of the median-subtracted response
+        values using the get_median_subtracted_response_2d_matrix method.
+
+        Finally, the method performs a 2D Gaussian fit to the 2D response
+        matrix using the fit_2D_gaussian_to_data method. The resulting best
+        fit parameters are stored in a dictionary, where the keys are the
+        directions, and the values are tuples containing the
+        preferred spatial and temporal frequencies and the peak response
+        amplitude, the best fit parameter values obtained from the Gaussian
+        fit, and the median-subtracted response matrix.
+
+        Args:
+            roi_id (int): The index of the ROI for which to calculate the best
+                fit parameters.
+
+        Returns:
+            dict: A dictionary with the best fit parameters for each direction.
+                The keys are the directions, and the values are tuples
+                containing the preferred spatial and temporal frequencies
+                and the peak response amplitude, the best fit parameter values
+                obtained from the Gaussian fit, and the median-subtracted
+                response matrix.
+        """
+        roi_data = {}
+        for dir in self.data.directions:
+            (
+                msr_array,
+                sf_0,
+                tf_0,
+                peak_response,
+            ) = self.get_median_subtracted_response_and_params(
+                self.data.responses,
+                roi_id,
+                dir,
+                self.data.spatial_frequencies,
+                self.data.temporal_frequencies,
+            )
+
+            parameters_to_fit_starting_point = [
+                peak_response,
+                sf_0,
+                tf_0,
+                np.std(self.data.spatial_frequencies, ddof=1),
+                np.std(self.data.temporal_frequencies, ddof=1),
+                self.data.config["fitting"]["power_law_exp"],
+            ]
+
+            best_result = fit_2D_gaussian_to_data(
+                self.data.spatial_frequencies,
+                self.data.temporal_frequencies,
+                msr_array,
+                parameters_to_fit_starting_point,
+                self.data.config,
+            )
+
+            roi_data[dir] = (
+                (sf_0, tf_0, peak_response),
+                best_result.x,
+                msr_array,
+            )
+
+        # now the same by pooling directions
+        (
+            msr_array,
+            sf_0,
+            tf_0,
+            peak_response,
+        ) = self.get_median_subtracted_response_and_params(
+            self.data.responses,
+            roi_id,
+            0,  # dummy value
+            self.data.spatial_frequencies,
+            self.data.temporal_frequencies,
+            single_directions=False,
+        )
+
+        parameters_to_fit_starting_point = [
+            peak_response,
+            sf_0,
+            tf_0,
+            np.std(self.data.spatial_frequencies, ddof=1),
+            np.std(self.data.temporal_frequencies, ddof=1),
+            self.data.config["fitting"]["power_law_exp"],
+        ]
+
+        best_result = fit_2D_gaussian_to_data(
+            self.data.spatial_frequencies,
+            self.data.temporal_frequencies,
+            msr_array,
+            parameters_to_fit_starting_point,
+            self.data.config,
+        )
+
+        roi_data["pooled"] = (
+            (sf_0, tf_0, peak_response),
+            best_result.x,
+            msr_array,
+        )
+
+        return roi_data
 
     def get_all_fits(self) -> None:
         """Calculate the Gaussian fits for all ROIs using multiprocessing.
@@ -626,76 +657,6 @@ class FrequencyResponsiveness:
                         (roi_id, key)
                     ] = roi_data[key][2]
 
-    def get_this_roi_fits_data(self, roi_id: int) -> dict:
-        """Calculate the best fit parameters for each ROI and direction.
-        This method takes as input the ROI index, and loops over the
-        directions to calculate the best fit parameters for each spatial
-        and temporal frequency. First, it calls the
-        get_median_subtracted_response method to obtain the median-
-        subtracted response matrix for the given ROI and direction. Next,
-        it calculates the preferred spatial and temporal frequencies, as
-        well as the peak response, using the get_preferred_sf_tf method.
-        Then, it constructs a 2D matrix of the median-subtracted response
-        values using the get_median_subtracted_response_2d_matrix method.
-
-        Finally, the method performs a 2D Gaussian fit to the 2D response
-        matrix using the fit_2D_gaussian_to_data method. The resulting best
-        fit parameters are stored in a dictionary, where the keys are the
-        directions, and the values are tuples containing the
-        preferred spatial and temporal frequencies and the peak response
-        amplitude, the best fit parameter values obtained from the Gaussian
-        fit, and the median-subtracted response matrix.
-
-        Args:
-            roi_id (int): The index of the ROI for which to calculate the best
-                fit parameters.
-
-        Returns:
-            dict: A dictionary with the best fit parameters for each direction.
-                The keys are the directions, and the values are tuples
-                containing the preferred spatial and temporal frequencies
-                and the peak response amplitude, the best fit parameter values
-                obtained from the Gaussian fit, and the median-subtracted
-                response matrix.
-        """
-        roi_data = {}
-        for dir in self.data.directions:
-            median_subtracted_response = self.get_median_subtracted_response(
-                self.data.responses, roi_id, dir
-            )
-            sf_0, tf_0, peak_response = self.get_preferred_sf_tf(
-                median_subtracted_response
-            )
-            msr_array = self.get_median_subtracted_response_2d_matrix(
-                median_subtracted_response,
-                self.data.spatial_frequencies,
-                self.data.temporal_frequencies,
-            )
-
-            parameters_to_fit_starting_point = [
-                peak_response,
-                sf_0,
-                tf_0,
-                np.std(self.data.spatial_frequencies, ddof=1),
-                np.std(self.data.temporal_frequencies, ddof=1),
-                self.data.config["fitting"]["power_law_exp"],
-            ]
-
-            best_result = fit_2D_gaussian_to_data(
-                self.data.spatial_frequencies,
-                self.data.temporal_frequencies,
-                msr_array,
-                parameters_to_fit_starting_point,
-                self.data.config,
-            )
-
-            roi_data[dir] = (
-                (sf_0, tf_0, peak_response),
-                best_result.x,
-                msr_array,
-            )
-        return roi_data
-
     def calculate_downsampled_gaussian(self) -> None:
         """Calculate the 2D Gaussian fits for each ROI and direction using
         the parameters obtained from fitting the 2D Gaussian model to the
@@ -717,6 +678,15 @@ class FrequencyResponsiveness:
                     self.data.spatial_frequencies,
                     self.data.temporal_frequencies,
                 )
+
+            # now the same by pooling directions
+            self.data.downsampled_gaussian[
+                (roi_id, "pooled")
+            ] = create_gaussian_matrix(
+                self.data.fit_output[(roi_id, "pooled")],
+                self.data.spatial_frequencies,
+                self.data.temporal_frequencies,
+            )
 
     def calculate_oversampled_gaussian(
         self, oversampling_factor: int = 100
@@ -747,16 +717,35 @@ class FrequencyResponsiveness:
                     (roi_id, dir)
                 ] = create_gaussian_matrix(
                     self.data.fit_output[(roi_id, dir)],
-                    np.logspace(
-                        log2(self.data.spatial_frequencies.min()),
-                        log2(self.data.spatial_frequencies.max()),
+                    np.linspace(
+                        self.data.spatial_frequencies.min(),
+                        self.data.spatial_frequencies.max(),
                         num=oversampling_factor,
-                        base=2,
+                        # base=2,
                     ),
-                    np.logspace(
-                        log2(self.data.temporal_frequencies.min()),
-                        log2(self.data.temporal_frequencies.max()),
+                    np.linspace(
+                        self.data.temporal_frequencies.min(),
+                        self.data.temporal_frequencies.max(),
                         num=oversampling_factor,
-                        base=2,
+                        # base=2,
                     ),
                 )
+
+            # now the same by pooling directions
+            self.data.oversampled_gaussian[
+                (roi_id, "pooled")
+            ] = create_gaussian_matrix(
+                self.data.fit_output[(roi_id, "pooled")],
+                np.linspace(
+                    self.data.spatial_frequencies.min(),
+                    self.data.spatial_frequencies.max(),
+                    num=oversampling_factor,
+                    # base=2,
+                ),
+                np.linspace(
+                    self.data.temporal_frequencies.min(),
+                    self.data.temporal_frequencies.max(),
+                    num=oversampling_factor,
+                    # base=2,
+                ),
+            )

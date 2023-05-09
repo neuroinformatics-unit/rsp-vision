@@ -172,13 +172,13 @@ def get_polar_plot_facet_callback(
         sorted_tfs = sorted(temporal_frequencies)
 
         p_sorted = get_peaks_dataframe(
-            gaussian_or_original,
-            roi_id,
-            directions,
-            sorted_sfs,
-            sorted_tfs,
-            median_subtracted_responses,
-            downsampled_gaussians,
+            gaussian_or_original=gaussian_or_original,
+            roi_id=roi_id,
+            directions=directions,
+            spatial_frequencies=sorted_sfs,
+            temporal_frequencies=sorted_tfs,
+            median_subtracted_responses=median_subtracted_responses,
+            downsampled_gaussians=downsampled_gaussians,
         )
 
         max_value = p_sorted["corresponding_value"].max()
@@ -190,6 +190,7 @@ def get_polar_plot_facet_callback(
             f"sf: {sf}, tf: {tf}"
             for sf, tf in itertools.product(sorted_sfs, sorted_tfs)
         ]
+
         fig = make_subplots(
             rows=nrows,
             cols=ncols,
@@ -203,7 +204,7 @@ def get_polar_plot_facet_callback(
             range(len(sorted_sfs)), range(len(sorted_tfs))
         ):
             tf = sorted_tfs[tf_idx]
-            sf = sorted_sfs[sf_idx]
+            sf = sorted_sfs[(sf_idx + 1) * -1]
 
             subset = p_sorted[
                 (p_sorted["temporal_frequency"] == tf)

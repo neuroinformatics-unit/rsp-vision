@@ -1,7 +1,7 @@
 import itertools
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Set, Tuple
+from typing import Dict, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -601,5 +601,9 @@ class PhotonData:
         self.measured_preference: dict
         self.fit_output: dict
         self.median_subtracted_response: dict
-        self.downsampled_gaussian: Dict[Tuple[int, int], np.ndarray]
-        self.oversampled_gaussian: Dict[Tuple[int, int], np.ndarray]
+        self.downsampled_gaussian: Dict[
+            Tuple[int, Union[int, str]], np.ndarray
+        ]
+        self.oversampled_gaussian: Dict[
+            Tuple[int, Union[int, str]], np.ndarray
+        ]

@@ -1,7 +1,7 @@
 import pathlib
-import pickle
 from functools import lru_cache
 
+import pandas as pd
 import pytest
 
 from tests.test_integration.generate_mock_data import (
@@ -41,5 +41,5 @@ def expected_outputs():
     path = pathlib.Path(__file__).parent.absolute()
     output_path = path / "test_integration" / "mock_data" / "outputs.plk"
     with open(output_path, "rb") as f:
-        outputs = pickle.load(f)
+        outputs = pd.read_pickle(f)
     return outputs
