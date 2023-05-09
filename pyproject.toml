@@ -48,6 +48,7 @@ dev = [
   "pre-commit",
   "ruff",
   "setuptools_scm",
+  "tqdm", # to generate mock data
 ]
 
 [build-system]
