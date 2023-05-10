@@ -90,7 +90,7 @@ def start_logging(module=None):
         module = get_module_for_logging()
 
     fancylog.start_logging(
-        output_dir="./", package=module, filename="load_suite2p", verbose=False
+        output_dir="./", package=module, filename="rsp_vision", verbose=False
     )
 
 
