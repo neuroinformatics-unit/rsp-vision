@@ -28,6 +28,9 @@ dependencies = [
     "python-decouple",
     "pandas",
     "scipy",
+    "numba",
+    "tqdm",
+
 ]
 
 [project.urls]
@@ -48,7 +51,9 @@ dev = [
   "pre-commit",
   "ruff",
   "setuptools_scm",
-  "tqdm", # to generate mock data
+  "dash",
+  "dash_bootstrap_components",
+  "dash_loading_spinners",
 ]
 
 [build-system]
