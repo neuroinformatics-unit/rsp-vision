@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Set, Tuple, Union
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-from dash import Dash, Input, Output, dcc, html
+from dash import Input, Output, callback, dcc, html
 
 from rsp_vision.dashboard.callbacks.plotting_helpers import (
     find_peak_coordinates,
@@ -11,7 +11,6 @@ from rsp_vision.dashboard.callbacks.plotting_helpers import (
 
 
 def get_murakami_plot_callback(
-    app: Dash,
     n_roi: int,
     directions: List[int],
     spatial_frequencies: np.ndarray,
@@ -20,7 +19,7 @@ def get_murakami_plot_callback(
     responsive_rois: Set[int],
     config: dict,
 ) -> None:
-    @app.callback(
+    @callback(
         Output("murakami-plot", "children"),
         [
             Input("roi-choice-dropdown", "value"),

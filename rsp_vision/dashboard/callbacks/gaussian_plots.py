@@ -3,13 +3,12 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import plotly.graph_objects as go
 import plotly.subplots as sp
-from dash import Dash, Input, Output, dcc, html
+from dash import Input, Output, callback, dcc, html
 
 from rsp_vision.dashboard.callbacks.plotting_helpers import fit_correlation
 
 
 def get_andermann_gaussian_plot_callback(
-    app: Dash,
     median_subtracted_responses: np.ndarray,
     downsampled_gaussians: Dict[Tuple[int, Union[int, str]], np.ndarray],
     oversampled_gaussians: Dict[Tuple[int, Union[int, str]], np.ndarray],
@@ -17,7 +16,7 @@ def get_andermann_gaussian_plot_callback(
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
 ) -> None:
-    @app.callback(
+    @callback(
         Output("gaussian-graph-andermann", "children"),
         [
             Input("roi-choice-dropdown", "value"),
