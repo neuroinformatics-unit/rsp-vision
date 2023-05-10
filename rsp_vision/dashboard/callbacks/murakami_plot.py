@@ -2,7 +2,6 @@ from typing import Any, Dict, List, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
-import plotly.express as px
 import plotly.graph_objects as go
 from dash import Dash, Input, Output, dcc, html
 
@@ -35,12 +34,12 @@ def get_murakami_plot_callback(
     ) -> html.Div:
         direction_input = direction_input["value"]
 
-        colors = px.colors.qualitative.Light24[:n_roi]
+        # colors = matplotlib.colors.cnames.values()
 
         fig = go.Figure()
 
         def simplified_murakami_plot(roi_id):
-            color = colors[roi_id]
+            # color = colors[roi_id]
             peaks = {
                 roi_id: find_peak_coordinates(
                     oversampled_gaussians[(roi_id, "pooled")],
@@ -71,7 +70,10 @@ def get_murakami_plot_callback(
                     x=[tf, median_peaks["temporal_frequency"][roi_id]],
                     y=[sf, median_peaks["spatial_frequency"][roi_id]],
                     mode="markers",
-                    marker=dict(color=color, size=20),
+                    marker=dict(
+                        # color=color,
+                        size=20
+                    ),
                     showlegend=True,
                     name=f"ROI {roi_id}",
                     marker_line_width=2 if roi_id in responsive_rois else 0,
@@ -81,7 +83,7 @@ def get_murakami_plot_callback(
             return fig
 
         def figure_for_murakami_plot(roi_id):
-            color = colors[roi_id]
+            # color = colors[roi_id]
             peaks = {
                 (roi_id, dire): find_peak_coordinates(
                     oversampled_gaussians[(roi_id, dire)],
@@ -115,7 +117,10 @@ def get_murakami_plot_callback(
                         x=[tf, median_peaks["temporal_frequency"][roi_id]],
                         y=[sf, median_peaks["spatial_frequency"][roi_id]],
                         mode="markers",
-                        marker=dict(color=color, size=10),
+                        marker=dict(
+                            # color=color,
+                            size=10
+                        ),
                         name=f"ROI {roi_id + 1}" if i == 0 else "",
                         showlegend=True if i == 0 else False,
                         marker_line_width=2
@@ -128,7 +133,10 @@ def get_murakami_plot_callback(
                         x=[tf, median_peaks["temporal_frequency"][roi_id]],
                         y=[sf, median_peaks["spatial_frequency"][roi_id]],
                         mode="lines",
-                        line=dict(color=color, width=1),
+                        line=dict(
+                            # color=color,
+                            width=1
+                        ),
                         showlegend=False,
                     )
                 )
