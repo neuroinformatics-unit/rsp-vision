@@ -1,13 +1,11 @@
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import Dash, Input, Output, dcc, html
+from dash import Input, Output, callback, dcc, html
 
 
-def get_update_fig_all_sessions_callback(
-    app: Dash, signal: pd.DataFrame
-) -> None:
-    @app.callback(
+def get_update_fig_all_sessions_callback(signal: pd.DataFrame) -> None:
+    @callback(
         Output("session-graph", "children"),
         Input("roi-choice-dropdown", "value"),
     )

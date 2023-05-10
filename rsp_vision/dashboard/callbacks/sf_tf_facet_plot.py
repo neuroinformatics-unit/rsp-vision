@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import plotly.express as px
-from dash import Dash, Input, Output, dcc, html
+from dash import Input, Output, callback, dcc, html
 
 from rsp_vision.dashboard.callbacks.plotting_helpers import (
     get_dataframe_for_facet_plot,
@@ -11,9 +11,9 @@ from rsp_vision.objects.photon_data import PhotonData
 
 
 def get_sf_tf_grid_callback(
-    app: Dash, signal: pd.DataFrame, data: PhotonData, counts: np.ndarray
+    signal: pd.DataFrame, data: PhotonData, counts: np.ndarray
 ) -> None:
-    @app.callback(
+    @callback(
         Output("sf_tf-graph", "children"),
         [
             Input("roi-choice-dropdown", "value"),

@@ -4,21 +4,20 @@ from typing import Any, Dict, List, Tuple, Union
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import Dash, Input, Output, dcc, html
+from dash import Input, Output, callback, dcc, html
 from plotly.subplots import make_subplots
 
 from rsp_vision.dashboard.callbacks.plotting_helpers import get_peaks_dataframe
 
 
 def get_polar_plot_callback(
-    app: Dash,
     directions: List[int],
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
     downsampled_gaussians: Dict[Tuple[int, Union[int, str]], Any],
     median_subtracted_responses: Dict[Tuple[int, Union[int, str]], Any],
 ) -> None:
-    @app.callback(
+    @callback(
         Output("polar-plot", "children"),
         [
             Input("roi-choice-dropdown", "value"),
@@ -112,7 +111,7 @@ def get_polar_plot_callback(
 
         fig.update_layout(
             polar=dict(radialaxis=dict(visible=True)),
-            plot_bgcolor="rgba(0, 0, 0, 0)",
+            plot_bgcolor="rgbaDash, (0, 0, 0, 0)",
             paper_bgcolor="rgba(0, 0, 0, 0)",
             width=1600,
             height=800,
@@ -153,14 +152,13 @@ def get_polar_plot_callback(
 
 
 def get_polar_plot_facet_callback(
-    app: Dash,
     directions: List[int],
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
     downsampled_gaussians: Dict[Tuple[int, Union[int, str]], Any],
     median_subtracted_responses: Dict[Tuple[int, Union[int, str]], Any],
 ) -> None:
-    @app.callback(
+    @callback(
         Output("polar-plot-facet", "children"),
         [
             Input("roi-choice-dropdown", "value"),
