@@ -33,14 +33,14 @@ from rsp_vision.objects.photon_data import PhotonData
 
 dash.register_page(
     __name__,
-    path="/one_animal_dashboard/",
-    redirect_from=["/home/"],
-    args=["selected_dataset"],
+    path="/dashboard/",
+    # redirect_from=["/home/"],
+    # args=["selected_dataset"],
 )
 
 
-def layout(selected_dataset=None):
-    with open(f"{selected_dataset}", "rb") as f:
+def layout(data=None):
+    with open(f"/Users/laura/data/output/{data}.pickle", "rb") as f:
         data: PhotonData = pickle.load(f)
 
     signal = data.signal
@@ -58,43 +58,7 @@ def layout(selected_dataset=None):
 
     sidebar = get_sidebar(responsive_rois, rois, directions)
 
-    get_update_fig_all_sessions_callback(signal)
-    get_sf_tf_grid_callback(signal, data, counts)
-    get_andermann_gaussian_plot_callback(
-        median_subtracted_responses=median_subtracted_responses,
-        downsampled_gaussians=downsampled_gaussians,
-        oversampled_gaussians=oversampled_gaussians,
-        fit_outputs=fit_outputs,
-        spatial_frequencies=spatial_frequencies,
-        temporal_frequencies=temporal_frequencies,
-    )
-    get_murakami_plot_callback(
-        n_roi=n_roi,
-        directions=directions,
-        spatial_frequencies=spatial_frequencies,
-        temporal_frequencies=temporal_frequencies,
-        oversampled_gaussians=oversampled_gaussians,
-        responsive_rois=responsive_rois,
-        config=data.config,
-    )
-    get_polar_plot_callback(
-        directions=directions,
-        spatial_frequencies=spatial_frequencies,
-        temporal_frequencies=temporal_frequencies,
-        downsampled_gaussians=downsampled_gaussians,
-        median_subtracted_responses=median_subtracted_responses,
-    )
-    get_polar_plot_facet_callback(
-        directions=directions,
-        spatial_frequencies=spatial_frequencies,
-        temporal_frequencies=temporal_frequencies,
-        downsampled_gaussians=downsampled_gaussians,
-        median_subtracted_responses=median_subtracted_responses,
-    )
-    get_update_radio_items_callback()
-    get_update_circle_figure_callback(directions)
-
-    html.Div(
+    layout = html.Div(
         [
             dbc.Container(
                 [
@@ -132,13 +96,52 @@ def layout(selected_dataset=None):
                 ],
                 fluid=True,
             ),
+            # get_update_fig_all_sessions_callback,
+            # get_andermann_gaussian_plot_callback,
+            # get_murakami_plot_callback,
+            # get_polar_plot_callback,
+            # get_polar_plot_facet_callback,
+            # get_update_radio_items_callback,
+            # get_update_circle_figure_callback,
+            # get_sf_tf_grid_callback,
         ],
-        get_update_fig_all_sessions_callback,
-        get_andermann_gaussian_plot_callback,
-        get_murakami_plot_callback,
-        get_polar_plot_callback,
-        get_polar_plot_facet_callback,
-        get_update_radio_items_callback,
-        get_update_circle_figure_callback,
-        get_sf_tf_grid_callback,
+        id="main-container",
     )
+
+    get_update_fig_all_sessions_callback(signal)
+    get_sf_tf_grid_callback(signal, data, counts)
+    get_andermann_gaussian_plot_callback(
+        median_subtracted_responses=median_subtracted_responses,
+        downsampled_gaussians=downsampled_gaussians,
+        oversampled_gaussians=oversampled_gaussians,
+        fit_outputs=fit_outputs,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
+    )
+    get_murakami_plot_callback(
+        n_roi=n_roi,
+        directions=directions,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
+        oversampled_gaussians=oversampled_gaussians,
+        responsive_rois=responsive_rois,
+        config=data.config,
+    )
+    get_polar_plot_callback(
+        directions=directions,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
+        downsampled_gaussians=downsampled_gaussians,
+        median_subtracted_responses=median_subtracted_responses,
+    )
+    get_polar_plot_facet_callback(
+        directions=directions,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
+        downsampled_gaussians=downsampled_gaussians,
+        median_subtracted_responses=median_subtracted_responses,
+    )
+    get_update_radio_items_callback()
+    get_update_circle_figure_callback(directions)
+
+    return layout
