@@ -1,5 +1,5 @@
 import plotly.graph_objects as go
-from dash import Dash, Input, Output, State, callback
+from dash import Input, Output, State, callback
 
 from rsp_vision.dashboard.callbacks.plotting_helpers import (
     get_circle_coordinates,
@@ -19,7 +19,7 @@ def get_update_circle_figure_callback(directions: list) -> None:
         )
 
 
-def get_update_radio_items_callback(app: Dash) -> None:
+def get_update_radio_items_callback() -> None:
     @callback(
         [
             Output("direction-store", "data"),
