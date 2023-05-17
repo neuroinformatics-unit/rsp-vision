@@ -14,7 +14,7 @@ CONFIG_PATH = config("CONFIG_PATH")
 config_path = Path(__file__).parents[1] / CONFIG_PATH
 
 
-def load_data(folder_name: str) -> Tuple[DataRaw, dict]:
+def load_data(folder_name: str) -> Tuple[DataRaw, dict, FolderNamingSpecs]:
     """Creates the configuration object and loads the data.
 
     Parameters
@@ -33,7 +33,7 @@ def load_data(folder_name: str) -> Tuple[DataRaw, dict]:
     folder_naming.extract_all_file_names()
     data_raw = load_data_from_filename(folder_naming, config)
 
-    return data_raw, config
+    return data_raw, config, folder_naming
 
 
 def load_data_from_filename(

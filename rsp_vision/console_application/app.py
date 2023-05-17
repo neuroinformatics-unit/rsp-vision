@@ -1,7 +1,5 @@
 import logging
-import pickle
 import sys
-from pathlib import Path
 
 import rich
 from fancylog import fancylog
@@ -13,6 +11,7 @@ from rsp_vision.analysis.spatial_freq_temporal_freq import (
 from rsp_vision.load.load_data import load_data
 from rsp_vision.objects.enums import PhotonType
 from rsp_vision.objects.photon_data import PhotonData
+from rsp_vision.save.save_data import save_data
 
 
 def exception_handler(func: object) -> object:
@@ -61,7 +60,7 @@ def analysis_pipeline() -> None:
     )
 
     # load data
-    data, config = load_data(folder_name)
+    data, config, folder_naming = load_data(folder_name)
 
     # preprocess and make PhotonData object
     photon_data = PhotonData(data, PhotonType.TWO_PHOTON, config)
@@ -75,12 +74,8 @@ def analysis_pipeline() -> None:
     logging.info("Analysis finished")
     logging.info(f"Updated photon_data object: {photon_data}")
 
-    saving_path = (
-        Path(config["paths"]["output"]) / f"{folder_name}_data.pickle"
-    )
-    with open(saving_path, "wb") as f:
-        pickle.dump(photon_data, f)
-        logging.info("Analysis saved")
+    # save results
+    save_data(folder_naming, photon_data, config)
 
 
 def start_logging(module=None):
