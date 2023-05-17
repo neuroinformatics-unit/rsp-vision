@@ -601,13 +601,30 @@ class FrequencyResponsiveness:
             self.data.config["fitting"]["power_law_exp"],
         ]
 
-        best_result = fit_2D_gaussian_to_data(
-            self.data.spatial_frequencies,
-            self.data.temporal_frequencies,
-            msr_array,
-            parameters_to_fit_starting_point,
-            self.data.config,
-        )
+        best_result = None
+        tentatives = 0
+        while best_result is None and tentatives < 10:
+            best_result = fit_2D_gaussian_to_data(
+                self.data.spatial_frequencies,
+                self.data.temporal_frequencies,
+                msr_array,
+                parameters_to_fit_starting_point,
+                self.data.config,
+            )
+            if best_result is None:
+                logging.warning(
+                    f"ROI {roi_id} and direction {dir} failed to fit."
+                    + f"Trying again... Tentative {tentatives + 1} of 10"
+                )
+                tentatives += 1
+
+        if best_result is None:
+            logging.warning(
+                f"ROI {roi_id} and direction {dir} failed to fit."
+                + "Skipping..."
+            )
+            best_result = OptimizeResult()
+            best_result.x = np.nan * np.ones(6)
 
         roi_data["pooled"] = (
             (sf_0, tf_0, peak_response),
