@@ -18,7 +18,7 @@ app = Dash(
 # fmt: on
 
 header = dmc.Header(
-    height=56,
+    height=70,
     children=[
         dmc.Title(
             "RSP Vision",

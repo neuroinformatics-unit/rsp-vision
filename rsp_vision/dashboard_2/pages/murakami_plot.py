@@ -5,6 +5,10 @@ dash.register_page(__name__, path="/murakami_plot")
 
 layout = dash.html.Div(
     [
-        dmc.Title("Murakami", order=2),
+        dmc.Title(
+            "Murakami",
+            order=2,
+            className="page-title",
+        ),
     ]
 )
