@@ -1,6 +1,6 @@
 import dash
 import dash_mantine_components as dmc
-from dash import Input, Output, callback, dash_table
+from dash import Input, Output, callback, dash_table, dcc
 
 dash.register_page(__name__, path="/")
 
@@ -30,7 +30,7 @@ data = [
 ]
 
 layout = dash.html.Div(
-    [
+    [   
         dmc.Title(
             "Data Table",
             order=2,
@@ -39,12 +39,14 @@ layout = dash.html.Div(
         dmc.Grid(
             children=[
                 dmc.Text(
-                    id="tbl_out",
+                    id="selected_data_str",
                     className="selected-data-text",
                 ),
                 dmc.Button(
                     "Load Data",
+                    id="button",
                     className="load-data-button",
+                    n_clicks=0,
                 ),
             ],
             className="selected-data-container",
@@ -70,14 +72,32 @@ layout = dash.html.Div(
             ],
             className="table",
         ),
+        dcc.Store(id="store"),
+        dcc.Location(id="redirect"),
     ],
     className="page",
 )
 
 
-@callback(Output("tbl_out", "children"), Input("table", "selected_rows"))
+@callback(
+        [Output("selected_data_str", "children"), 
+         Output("store", "data"),
+         Output("button", "disabled")],
+        Input("table", "selected_rows")
+    )
 def update_graphs(selected_rows):
     if selected_rows is None or len(selected_rows) == 0:
-        return "Select data to be loaded"
+        return "Select data to be loaded", [], True
     else:
-        return f'Selected data: {data[selected_rows[0]]["Element Name"]}'
+        return f'Selected data: {data[selected_rows[0]]["Element Name"]}', data[selected_rows[0]], False
+
+@callback(
+        Output("redirect", "pathname"),
+        Input("button", "n_clicks")
+    )
+def redirect(n_clicks):
+    if n_clicks is None or n_clicks == 0:
+        pass
+    else:
+        return "/murakami_plot"
+        
