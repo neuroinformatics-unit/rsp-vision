@@ -1,8 +1,37 @@
 .header {
     background-color: #bf8e8e;
+    margin: auto;
+    width: 50%;
 }
 
 .main-title {
   color: #000000;
-  font-family: 'Open Sans', sans-serif;
+  text-align: center;
+}
+
+.page-title{
+    color: #000000;
+    text-align: center;
+}
+
+.page{
+    padding: 3%;
+    background-color: rgb(180, 224, 224);
+}
+
+.table{
+    padding: 3%;
+    background-color: rgb(161, 219, 187);
+}
+
+.selected-data-container{
+    width: 60%;
+    margin: auto;
+
+    background-color: rgb(154, 196, 133);
+}
+
+.load-data-button{
+    margin-right: 0;
+    margin-left:auto;
 }
