@@ -13,7 +13,8 @@ external_stylesheets = [
 app = Dash(
     __name__,
     use_pages=True,
-    external_stylesheets=external_stylesheets
+    external_stylesheets=external_stylesheets,
+    suppress_callback_exceptions=True,
 )
 # fmt: on
 
