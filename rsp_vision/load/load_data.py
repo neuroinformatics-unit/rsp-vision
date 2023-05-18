@@ -4,17 +4,15 @@ from typing import Tuple
 
 import h5py
 import yaml
-from decouple import config
 
 from ..objects.data_raw import DataRaw
 from ..objects.enums import AnalysisType, DataType
 from ..objects.folder_naming_specs import FolderNamingSpecs
 
-CONFIG_PATH = config("CONFIG_PATH")
-config_path = Path(__file__).parents[1] / CONFIG_PATH
 
-
-def load_data(folder_name: str) -> Tuple[DataRaw, dict, FolderNamingSpecs]:
+def load_data(
+    folder_name: str, config: dict
+) -> Tuple[DataRaw, FolderNamingSpecs]:
     """Creates the configuration object and loads the data.
 
     Parameters
@@ -28,12 +26,11 @@ def load_data(folder_name: str) -> Tuple[DataRaw, dict, FolderNamingSpecs]:
         specs: specs object
         data_raw: list containing all raw data
     """
-    config = read_config_file(config_path)
     folder_naming = FolderNamingSpecs(folder_name, config)
     folder_naming.extract_all_file_names()
     data_raw = load_data_from_filename(folder_naming, config)
 
-    return data_raw, config, folder_naming
+    return data_raw, folder_naming
 
 
 def load_data_from_filename(
@@ -82,6 +79,4 @@ def read_config_file(config_path: Path) -> dict:
     """
     with open(config_path, "r") as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
-        logging.debug(f"Config file read from {config_path}")
-        logging.debug(f"Config file content: {config}")
     return config
