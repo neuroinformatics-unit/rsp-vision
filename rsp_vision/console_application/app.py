@@ -1,17 +1,22 @@
 import logging
 import sys
+from pathlib import Path
 
 import rich
+from decouple import config
 from fancylog import fancylog
 from rich.prompt import Prompt
 
 from rsp_vision.analysis.spatial_freq_temporal_freq import (
     FrequencyResponsiveness,
 )
-from rsp_vision.load.load_data import load_data
+from rsp_vision.load.load_data import load_data, read_config_file
 from rsp_vision.objects.enums import PhotonType
 from rsp_vision.objects.photon_data import PhotonData
-from rsp_vision.save.save_data import save_data
+from rsp_vision.save.save_data import SWC_Blueprint_Spec, save_data
+
+CONFIG_PATH = config("CONFIG_PATH")
+config_path = Path(__file__).parents[1] / CONFIG_PATH
 
 
 def exception_handler(func: object) -> object:
@@ -44,8 +49,16 @@ def analysis_pipeline() -> None:
 
     CLI or GUI functionality is added here.
     """
-    # pipeline draft
-    start_logging()
+    config = read_config_file(config_path)
+    swc_blueprint_spec = SWC_Blueprint_Spec(
+        project_name="rsp_vision",
+        raw_data=False,
+        derivatives=True,
+        local_path=Path(config["paths"]["output"]),
+    )
+    start_logging(swc_blueprint_spec)
+    logging.debug(f"Config file read from {config_path}")
+    logging.debug(f"Config file content: {config}")
 
     folder_name = Prompt.ask(
         " \
@@ -60,7 +73,7 @@ def analysis_pipeline() -> None:
     )
 
     # load data
-    data, config, folder_naming = load_data(folder_name)
+    data, folder_naming = load_data(folder_name, config)
 
     # preprocess and make PhotonData object
     photon_data = PhotonData(data, PhotonType.TWO_PHOTON, config)
@@ -75,10 +88,10 @@ def analysis_pipeline() -> None:
     logging.info(f"Updated photon_data object: {photon_data}")
 
     # save results
-    save_data(folder_naming, photon_data, config)
+    save_data(swc_blueprint_spec, folder_naming, photon_data, config)
 
 
-def start_logging(module=None):
+def start_logging(swc_blueprint_spec: SWC_Blueprint_Spec, module=None):
     """Start logging to file and console.
 
     The log level to file is set to DEBUG, to console to INFO. The log file is
@@ -89,7 +102,10 @@ def start_logging(module=None):
         module = get_module_for_logging()
 
     fancylog.start_logging(
-        output_dir="./", package=module, filename="rsp_vision", verbose=False
+        output_dir=str(swc_blueprint_spec.logs_path),
+        package=module,
+        filename="rsp_vision",
+        verbose=False,
     )
 
 
