@@ -50,11 +50,15 @@ class SubjectFolder:
         )
 
     def get_latest_sub_number(self, swc_blueprint_spec) -> int:
-        # get the list of folders in the project folder
-        # get the last sub folder
-        # if does not exist, return 0
-
-        return 0
+        try:
+            onlyfolders = [
+                f
+                for f in swc_blueprint_spec.path.iterdir()
+                if f.is_dir() and f.name.startswith("sub-")
+            ]
+            return int(onlyfolders[-1].name.split("_")[0][4:7])
+        except FileNotFoundError:
+            return 0
 
 
 class SessionFolder:
@@ -94,11 +98,15 @@ class SessionFolder:
         )
 
     def get_latest_ses_number(self, subject_folder) -> int:
-        # get the list of folders in the subject folder
-        # get the last ses folder
-        # if does not exist, return 0
-
-        return 0
+        try:
+            onlyfolders = [
+                f
+                for f in subject_folder.sub_folder_path.iterdir()
+                if f.is_dir() and f.name.startswith("ses-")
+            ]
+            return int(onlyfolders[-1].name.split("_")[0][4:7])
+        except FileNotFoundError:
+            return 0
 
 
 def save_data(
