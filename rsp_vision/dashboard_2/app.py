@@ -1,6 +1,6 @@
 import dash
 import dash_mantine_components as dmc
-from dash import Dash, html
+from dash import Dash, dcc, html
 
 link = "https://fonts.googleapis.com/css2?family=Open+Sans&display=swap"
 external_stylesheets = [
@@ -32,6 +32,7 @@ header = dmc.Header(
 
 app.layout = html.Div(
     [
+        dcc.Store(id="store", data={}),
         header,
         dash.page_container,
     ]
