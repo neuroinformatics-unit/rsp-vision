@@ -1,0 +1,81 @@
+import pickle
+from pathlib import Path
+
+import dash
+import dash_mantine_components as dmc
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+from dash import Input, Output, callback, dcc, html
+
+dash.register_page(__name__, path="/sf_tf_facet_plot")
+
+layout = html.Div(
+    [
+        dmc.Title(
+            "SF-TF facet plot and gaussians",
+            className="page-title",
+        ),
+        dmc.Grid(
+            children=[
+                dmc.Col(
+                    [
+                        dmc.Text(
+                            id="selected_data_str_sf_tf",
+                        ),
+                        html.Br(),
+                        # dmc.Switch(
+                        #     id="show-only-responsive",
+                        #     label="Show only responsive ROIs",
+                        #     checked=True,
+                        # ),
+                        html.Br(),
+                        html.Br(),
+                        dmc.NavLink(
+                            label="Back to Data Table",
+                            href="/",
+                            className="navlink",
+                        ),
+                        dmc.NavLink(
+                            label="Murakami plot",
+                            href="/murakami_plot",
+                            className="navlink",
+                        ),
+                        dmc.NavLink(
+                            label="SF-TF facet plot and gaussians",
+                            href="/sf_tf_facet_plot",
+                            className="navlink",
+                            disabled=True,
+                        ),
+                        dmc.NavLink(
+                            label="Polar plots",
+                            href="/polar_plots",
+                            className="navlink",
+                        ),
+                    ],
+                    span=2,
+                ),
+                dmc.Col(
+                    [
+                        html.Div(
+                            id="sf-tf-plot",
+                            className="sf-tf-plot",
+                        ),
+                    ],
+                    span="auto",
+                ),
+                dmc.Col(
+                    [
+                        html.Div(
+                            id="gaussian-plot",
+                            className="sf-tf-plot",
+                        ),
+                    ],
+                    span=3,
+                ),
+            ],
+            className="sf-tf-container",
+        ),
+    ],
+    className="page",
+)
