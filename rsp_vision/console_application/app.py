@@ -101,6 +101,8 @@ def start_logging(swc_blueprint_spec: SWC_Blueprint_Spec, module=None):
     if module is None:
         module = get_module_for_logging()
 
+    Path(swc_blueprint_spec.logs_path).mkdir(parents=True, exist_ok=True)
+
     fancylog.start_logging(
         output_dir=str(swc_blueprint_spec.logs_path),
         package=module,
