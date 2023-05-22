@@ -13,18 +13,38 @@ dash.register_page(__name__, path="/murakami_plot")
 layout = html.Div(
     [
         dmc.Title(
-            "Murakami",
-            order=2,
+            "Murakami Plot",
             className="page-title",
         ),
         dmc.Grid(
             children=[
                 dmc.Col(
                     [
+                        dmc.Text(
+                            id="selected_data_str_murakami",
+                        ),
+                        html.Br(),
                         dmc.Switch(
                             id="show-only-responsive",
                             label="Show only responsive ROIs",
                             checked=True,
+                        ),
+                        html.Br(),
+                        html.Br(),
+                        dmc.NavLink(
+                            label="Back to Data Table",
+                            href="/",
+                            className="navlink",
+                        ),
+                        dmc.NavLink(
+                            label="SF-TF facet plot and gaussians",
+                            href="/sf_tf_facet_plot",
+                            className="navlink",
+                        ),
+                        dmc.NavLink(
+                            label="Polar plots",
+                            href="/polar_plots",
+                            className="navlink",
                         ),
                     ],
                     span=2,
@@ -47,6 +67,17 @@ layout = html.Div(
 
 
 @callback(
+    Output("selected_data_str_murakami", "children"),
+    Input("store", "data"),
+)
+def update_selected_data_str(store):
+    if store == {}:
+        return "No data selected"
+    else:
+        return f'Dataset loaded is: {store["data"][2]}'
+
+
+@callback(
     Output("murakami-plot", "children"),
     [
         Input("store", "data"),
@@ -56,106 +87,100 @@ layout = html.Div(
 def murakami_plot(store, show_only_responsive):
     if store == {}:
         return "No data to plot"
-    else:
-        oversampling_factor = store["oversampling_factor"]
-        spatial_frequencies = store["spatial_frequencies"]
-        temporal_frequencies = store["temporal_frequencies"]
-        data = load_data(store)
-        responsive_rois = data["responsive_rois"]
-        n_roi = data["n_roi"]
-        oversampled_gaussians = data["oversampled_gaussians"]
 
-        total_roi = (
-            responsive_rois if show_only_responsive else list(range(n_roi))
-        )
-        print(f"total roi: {total_roi}")
+    data = load_data(store)
 
-        fig = go.Figure()
+    responsive_rois = data["responsive_rois"]
+    n_roi = data["n_roi"]
+    oversampled_gaussians = data["oversampled_gaussians"]
+    oversampling_factor = store["oversampling_factor"]
+    spatial_frequencies = store["spatial_frequencies"]
+    temporal_frequencies = store["temporal_frequencies"]
 
-        for roi_id in total_roi:
-            print(f"plotting roi {roi_id}")
-            fig = simplified_murakami_plot(
-                roi_id=roi_id,
-                fig=fig,
-                oversampling_factor=oversampling_factor,
-                responsive_rois=responsive_rois,
-                oversampled_gaussians=oversampled_gaussians[
-                    (roi_id, "pooled")
-                ],
-                spatial_frequencies=spatial_frequencies,
-                temporal_frequencies=temporal_frequencies,
-            )
+    print(f"n_roi: {n_roi}")
 
-        fig.update_layout(
-            title="Murakami plot",
-            yaxis_title="Spatial frequency (cycles/deg)",
-            xaxis_title="Temporal frequency (Hz)",
-            legend_title="ROI",
-            plot_bgcolor="rgba(0, 0, 0, 0)",
-            # paper_bgcolor="rgba(0, 0, 0, 0)",
-            autosize=False,
-            width=1000,
-            height=800,
-            margin=dict(t=50, b=50, l=50, r=50),
+    total_roi = responsive_rois if show_only_responsive else list(range(n_roi))
+
+    fig = go.Figure()
+
+    for roi_id in total_roi:
+        fig = simplified_murakami_plot(
+            roi_id=roi_id,
+            fig=fig,
+            oversampling_factor=oversampling_factor,
+            responsive_rois=responsive_rois,
+            oversampled_gaussians=oversampled_gaussians[(roi_id, "pooled")],
+            spatial_frequencies=spatial_frequencies,
+            temporal_frequencies=temporal_frequencies,
         )
 
-        fig.update_xaxes(
-            range=[-0.05, 16.1],
-            title_text="Temporal frequency (Hz)",
-            showgrid=False,
-            zeroline=False,
-        )
-        fig.update_yaxes(
-            range=[0, 0.33],
-            title_text="Spatial frequency (cycles/deg)",
-            showgrid=False,
-            zeroline=False,
-        )
-        #  draw horizontal lines
-        for i in spatial_frequencies:
-            fig.add_shape(
-                type="line",
-                x0=0.25,
-                y0=i,
-                x1=16.1,
-                y1=i,
-                line=dict(color="LightGray", width=1),
-            )
-            #  add annotations for horizontal lines
-            fig.add_annotation(
-                x=0.05,
-                y=i,
-                text=f"{i}",
-                showarrow=False,
-                yshift=10,
-                xshift=10,
-                font=dict(color="LightGray"),
-            )
+    fig.update_layout(
+        title="Murakami plot",
+        yaxis_title="Spatial frequency (cycles/deg)",
+        xaxis_title="Temporal frequency (Hz)",
+        legend_title="ROI",
+        plot_bgcolor="rgba(0, 0, 0, 0)",
+        # paper_bgcolor="rgba(0, 0, 0, 0)",
+        autosize=False,
+        width=1000,
+        height=800,
+        margin=dict(t=50, b=50, l=50, r=50),
+    )
 
-        for i in temporal_frequencies:
-            fig.add_shape(
-                type="line",
-                x0=i,
-                y0=0.001,
-                x1=i,
-                y1=0.33,
-                line=dict(color="LightGray", width=1),
-            )
-            #  add annotations for vertical lines
-            fig.add_annotation(
-                x=i,
-                y=0.001,
-                text=f"{i}",
-                showarrow=False,
-                yshift=10,
-                xshift=10,
-                font=dict(color="LightGray"),
-            )
-
-        return dcc.Graph(
-            id="gaussian_plot",
-            figure=fig,
+    fig.update_xaxes(
+        range=[-0.05, 16.1],
+        title_text="Temporal frequency (Hz)",
+        showgrid=False,
+        zeroline=False,
+    )
+    fig.update_yaxes(
+        range=[0, 0.33],
+        title_text="Spatial frequency (cycles/deg)",
+        showgrid=False,
+        zeroline=False,
+    )
+    #  draw horizontal lines
+    for i in spatial_frequencies:
+        fig.add_shape(
+            type="line",
+            x0=0.25,
+            y0=i,
+            x1=16.1,
+            y1=i,
+            line=dict(color="LightGray", width=1),
         )
+        #  add annotations for horizontal lines
+        fig.add_annotation(
+            x=0.05,
+            y=i,
+            text=f"{i}",
+            showarrow=False,
+            yshift=10,
+            xshift=10,
+            font=dict(color="LightGray"),
+        )
+
+    for i in temporal_frequencies:
+        fig.add_shape(
+            type="line",
+            x0=i,
+            y0=0.001,
+            x1=i,
+            y1=0.33,
+            line=dict(color="LightGray", width=1),
+        )
+        #  add annotations for vertical lines
+        fig.add_annotation(
+            x=i,
+            y=0.001,
+            text=f"{i}",
+            showarrow=False,
+            yshift=10,
+            xshift=10,
+            font=dict(color="LightGray"),
+        )
+
+    return dcc.Graph(id="gaussian_plot", figure=fig)
 
 
 def simplified_murakami_plot(
@@ -167,8 +192,6 @@ def simplified_murakami_plot(
     spatial_frequencies,
     temporal_frequencies,
 ):
-    # color = colors[roi_id]
-    print("finding peaks...")
     peaks = {
         roi_id: find_peak_coordinates(
             oversampled_gaussian=oversampled_gaussians,
@@ -177,7 +200,6 @@ def simplified_murakami_plot(
             oversampling_factor=oversampling_factor,
         )
     }
-    print("peaks found")
 
     p = pd.DataFrame(
         {
@@ -246,8 +268,6 @@ def find_peak_coordinates(
     temporal_frequencies: np.ndarray,
     oversampling_factor: int,
 ):
-    print("finding peak coordinates")
-    # find the peak indices
     peak_indices = np.unravel_index(
         np.argmax(oversampled_gaussian), oversampled_gaussian.shape
     )
