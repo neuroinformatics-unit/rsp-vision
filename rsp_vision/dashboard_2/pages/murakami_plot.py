@@ -37,6 +37,12 @@ layout = html.Div(
                             className="navlink",
                         ),
                         dmc.NavLink(
+                            label="Murakami plot",
+                            href="/murakami_plot",
+                            className="navlink",
+                            disabled=True,
+                        ),
+                        dmc.NavLink(
                             label="SF-TF facet plot and gaussians",
                             href="/sf_tf_facet_plot",
                             className="navlink",
