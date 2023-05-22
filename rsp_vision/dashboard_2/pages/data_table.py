@@ -89,8 +89,17 @@ def update_graphs(selected_rows):
     if selected_rows is None or len(selected_rows) == 0:
         return "Select data to be loaded", {}, True
     else:
+        store = {
+            "data": dataframe.iloc[selected_rows[0]],
+            "path": config["paths"]["output"] + "/rsp_vision/derivatives",
+            "oversampling_factor": int(
+                config["fitting"]["oversampling_factor"]
+            ),
+            "spatial_frequencies": config["spatial_frequencies"],
+            "temporal_frequencies": config["temporal_frequencies"],
+        }
         return (
             f'Selected data: {dataframe.iloc[selected_rows[0]]["mouse line"]}',
-            {"data": dataframe.iloc[selected_rows[0]]},
+            store,
             False,
         )
