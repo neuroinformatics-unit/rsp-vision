@@ -1,34 +1,32 @@
+from pathlib import Path
+
 import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
+import pandas as pd
 from dash import Input, Output, callback, dash_table
+from decouple import config
+
+from rsp_vision.load.load_data import read_config_file
+from rsp_vision.save.save_data import SWC_Blueprint_Spec
+
+CONFIG_PATH = config("CONFIG_PATH")
+config_path = Path(__file__).parents[2] / CONFIG_PATH
+config = read_config_file(config_path)
+swc_blueprint_spec = SWC_Blueprint_Spec(
+    project_name="rsp_vision",
+    raw_data=False,
+    derivatives=True,
+    local_path=Path(config["paths"]["output"]),
+)
+with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
+    c = f.readline().split(",")
+    c[0] = "index"
+    columns = [{"name": i, "id": i} for i in c]
+    dataframe = pd.read_csv(f, names=c, index_col=0)
+    data = dataframe.to_dict(orient="records")
 
 dash.register_page(__name__, path="/")
-
-columns = [
-    {"name": i, "id": i}
-    for i in ["Element Position", "Element Name", "Symbol", "Atomic Mass"]
-]
-data = [
-    {
-        "Element Position": "6",
-        "Element Name": "Carbon",
-        "Symbol": "C",
-        "Atomic Mass": "12.011",
-    },
-    {
-        "Element Position": "7",
-        "Element Name": "Nitrogen",
-        "Symbol": "N",
-        "Atomic Mass": "14.007",
-    },
-    {
-        "Element Position": "39",
-        "Element Name": "Yttrium",
-        "Symbol": "Y",
-        "Atomic Mass": "88.906",
-    },
-]
 
 layout = dash.html.Div(
     [
@@ -74,14 +72,6 @@ layout = dash.html.Div(
             ],
             className="table",
         ),
-        dmc.Text(
-            id="stored_data1",
-            className="selected-data-text",
-        ),
-        # dcc.Location(
-        #     id="redirect",
-        #     refresh=True,
-        #     ),
     ],
     className="page",
 )
@@ -99,30 +89,8 @@ def update_graphs(selected_rows):
     if selected_rows is None or len(selected_rows) == 0:
         return "Select data to be loaded", {}, True
     else:
-        store = {"data": "test content", "other": "other test"}
         return (
-            f'Selected data: {data[selected_rows[0]]["Element Name"]}',
-            store,  # data[selected_rows[0]]},
+            f'Selected data: {dataframe.iloc[selected_rows[0]]["mouse line"]}',
+            {"data": dataframe.iloc[selected_rows[0]]},
             False,
         )
-
-
-# @callback(
-#         Output("redirect", "pathname"),
-#         Input("button", "n_clicks")
-#     )
-# def redirect(n_clicks):
-#     if n_clicks is None or n_clicks == 0:
-#         pass
-#     else:
-#         return "/murakami_plot"
-
-
-@callback(
-    Output("stored_data1", "children"),
-    Input("store", "data"),
-)
-def read_stored_data(store):
-    if store == {}:
-        return "Store is None"
-    return str(store["data"])
