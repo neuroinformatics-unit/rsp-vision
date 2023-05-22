@@ -19,11 +19,12 @@ layout = dash.html.Div(
     className="page",
 )
 
+
 @callback(
     Output("stored_data", "children"),
     Input("store", "data"),
 )
-def read_stored_data(data):
-    if data is None:
-        return "No data stored"
-    return str(data) + "***"
+def read_stored_data(store):
+    if store == {}:
+        return "Store is None"
+    return str(store["data"])
