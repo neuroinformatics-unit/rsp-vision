@@ -224,7 +224,7 @@ def load_data(store):
     subject_folder = f"sub-{sub:03d}_line-{line}_id-{id}"
     session_folder = (
         f"ses-{ses:03d}_hemisphere-{hemisphere}"
-        + +f"_region-{brain_region}_monitor-{monitor_position}"
+        + f"_region-{brain_region}_monitor-{monitor_position}"
     )
 
     path = (
