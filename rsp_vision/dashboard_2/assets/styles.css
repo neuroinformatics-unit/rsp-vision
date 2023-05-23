@@ -34,4 +34,26 @@
 .load-data-button{
     margin-right: 0;
     margin-left:auto;
+    border-radius: 8px;
+    border-width: 0;
+    text-align: center;
+}
+
+/* button, when enabled do not underline */
+a:-webkit-any-link {
+    text-decoration: none !important;
+    /* force font to be the default one, Open Sans; */
+    font: -webkit-small-control;
+    margin-right: 0;
+    margin-left:auto;
+}
+
+.directions-circle{
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #bf8e8e;
+    margin: auto;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }

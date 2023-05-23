@@ -111,9 +111,6 @@ def update_graphs(selected_rows):
             ),
             "subject_folder_path": str(sub_folder.sub_folder_path),
             "session_folder_path": str(session_folder.ses_folder_path),
-            # "spatial_frequencies": config["spatial_frequencies"],
-            # "temporal_frequencies": config["temporal_frequencies"],
-            # "directions": config["directions"],
         }
         return (
             f'Selected data: {dataframe.iloc[selected_rows[0]]["mouse line"]}',
