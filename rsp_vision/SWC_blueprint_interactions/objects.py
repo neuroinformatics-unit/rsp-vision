@@ -41,17 +41,22 @@ class SubjectFolder:
         self.sub_folder_path = Path(
             self.swc_blueprint_spec.path / self.sub_folder_name
         )
+        return self
 
     def make_from_table_row(self, table_row: dict):
         self.sub_num = int(table_row["sub"])
         self.sub = f"sub-{self.sub_num:03d}"
         self.id = (
-            "line-" + table_row["mouse line"] + "_id-" + table_row["mouse id"]
+            "line-"
+            + table_row["mouse line"]
+            + "_id-"
+            + str(table_row["mouse id"])
         )
         self.sub_folder_name = f"{self.sub}_{self.id}"
         self.sub_folder_path = Path(
             self.swc_blueprint_spec.path / self.sub_folder_name
         )
+        return self
 
     def get_latest_sub_number(self, swc_blueprint_spec) -> int:
         try:
@@ -104,6 +109,7 @@ class SessionFolder:
         self.ses_folder_path = Path(
             self.subject_folder.sub_folder_path / self.ses_folder_name
         )
+        return self
 
     def make_from_table_row(self, table_row: dict):
         self.ses_num = int(table_row["ses"])
@@ -116,14 +122,23 @@ class SessionFolder:
             + table_row["brain region"]
             + "_monitor-"
             + self.monitor
-            + ("_fov-" + table_row["fov"] if table_row["fov"] else "")
-            + ("_cre-" + table_row["cre"] if table_row["cre"] else "")
+            + (
+                "_fov-" + str(table_row["fov"])
+                if (str(table_row["fov"]) != "nan")
+                else ""
+            )
+            + (
+                "_cre-" + str(table_row["cre"])
+                if (str(table_row["cre"]) != "nan")
+                else ""
+            )
         )
 
         self.ses_folder_name = f"{self.ses}_{self.id}"
         self.ses_folder_path = Path(
             self.subject_folder.sub_folder_path / self.ses_folder_name
         )
+        return self
 
     def get_latest_ses_number(self, subject_folder) -> int:
         try:
