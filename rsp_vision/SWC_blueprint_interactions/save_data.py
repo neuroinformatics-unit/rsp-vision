@@ -9,104 +9,11 @@ import yaml
 from rsp_vision.objects.enums import PhotonType
 from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
 from rsp_vision.objects.photon_data import PhotonData
-
-
-class SWC_Blueprint_Spec:
-    def __init__(
-        self,
-        project_name: str,
-        raw_data: bool = False,
-        derivatives: bool = True,
-        local_path: Path = Path(),
-    ) -> None:
-        self.project_name = project_name
-        self.raw_data = raw_data
-        self.derivatives = derivatives
-        self.path = (
-            local_path / self.project_name / "derivatives"
-            if derivatives
-            else local_path / self.project_name / "raw_data"
-        )
-        self.logs_path = local_path / self.project_name / "logs"
-
-
-class SubjectFolder:
-    def __init__(
-        self,
-        swc_blueprint_spec: SWC_Blueprint_Spec,
-        folder_naming_specs: FolderNamingSpecs,
-    ) -> None:
-        self.sub_num = self.get_latest_sub_number(swc_blueprint_spec)
-        self.sub: str = f"sub-{self.sub_num:03d}"
-        self.id = (
-            "line-"
-            + folder_naming_specs.mouse_line
-            + "_id-"
-            + folder_naming_specs.mouse_id
-        )
-        self.sub_folder_name = f"{self.sub}_{self.id}"
-        self.sub_folder_path = Path(
-            swc_blueprint_spec.path / self.sub_folder_name
-        )
-
-    def get_latest_sub_number(self, swc_blueprint_spec) -> int:
-        try:
-            onlyfolders = [
-                f
-                for f in swc_blueprint_spec.path.iterdir()
-                if f.is_dir() and f.name.startswith("sub-")
-            ]
-            return int(onlyfolders[-1].name.split("_")[0][4:7])
-        except FileNotFoundError:
-            return 0
-
-
-class SessionFolder:
-    def __init__(
-        self,
-        subject_folder: SubjectFolder,
-        folder_naming_specs: FolderNamingSpecs,
-    ) -> None:
-        self.ses_num = self.get_latest_ses_number(subject_folder)
-        self.ses = f"ses-{self.ses_num:03d}"
-        self.monitor = (
-            "_".join(folder_naming_specs.monitor_position.split("_")[1:])
-            .replace("_", "-")
-            .replace("-", "")
-        )
-        self.id = (
-            "hemisphere-"
-            + folder_naming_specs.hemisphere
-            + "_region-"
-            + folder_naming_specs.brain_region
-            + "_monitor-"
-            + self.monitor
-            + (
-                "_fov-" + folder_naming_specs.fov
-                if folder_naming_specs.fov
-                else ""
-            )
-            + (
-                "_cre-" + folder_naming_specs.cre
-                if folder_naming_specs.cre
-                else ""
-            )
-        )
-        self.ses_folder_name = f"{self.ses}_{self.id}"
-        self.ses_folder_path = Path(
-            subject_folder.sub_folder_path / self.ses_folder_name
-        )
-
-    def get_latest_ses_number(self, subject_folder) -> int:
-        try:
-            onlyfolders = [
-                f
-                for f in subject_folder.sub_folder_path.iterdir()
-                if f.is_dir() and f.name.startswith("ses-")
-            ]
-            return int(onlyfolders[-1].name.split("_")[0][4:7])
-        except FileNotFoundError:
-            return 0
+from rsp_vision.SWC_blueprint_interactions.objects import (
+    SessionFolder,
+    SubjectFolder,
+    SWC_Blueprint_Spec,
+)
 
 
 def save_data(
@@ -117,13 +24,11 @@ def save_data(
 ) -> None:
     subject_folder = SubjectFolder(
         swc_blueprint_spec=swc_blueprint_spec,
-        folder_naming_specs=folder_naming_specs,
-    )
+    ).make_from_folder_naming_specs(folder_naming_specs)
 
     session_folder = SessionFolder(
         subject_folder=subject_folder,
-        folder_naming_specs=folder_naming_specs,
-    )
+    ).make_from_folder_naming_specs(folder_naming_specs)
 
     Path(session_folder.ses_folder_path).mkdir(parents=True, exist_ok=True)
 
@@ -172,7 +77,7 @@ def save_data(
         yaml.dump(metadata, f)
 
     #  read csv containing analysis log
-    
+
     dict = {
         "sub": subject_folder.sub_num,
         "ses": session_folder.ses_num,
@@ -202,7 +107,7 @@ def save_data(
             #  if there is, update the row
             #  if there is not, append a new row
             #  save the csv
-            
+
             if analysis_log[
                 (analysis_log["sub"] == subject_folder.sub_num)
                 & (analysis_log["ses"] == session_folder.ses_num)
@@ -217,7 +122,7 @@ def save_data(
                     & (analysis_log["ses"] == session_folder.ses_num),
                     dict.keys(),
                 ] = dict.values()
-                
+
     except FileNotFoundError:
         analysis_log = pd.DataFrame(dict, index=[0])
 
