@@ -16,7 +16,7 @@ def get_app() -> Dash:
         __name__,
         use_pages=True,
         external_stylesheets=external_stylesheets,
-        # suppress_callback_exceptions=True,
+        suppress_callback_exceptions=True,
     )
     # fmt: on
 
