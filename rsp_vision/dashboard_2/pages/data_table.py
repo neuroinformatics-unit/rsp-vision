@@ -8,7 +8,11 @@ from dash import Input, Output, callback, dash_table
 from decouple import config
 
 from rsp_vision.load.load_data import read_config_file
-from rsp_vision.save.save_data import SWC_Blueprint_Spec
+from rsp_vision.SWC_blueprint_interactions.objects import (
+    SessionFolder,
+    SubjectFolder,
+    SWC_Blueprint_Spec,
+)
 
 CONFIG_PATH = config("CONFIG_PATH")
 config_path = Path(__file__).parents[2] / CONFIG_PATH
@@ -89,14 +93,27 @@ def update_graphs(selected_rows):
     if selected_rows is None or len(selected_rows) == 0:
         return "Select data to be loaded", {}, True
     else:
+        sub_folder = SubjectFolder(
+            swc_blueprint_spec=swc_blueprint_spec
+        ).make_from_table_row(dataframe.iloc[selected_rows[0]])
+        print(sub_folder)
+        session_folder = SessionFolder(
+            subject_folder=sub_folder
+        ).make_from_table_row(dataframe.iloc[selected_rows[0]])
+        print(session_folder)
+
         store = {
             "data": dataframe.iloc[selected_rows[0]],
-            "path": config["paths"]["output"] + "/rsp_vision/derivatives",
+            "path": str(swc_blueprint_spec.path),
+            "config": config,
             "oversampling_factor": int(
                 config["fitting"]["oversampling_factor"]
             ),
-            "spatial_frequencies": config["spatial_frequencies"],
-            "temporal_frequencies": config["temporal_frequencies"],
+            "subject_folder_path": str(sub_folder.sub_folder_path),
+            "session_folder_path": str(session_folder.ses_folder_path),
+            # "spatial_frequencies": config["spatial_frequencies"],
+            # "temporal_frequencies": config["temporal_frequencies"],
+            # "directions": config["directions"],
         }
         return (
             f'Selected data: {dataframe.iloc[selected_rows[0]]["mouse line"]}',

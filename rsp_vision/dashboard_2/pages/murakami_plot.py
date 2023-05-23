@@ -99,9 +99,9 @@ def murakami_plot(store, show_only_responsive):
     responsive_rois = data["responsive_rois"]
     n_roi = data["n_roi"]
     oversampled_gaussians = data["oversampled_gaussians"]
-    oversampling_factor = store["oversampling_factor"]
-    spatial_frequencies = store["spatial_frequencies"]
-    temporal_frequencies = store["temporal_frequencies"]
+    oversampling_factor = store["config"]["fitting"]["oversampling_factor"]
+    spatial_frequencies = store["config"]["spatial_frequencies"]
+    temporal_frequencies = store["config"]["temporal_frequencies"]
 
     print(f"n_roi: {n_roi}")
 
@@ -242,26 +242,12 @@ def simplified_murakami_plot(
 
 
 def load_data(store):
-    sub = store["data"][0]
-    ses = store["data"][1]
-    line = store["data"][2]
-    id = store["data"][3]
-    hemisphere = store["data"][4]
-    brain_region = store["data"][5]
-    monitor_position = store["data"][6]
-    subject_folder = f"sub-{sub:03d}_line-{line}_id-{id}"
-    session_folder = (
-        f"ses-{ses:03d}_hemisphere-{hemisphere}"
-        + f"_region-{brain_region}_monitor-{monitor_position}"
-    )
-
     path = (
         Path(store["path"])
-        / subject_folder
-        / session_folder
+        / store["subject_folder_path"]
+        / store["session_folder_path"]
         / "gaussians_fits_and_roi_info.pickle"
     )
-
     with open(path, "rb") as f:
         data = pickle.load(f)
 
