@@ -16,7 +16,6 @@ from rsp_vision.objects.photon_data import PhotonData
 from rsp_vision.objects.SWC_Blueprint import SWC_Blueprint_Spec
 from rsp_vision.save.save_data import save_data
 
-
 CONFIG_PATH = config("CONFIG_PATH")
 config_path = Path(__file__).parents[1] / CONFIG_PATH
 
