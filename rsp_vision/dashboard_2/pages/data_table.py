@@ -8,7 +8,7 @@ from dash import Input, Output, callback, dash_table
 from decouple import config
 
 from rsp_vision.load.load_data import read_config_file
-from rsp_vision.SWC_blueprint_interactions.objects import (
+from rsp_vision.objects.SWC_Blueprint import (
     SessionFolder,
     SubjectFolder,
     SWC_Blueprint_Spec,
