@@ -27,10 +27,12 @@ class SubjectFolder:
         self.swc_blueprint_spec = swc_blueprint_spec
 
     def make_from_folder_naming_specs(
-        self, folder_naming_specs: FolderNamingSpecs
+        self,
+        folder_naming_specs: FolderNamingSpecs,
+        sub_num: int,
     ):
-        self.sub_num = self.get_latest_sub_number(self.swc_blueprint_spec)
-        self.sub = f"sub-{self.sub_num:03d}"
+        self.sub_num = sub_num
+        self.sub = f"sub-{sub_num:03d}"
         self.id = (
             "line-"
             + folder_naming_specs.mouse_line
@@ -58,17 +60,6 @@ class SubjectFolder:
         )
         return self
 
-    def get_latest_sub_number(self, swc_blueprint_spec) -> int:
-        try:
-            onlyfolders = [
-                f
-                for f in swc_blueprint_spec.path.iterdir()
-                if f.is_dir() and f.name.startswith("sub-")
-            ]
-            return int(onlyfolders[-1].name.split("_")[0][4:7])
-        except FileNotFoundError:
-            return 0
-
 
 class SessionFolder:
     def __init__(
@@ -78,9 +69,11 @@ class SessionFolder:
         self.subject_folder = subject_folder
 
     def make_from_folder_naming_specs(
-        self, folder_naming_specs: FolderNamingSpecs
+        self,
+        folder_naming_specs: FolderNamingSpecs,
+        ses_num: int,
     ):
-        self.ses_num = self.get_latest_ses_number(self.subject_folder)
+        self.ses_num = ses_num
         self.ses = f"ses-{self.ses_num:03d}"
         self.monitor = (
             "_".join(folder_naming_specs.monitor_position.split("_")[1:])
@@ -139,14 +132,3 @@ class SessionFolder:
             self.subject_folder.sub_folder_path / self.ses_folder_name
         )
         return self
-
-    def get_latest_ses_number(self, subject_folder) -> int:
-        try:
-            onlyfolders = [
-                f
-                for f in subject_folder.sub_folder_path.iterdir()
-                if f.is_dir() and f.name.startswith("ses-")
-            ]
-            return int(onlyfolders[-1].name.split("_")[0][4:7])
-        except FileNotFoundError:
-            return 0

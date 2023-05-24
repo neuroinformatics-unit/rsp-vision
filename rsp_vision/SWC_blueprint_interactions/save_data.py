@@ -22,13 +22,91 @@ def save_data(
     photon_data: PhotonData,
     config_file: dict,
 ) -> None:
+    # does the table exist?
+    reanalysis = False
+    try:
+        with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
+            analysis_log = pd.read_csv(f, index_col=0, header=0)
+            if analysis_log.empty:
+                # no data at all
+                sub = 0
+                ses = 0
+            elif analysis_log[
+                (analysis_log["mouse line"] == folder_naming_specs.mouse_line)
+                & (analysis_log["mouse id"] == folder_naming_specs.mouse_id)
+            ].empty:
+                # this subject was never analysed before
+                sub = analysis_log["sub"].max() + 1
+                ses = 0
+            elif analysis_log[
+                analysis_log["folder name"] == folder_naming_specs.folder_name
+            ].empty:
+                #  this subject was analysed before, but not this session
+                sub = analysis_log[
+                    (
+                        analysis_log["mouse line"]
+                        == folder_naming_specs.mouse_line
+                    )
+                    & (
+                        analysis_log["mouse id"]
+                        == folder_naming_specs.mouse_id
+                    )
+                ]["sub"][0]
+                ses = (
+                    analysis_log[
+                        (
+                            analysis_log["mouse line"]
+                            == folder_naming_specs.mouse_line
+                        )
+                        & (
+                            analysis_log["mouse id"]
+                            == folder_naming_specs.mouse_id
+                        )
+                    ]["ses"].max()
+                    + 1
+                )
+            else:
+                # this subject and this session were analysed before
+                sub = analysis_log[
+                    analysis_log["folder name"]
+                    == folder_naming_specs.folder_name
+                ]["sub"][0]
+                ses = analysis_log[
+                    analysis_log["folder name"]
+                    == folder_naming_specs.folder_name
+                ]["ses"][0]
+                reanalysis = True
+
+    except FileNotFoundError:
+        analysis_log = pd.DataFrame(
+            columns=[
+                "folder name",
+                "sub",
+                "ses",
+                "mouse line",
+                "mouse id",
+                "hemisphere",
+                "brain region",
+                "monitor position",
+                "fov",
+                "cre",
+                "analysed",
+                "analysis date",
+                "commit hash",
+                "microscope",
+                "n roi",
+                "n responsive roi",
+                "days of the experiment",
+            ],
+        )
+
     subject_folder = SubjectFolder(
         swc_blueprint_spec=swc_blueprint_spec,
-    ).make_from_folder_naming_specs(folder_naming_specs)
+    ).make_from_folder_naming_specs(folder_naming_specs, sub)
 
     session_folder = SessionFolder(
         subject_folder=subject_folder,
-    ).make_from_folder_naming_specs(folder_naming_specs)
+    ).make_from_folder_naming_specs(folder_naming_specs, ses)
 
     Path(session_folder.ses_folder_path).mkdir(parents=True, exist_ok=True)
 
@@ -76,9 +154,8 @@ def save_data(
     with open(session_folder.ses_folder_path / "metadata.yml", "w") as f:
         yaml.dump(metadata, f)
 
-    #  read csv containing analysis log
-
     dict = {
+        "folder name": folder_naming_specs.folder_name,
         "sub": subject_folder.sub_num,
         "ses": session_folder.ses_num,
         "mouse line": folder_naming_specs.mouse_line,
@@ -100,30 +177,12 @@ def save_data(
         "n responsive roi": len(photon_data.responsive_rois),
         "days of the experiment": photon_data.total_n_days,
     }
-    try:
-        with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
-            analysis_log = pd.read_csv(f, index_col=0, header=0)
-            #  try to see if there is a row with the same folder name
-            #  if there is, update the row
-            #  if there is not, append a new row
-            #  save the csv
 
-            if analysis_log[
-                (analysis_log["sub"] == subject_folder.sub_num)
-                & (analysis_log["ses"] == session_folder.ses_num)
-            ].empty:
-                analysis_log = analysis_log.append(
-                    dict,
-                    ignore_index=True,
-                )
-            else:
-                analysis_log.loc[
-                    (analysis_log["sub"] == subject_folder.sub_num)
-                    & (analysis_log["ses"] == session_folder.ses_num),
-                    dict.keys(),
-                ] = dict.values()
-
-    except FileNotFoundError:
-        analysis_log = pd.DataFrame(dict, index=[0])
+    if not reanalysis:
+        analysis_log = pd.concat([analysis_log, pd.DataFrame(dict, index=[0])])
+    else:
+        analysis_log.loc[
+            analysis_log["folder name"] == folder_naming_specs.folder_name
+        ] = dict
 
     analysis_log.to_csv(swc_blueprint_spec.path / "analysis_log.csv")
