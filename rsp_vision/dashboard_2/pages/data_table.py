@@ -94,12 +94,20 @@ def update_graphs(selected_rows):
         return "Select data to be loaded", {}, True
     else:
         sub_folder = SubjectFolder(
-            swc_blueprint_spec=swc_blueprint_spec
-        ).make_from_table_row(dataframe.iloc[selected_rows[0]])
+            swc_blueprint_spec,
+            dataframe.iloc[selected_rows[0]].to_dict(),
+            sub_num=0,  # irrelevant
+        )
         print(sub_folder)
         session_folder = SessionFolder(
-            subject_folder=sub_folder
-        ).make_from_table_row(dataframe.iloc[selected_rows[0]])
+            sub_folder,
+            dataframe.iloc[selected_rows[0]].to_dict(),
+            ses_num=0,  # irrelevant
+        )
+
+        # session_folder = SessionFolder(
+        #     subject_folder=sub_folder
+        # ).make_from_table_row(dataframe.iloc[selected_rows[0]])
         print(session_folder)
 
         store = {

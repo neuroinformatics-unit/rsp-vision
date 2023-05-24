@@ -8,6 +8,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, callback, dcc, html
 
+from rsp_vision.analysis.gaussians_calculations import get_gaussian_matrix_to_be_plotted
+
 dash.register_page(__name__, path="/murakami_plot")
 
 layout = html.Div(
@@ -98,10 +100,20 @@ def murakami_plot(store, show_only_responsive):
 
     responsive_rois = data["responsive_rois"]
     n_roi = data["n_roi"]
-    oversampled_gaussians = data["oversampled_gaussians"]
+    # oversampled_gaussians = data["oversampled_gaussians"]
     oversampling_factor = store["config"]["fitting"]["oversampling_factor"]
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
+
+    
+
+    oversampled_gaussians = call_get_gaussian_matrix_to_be_plotted(
+        n_roi,
+        data,
+        spatial_frequencies,
+        temporal_frequencies,
+        oversampling_factor,
+    )
 
     print(f"n_roi: {n_roi}")
 
@@ -278,3 +290,31 @@ def find_peak_coordinates(
     sf = spatial_freq_linspace[peak_indices[0]]
     tf = temporal_freq_linspace[peak_indices[1]]
     return tf, sf
+
+
+def call_get_gaussian_matrix_to_be_plotted(
+        n_roi: int,
+        data: dict,
+        spatial_frequencies: np.ndarray,
+        temporal_frequencies: np.ndarray,
+        oversampling_factor: int,
+):
+    oversampled_gaussians = {}
+
+    
+    for roi_id in range(n_roi):
+        print((roi_id, "pooled"))
+        print(data["fit_outputs"][(roi_id, "pooled")])
+        oversampled_gaussians[(roi_id, "pooled")] = get_gaussian_matrix_to_be_plotted(
+            kind="custom",
+            roi_id=roi_id,
+            fit_output=data["fit_outputs"],
+            sfs= np.asarray(spatial_frequencies),
+            tfs= np.asarray(temporal_frequencies),
+            pooled_directions=True,
+            matrix_definition=oversampling_factor
+        )
+
+    return oversampled_gaussians
+        
+
