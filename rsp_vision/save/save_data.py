@@ -9,7 +9,7 @@ import yaml
 from rsp_vision.objects.enums import PhotonType
 from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
 from rsp_vision.objects.photon_data import PhotonData
-from rsp_vision.SWC_blueprint_interactions.objects import (
+from rsp_vision.objects.SWC_Blueprint import (
     SessionFolder,
     SubjectFolder,
     SWC_Blueprint_Spec,
