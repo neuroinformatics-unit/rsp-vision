@@ -1,6 +1,7 @@
 import logging
 import pickle
 import sys
+from pathlib import Path
 
 import rich
 from fancylog import fancylog
@@ -74,7 +75,10 @@ def analysis_pipeline() -> None:
     logging.info("Analysis finished")
     logging.info(f"Updated photon_data object: {photon_data}")
 
-    with open(f"{folder_name}_data.pickle", "wb") as f:
+    saving_path = (
+        Path(config["paths"]["output"]) / f"{folder_name}_data.pickle"
+    )
+    with open(saving_path, "wb") as f:
         pickle.dump(photon_data, f)
         logging.info("Analysis saved")
 
