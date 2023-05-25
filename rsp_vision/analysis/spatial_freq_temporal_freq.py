@@ -529,14 +529,10 @@ class FrequencyResponsiveness:
         This method takes as input the ROI index, and loops over the
         directions to calculate the best fit parameters for each spatial
         and temporal frequency. First, it calls the
-        get_median_subtracted_response method to obtain the median-
-        subtracted response matrix for the given ROI and direction. Next,
-        it calculates the preferred spatial and temporal frequencies, as
-        well as the peak response, using the get_preferred_sf_tf method.
-        Then, it constructs a 2D matrix of the median-subtracted response
-        values using the get_median_subtracted_response_2d_matrix method.
+        get_median_subtracted_response_and_params method to extract the
+        median subtracted response matrix for the given ROI and direction.
 
-        Finally, the method performs a 2D Gaussian fit to the 2D response
+        Then, the method performs a 2D Gaussian fit to the 2D response
         matrix using the fit_2D_gaussian_to_data method. The resulting best
         fit parameters are stored in a dictionary, where the keys are the
         directions, and the values are tuples containing the
