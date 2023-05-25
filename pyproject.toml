@@ -30,7 +30,6 @@ dependencies = [
     "scipy",
     "numba",
     "tqdm",
-
 ]
 
 [project.urls]
@@ -51,9 +50,7 @@ dev = [
   "pre-commit",
   "ruff",
   "setuptools_scm",
-  "dash",
-  "dash_bootstrap_components",
-  "dash_loading_spinners",
+  "check-manifest",
 ]
 
 [build-system]
