@@ -352,32 +352,6 @@ class PhotonData:
             }
         )
 
-        # df = pd.DataFrame(
-        #     {
-        #         "day": np.repeat(day, self.n_frames_per_session),
-        #         "time from beginning": self.get_timing_array(),
-        #         "frames_id": np.arange(
-        #             self.n_frames_per_session * session,
-        #             self.n_frames_per_session * (session + 1),
-        #         ),
-        #         "signal": data_raw.frames[session][roi, :],
-        #         "roi_id": np.repeat(roi, self.n_frames_per_session),
-        #         "session_id": np.repeat(
-        #             session, self.n_frames_per_session
-        #         ),
-        #         "sf": np.repeat(np.nan, self.n_frames_per_session),
-        #         "tf": np.repeat(np.nan, self.n_frames_per_session),
-        #         "direction": np.repeat(
-        #             np.nan, self.n_frames_per_session
-        #         ),
-        #         "stimulus_onset": np.repeat(
-        #             False, self.n_frames_per_session
-        #         ),
-        #     }
-        # )
-
-        # signal = pd.concat([signal, df], ignore_index=True)
-
         # columns initialized to nan that will be
         # filled when performing the analysis
         signal["mean_response"] = np.nan
