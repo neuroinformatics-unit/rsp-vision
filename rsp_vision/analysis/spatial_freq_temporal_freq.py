@@ -554,27 +554,35 @@ class FrequencyResponsiveness:
                 obtained from the Gaussian fit, and the median-subtracted
                 response matrix.
         """
-        roi_data = {}
-        for dir in self.data.directions:
+
+        def manage_fitting(
+            responses: np.ndarray,
+            roi_id: int,
+            directions: int,
+            spatial_frequencies: np.ndarray,
+            temporal_frequencies: np.ndarray,
+            single_directions: bool,
+        ) -> Tuple[Tuple[float, float, float], np.ndarray, np.ndarray]:
             (
                 msr_array,
                 sf_0,
                 tf_0,
                 peak_response,
             ) = self.get_median_subtracted_response_and_params(
-                self.data.responses,
+                responses,
                 roi_id,
-                dir,
-                self.data.spatial_frequencies,
-                self.data.temporal_frequencies,
+                directions,
+                spatial_frequencies,
+                temporal_frequencies,
+                single_directions,
             )
 
             parameters_to_fit_starting_point = [
                 peak_response,
                 sf_0,
                 tf_0,
-                np.std(self.data.spatial_frequencies, ddof=1),
-                np.std(self.data.temporal_frequencies, ddof=1),
+                np.std(spatial_frequencies, ddof=1),
+                np.std(temporal_frequencies, ddof=1),
                 self.data.config["fitting"]["power_law_exp"],
             ]
 
@@ -582,8 +590,8 @@ class FrequencyResponsiveness:
             tentatives = 0
             while best_result is None and tentatives < 10:
                 best_result = fit_2D_gaussian_to_data(
-                    self.data.spatial_frequencies,
-                    self.data.temporal_frequencies,
+                    spatial_frequencies,
+                    temporal_frequencies,
                     msr_array,
                     parameters_to_fit_starting_point,
                     self.data.config,
@@ -603,65 +611,31 @@ class FrequencyResponsiveness:
                 best_result = OptimizeResult()
                 best_result.x = np.nan * np.ones(6)
 
-            roi_data[dir] = (
+            return (
                 (sf_0, tf_0, peak_response),
                 best_result.x,
                 msr_array,
             )
 
+        roi_data = {}
+        for dir in self.data.directions:
+            roi_data[dir] = manage_fitting(
+                responses=self.data.responses,
+                roi_id=roi_id,
+                directions=dir,
+                spatial_frequencies=self.data.spatial_frequencies,
+                temporal_frequencies=self.data.temporal_frequencies,
+                single_directions=True,
+            )
+
         # now the same by pooling directions
-        (
-            msr_array,
-            sf_0,
-            tf_0,
-            peak_response,
-        ) = self.get_median_subtracted_response_and_params(
-            self.data.responses,
-            roi_id,
-            0,  # dummy value
-            self.data.spatial_frequencies,
-            self.data.temporal_frequencies,
+        roi_data["pooled"] = manage_fitting(
+            responses=self.data.responses,
+            roi_id=roi_id,
+            directions=0,
+            spatial_frequencies=self.data.spatial_frequencies,
+            temporal_frequencies=self.data.temporal_frequencies,
             single_directions=False,
-        )
-
-        parameters_to_fit_starting_point = [
-            peak_response,
-            sf_0,
-            tf_0,
-            np.std(self.data.spatial_frequencies, ddof=1),
-            np.std(self.data.temporal_frequencies, ddof=1),
-            self.data.config["fitting"]["power_law_exp"],
-        ]
-
-        best_result = None
-        tentatives = 0
-        while best_result is None and tentatives < 10:
-            best_result = fit_2D_gaussian_to_data(
-                self.data.spatial_frequencies,
-                self.data.temporal_frequencies,
-                msr_array,
-                parameters_to_fit_starting_point,
-                self.data.config,
-            )
-            if best_result is None:
-                logging.warning(
-                    f"ROI {roi_id} and direction {dir} failed to fit."
-                    + f"Trying again... Tentative {tentatives + 1} of 10"
-                )
-                tentatives += 1
-
-        if best_result is None:
-            logging.warning(
-                f"ROI {roi_id} and direction {dir} failed to fit."
-                + "Skipping..."
-            )
-            best_result = OptimizeResult()
-            best_result.x = np.nan * np.ones(6)
-
-        roi_data["pooled"] = (
-            (sf_0, tf_0, peak_response),
-            best_result.x,
-            msr_array,
         )
 
         return roi_data
