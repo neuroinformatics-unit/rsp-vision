@@ -1,11 +1,11 @@
 import logging
-import multiprocessing as mp
 from multiprocessing import Pool
 from typing import Dict, Set, Tuple
 
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
+from scipy.optimize import OptimizeResult
 
 from rsp_vision.analysis.gaussians_calculations import (
     create_gaussian_matrix,
@@ -600,10 +600,12 @@ class FrequencyResponsiveness:
                     tentatives += 1
 
             if best_result is None:
-                raise RuntimeError(
+                logging.warning(
                     f"ROI {roi_id} and direction {dir} failed to fit."
-                    + "Please check the data."
+                    + "Skipping..."
                 )
+                best_result = OptimizeResult()
+                best_result.x = np.nan * np.ones(6)
 
             roi_data[dir] = (
                 (sf_0, tf_0, peak_response),
