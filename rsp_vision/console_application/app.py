@@ -52,7 +52,8 @@ def analysis_pipeline() -> None:
         " \
         Please provide the experimental folder name.\n \
         Format: Mouse_Id_Hemisphere_BrainRegion_Monitor_position.\n \
-        Example: AK_1111739_hL_RSPd_monitor_front\n \
+        Example (1 day): AK_1111739_hL_RSPd_monitor_front\n \
+        Example (2 days): BY_IAA_1117276_hR_RSPg_monitor_front\n \
         📁"
     )
 

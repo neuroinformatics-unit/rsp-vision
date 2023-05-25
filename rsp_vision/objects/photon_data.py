@@ -169,7 +169,8 @@ class PhotonData:
         self.n_sessions: int = data_raw.frames.shape[0]
         self.n_roi: int = data_raw.frames[0].shape[0]
         self.n_frames_per_session: int = data_raw.frames[0].shape[1]
-        self.day_stim: np.ndarray = data_raw.day["stimulus"]  # seems useless
+        self.day_stim: np.ndarray = data_raw.day["stimulus"]
+        self.total_n_days = int(max(self.day_stim))
 
         grey_or_static = "".join(
             [
@@ -308,11 +309,16 @@ class PhotonData:
 
         for session in range(self.n_sessions):
             for roi in range(self.n_roi):
+                if self.total_n_days in (2, 3):
+                    day = (
+                        session * self.total_n_days + self.n_sessions - 1
+                    ) // self.n_sessions
+                else:
+                    day = 1
+
                 df = pd.DataFrame(
                     {
-                        "day": np.repeat(
-                            self.day_stim[0], self.n_frames_per_session
-                        ),
+                        "day": np.repeat(day, self.n_frames_per_session),
                         "time from beginning": self.get_timing_array(),
                         "frames_id": np.arange(
                             self.n_frames_per_session * session,
@@ -459,7 +465,10 @@ class PhotonData:
                     + "missing or duplicated"
                 )
 
-            if np.any(pivot_table.values != self.n_triggers_per_stimulus):
+            if np.any(
+                pivot_table.values
+                != self.n_triggers_per_stimulus * self.total_n_days
+            ):
                 logging.error(f"Pivot table: {pivot_table}")
                 raise RuntimeError(
                     "Number of stimuli is not correct, some combinations are "
@@ -528,7 +537,9 @@ class PhotonData:
             pivot_table = signal[signal.stimulus_onset].pivot_table(
                 index=["sf", "tf", "direction"], aggfunc="size"
             )
-            expected = self.n_triggers_per_stimulus * self.n_roi
+            expected = (
+                self.n_triggers_per_stimulus * self.n_roi * self.total_n_days
+            )
             if not np.all(pivot_table == expected):
                 raise ValueError(
                     f"Signal table was not populated correctly \
