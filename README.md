@@ -38,7 +38,7 @@ len_session = int(
 ```
 where len_trigger and len_baseline_trigger are the lengths of the triggers in frames.
 
-The `stim` key is a dictionary containing information about the stimuli, with `stim["stimulus"]` being the most important. It contains the sequence of randomized features of the gratings. A given stimulus, composed of `sf`/`tf`/`direction` features, is repeated three times a day, and distributed across sessions.
+`stim` is the key of a dictionary containing information about the stimuli, with `stim["stimulus"]` being the most important. It contains the sequence of randomized features of the gratings. A given stimulus, composed of `sf`/`tf`/`direction` features, is repeated three times a day, and distributed across sessions.
 
 `data_raw`, is reorganized into a `pandas.DataFrame` called signal, which is stored in the `PhotonData` object. The `pandas.DataFrame` has the following columns:
 
@@ -64,27 +64,27 @@ Overall, the `PhotonData` object provides a more organized and accessible format
 
 The goal of this analysis is to identify the cells that respond to the drifting gratings. `FrequencyResponsiveness` is the class that handles this analysis.
 
-The features of the stimuli of which we care about are their spatial and temporal frequency, in particular the combination of the two. This is why we focus on the `sf` and `tf` columns of the `signal` dataframe. Combinations of these two features are repeated n times, where `n = len(directions) * len(repetitions)`.
+Since we are interested in the speed-tuning properties of neurons, we want to calculate the responses of single ROIs to combinations of `sf` and `tf` features. This is why we focus on the `sf` and `tf` columns of the `signal` dataframe. Combinations of these two features are repeated n times, where `n = len(directions) * len(repetitions)`.
 
-In order to compute the various statical analysis, two frames windows are taken into account, the response window, in the drifting grating part, and the baseline window, in the static or gray part of the stimulus. The mean is computed across the frames in these windows, and the difference between the two means is computed. These values are stored in the `response`, `basieline` and `subtracted` columns of the `signal` `pandas.DataFrame` in the `PhotonData` object.
+In order to compute the various statical analysis, two frames windows are taken into account, the response window, in the drifting grating part, and the baseline window, in the static or grey part of the stimulus. The mean is computed across the frames in these windows, and the difference between the two means is computed. These values are stored in the `response`, `basieline` and `subtracted` columns of the `signal` `pandas.DataFrame` in the `PhotonData` object.
 
 Three non-parametric statistics are computed to quantify id the response to `sf`/`tf` combinations is significant:
-- The Kruskal-Wallis test 
-- The Wilcoxon rank-sum test 
+- The Kruskal-Wallis test
+- The Wilcoxon rank-sum test
 - The sign-rank test
 
-The magnitude is also computed for each `sf`/`tf` combination. The magnitude is the difference between the mean of the median dF/F in the response window and the mean of the median dF/F in the baseline window, divided by the standard deviation of the baseline window. It is computed for each repetition of the same `sf`/`tf` combinations.
+The magnitude is also computed for each `sf`/`tf` combination. The magnitude is the difference between the mean of the median dF/F in the response window and the mean of the median dF/F in the baseline window, divided by the standard deviation of the median of the baseline window. It is computed for each repetition of the same `sf`/`tf` combinations. All the "mean of medians" are stored for each `sf`/`tf` combination in the `magnitude_over_medians` `pd.DataFrame` of `PhotonData` object.
 
 All statistical tests and magnitude calculations are done by pooling together all directions of the same `sf`/`tf` combination (24, 48 or 72 repetitions - 1, 2 or 3 days of recording).
 
-The threshold for the KW test and for the magnitude is stored in the configuration file. The threshold for the Wilcoxon and sign-rank tests is set to 0.05.
+The threshold for the KW test and the magnitude is stored in the configuration file. The threshold for the Wilcoxon and sign-rank tests is set to 0.05. A ROI is significantly responsive if it passes the KW test and if its magnitude is above the threshold. The other two tests are currently not used.
 
 ### Response matrix and Gaussian fitting
 
-For each ROI we can identify a response matrix that we call `median_subtracted_response`. It is a n_s x n_tf (6x6) matrix, where `n_sf` and `n_tf` are the number of unique spatial and temporal frequencies. Each element of the matrix is the median-subtracted response of the ROI to the corresponding `sf`/`tf` combination. It is subtracted because we are interested in the difference between the response to the drifting grating and the response to the static or gray part of the stimulus. The median is computed across the repetitions of the same `sf`/`tf` combination, considering different directions independently (for a total of 3, 6 or 9 repetitions) or by pooling all directions together. 
+For each ROI we can identify a response matrix that we call `median_subtracted_response`. It is a n_s x n_tf (6x6) matrix, where `n_sf` and `n_tf` are the number of unique spatial and temporal frequencies. Each element of the matrix is the median-subtracted response of the ROI to the corresponding `sf`/`tf` combination. It is subtracted because we are interested in the difference between the response to the drifting grating and the response to the static or gray part of the stimulus. The median is computed across the repetitions of the same `sf`/`tf` combination, considering different directions independently (for a total of 3, 6 or 9 repetitions) or by pooling all directions together.
 
 Each matrix can be fitted to a 2D elliptical Gaussian function, adjusted to incorporate ξ, the skew of the temporal frequency tuning curve, which allows us to take into account the tuning for speed.
 
 Gaussian fitting calculations are performed by static methods in the `gaussian_calculations.py` file. It is used by the `FrequencyResponsiveness` class to pre-compute the fits for each ROI to be displayed by the dashboard. Since the fits are pre-computed, the dashboard will be able to run smoothly.
 
-After the fit, the gaussian is sampled to generate a 6x6 and a 100x100 matrix, which will be displayed in the dashboard, together with the median subtracted response matrix.
+After the fit, the Gaussian is sampled to generate a 6x6 and a 100x100 matrix, which will be displayed in the dashboard, together with the median subtracted response matrix.
