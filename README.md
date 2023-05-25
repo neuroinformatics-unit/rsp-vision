@@ -88,3 +88,7 @@ Each matrix can be fitted to a 2D elliptical Gaussian function, adjusted to inco
 Gaussian fitting calculations are performed by static methods in the `gaussian_calculations.py` file. It is used by the `FrequencyResponsiveness` class to pre-compute the fits for each ROI to be displayed by the dashboard. Since the fits are pre-computed, the dashboard will be able to run smoothly.
 
 After the fit, the Gaussian is sampled to generate a 6x6 and a 100x100 matrix, which will be displayed in the dashboard, together with the median subtracted response matrix.
+
+### Schema of the current analysis pipeline
+A schematic representation of the process is shown below:
+![Responsiveness analysis diagram](https://raw.githubusercontent.com/neuroinformatics-unit/rsp-vision/565b6ef3288cc5bec37341c796f11bd5e185c61a/docs/Responsiveness%20analysis%20diagram.svg?token=AG642BSFJXAYISC6PI73XGDEN5QPY)
