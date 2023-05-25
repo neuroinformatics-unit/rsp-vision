@@ -107,7 +107,7 @@ def get_raw_data_dict_mock(
         "day": {
             "roi": "roi",
             "roi_label": "roi_label",
-            "stimulus": "stimulus",
+            "stimulus": [1] * n_roi,
         },
         "imaging": "imaging",
         "f": get_random_responses(seed_number, n_sessions, n_roi, len_session),
