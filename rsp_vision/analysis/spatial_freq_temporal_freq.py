@@ -51,7 +51,8 @@ class FrequencyResponsiveness:
         -------
         PhotonData
             A `PhotonData` object containing the processed signal data and
-            Gaussian model fits.
+            Gaussian model fits. This object is also stored as an attribute\
+            of the `FrequencyResponsiveness` object.
         """
         self.calculate_mean_response_and_baseline()
         logging.info(f"Edited signal dataframe:{self.data.responses.head()}")
@@ -463,7 +464,42 @@ class FrequencyResponsiveness:
         sf: np.ndarray,
         tf: np.ndarray,
         single_directions: bool = True,
-    ) -> pd.DataFrame:
+    ) -> Tuple[pd.DataFrame, float, float, float]:
+        """Extracts the matrix of median subtracted responses for a given
+        ROI and direction (or pooled across directions if `single_directions`
+        is set to False), as well as the peak response, peak SF and peak TF.
+
+        The median subtracted response matrix is the median of the responses
+        across repetitions, calculated for each SF and TF. It expects to
+        receive a dataframe containing subtracted responses precalculated.
+
+        The peak response is defined as the maximum median subtracted
+        response across SF and TF. The peak SF and peak TF are defined as
+        the SF and TF corresponding to the peak response.
+
+        Parameters
+        ----------
+        responses : pd.DataFrame
+            The dataframe containing the subtracted responses.
+        roi_id : int
+            The ID of the ROI to extract the response matrix from.
+        dir : int
+            The direction to extract the response matrix from.
+            It won't be used if `single_directions` is set to False.
+        sf : np.ndarray
+            All the possible SFs.
+        tf : np.ndarray
+            All the possible TFs.
+        single_directions : bool, optional
+            Whether to extract the response matrix for a single direction
+            or for all directions. By default True
+
+        Returns
+        -------
+        Tuple[pd.DataFrame, float, float, float]
+            A tuple containing the median subtracted response matrix,
+            the peak SF, the peak TF and the peak response.
+        """
         median_subtracted_response = (
             responses[
                 (responses.roi_id == roi_id) & (responses.direction == dir)
