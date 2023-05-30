@@ -91,4 +91,4 @@ After the fit, the Gaussian is sampled to generate a 6x6 and a 100x100 matrix, w
 
 ### Schema of the current analysis pipeline
 A schematic representation of the process is shown below:
-![Responsiveness analysis diagram](https://raw.githubusercontent.com/neuroinformatics-unit/rsp-vision/565b6ef3288cc5bec37341c796f11bd5e185c61a/docs/Responsiveness%20analysis%20diagram.svg?token=AG642BSFJXAYISC6PI73XGDEN5QPY)
+![Responsiveness analysis diagram](https://raw.githubusercontent.com/neuroinformatics-unit/rsp-vision/565b6ef3288cc5bec37341c796f11bd5e185c61a/docs/Responsiveness%20analysis%20diagram.png?token=AG642BSFJXAYISC6PI73XGDEN5QPY)
