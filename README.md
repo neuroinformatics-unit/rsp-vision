@@ -66,14 +66,19 @@ The goal of this analysis is to identify the cells that respond to the drifting 
 
 Since we are interested in the speed-tuning properties of neurons, we want to calculate the responses of single ROIs to combinations of `sf` and `tf` features. This is why we focus on the `sf` and `tf` columns of the `signal` dataframe. Combinations of these two features are repeated n times, where `n = len(directions) * len(repetitions)`.
 
-In order to compute the various statical analysis, two frames windows are taken into account, the response window, in the drifting grating part, and the baseline window, in the static or grey part of the stimulus. The mean is computed across the frames in these windows, and the difference between the two means is computed. These values are stored in the `response`, `basieline` and `subtracted` columns of the `signal` `pandas.DataFrame` in the `PhotonData` object.
+In order to compute the various statistical analyses, two frame windows are taken into account, the response window, in the drifting grating part, and the baseline window, in the static or grey part of the stimulus. The mean is computed across the frames in these windows, and the difference between the two means is computed. These values are stored in the `response`, `baseline` and `subtracted` columns of the `signal` `pandas.DataFrame` in the `PhotonData` object.
 
-Three non-parametric statistics are computed to quantify id the response to `sf`/`tf` combinations is significant:
+Three non-parametric statistics are computed to quantify whether the response to `sf`/`tf` combinations is significant:
 - The Kruskal-Wallis test
 - The Wilcoxon rank-sum test
 - The sign-rank test
 
-The magnitude is also computed for each `sf`/`tf` combination. The magnitude is the difference between the mean of the median dF/F in the response window and the mean of the median dF/F in the baseline window, divided by the standard deviation of the median of the baseline window. It is computed for each repetition of the same `sf`/`tf` combinations. All the "mean of medians" are stored for each `sf`/`tf` combination in the `magnitude_over_medians` `pd.DataFrame` of `PhotonData` object.
+The magnitude is also computed for each `sf`/`tf` combination. The magnitude is the difference between the mean of the median dF/F in the response window and the mean of the median dF/F in the baseline window, divided by the standard deviation of the median of the baseline window. It is computed for each repetition of the same `sf`/`tf` combinations. 
+For each `sf`/`tf` combination:
+$$magnitude = \dfrac{mean(median(response)) - mean(median(baseline))}{std(baseline)}$$
+$`median(response)`$ is the median value across all the traces that have the same `sf`/`tf` combinations. If the direction of the grating changed is irrelevant.
+All the "mean of medians" are stored for each `sf`/`tf` combination in the `magnitude_over_medians` `pd.DataFrame` of `PhotonData` object.
+
 
 All statistical tests and magnitude calculations are done by pooling together all directions of the same `sf`/`tf` combination (24, 48 or 72 repetitions - 1, 2 or 3 days of recording).
 
@@ -81,9 +86,9 @@ The threshold for the KW test and the magnitude is stored in the configuration f
 
 ### Response matrix and Gaussian fitting
 
-For each ROI we can identify a response matrix that we call `median_subtracted_response`. It is a n_s x n_tf (6x6) matrix, where `n_sf` and `n_tf` are the number of unique spatial and temporal frequencies. Each element of the matrix is the median-subtracted response of the ROI to the corresponding `sf`/`tf` combination. It is subtracted because we are interested in the difference between the response to the drifting grating and the response to the static or gray part of the stimulus. The median is computed across the repetitions of the same `sf`/`tf` combination, considering different directions independently (for a total of 3, 6 or 9 repetitions) or by pooling all directions together.
+For each ROI we can identify a response matrix that we call `median_subtracted_response`. It is a n_sf x n_tf (6x6) matrix, where `n_sf` and `n_tf` are the number of unique spatial and temporal frequencies. Each element of the matrix is the median-subtracted response of the ROI to the corresponding `sf`/`tf` combination. It is subtracted because we are interested in the difference between the response to the drifting grating and the response to the static or gray part of the stimulus. The median is computed across the repetitions of the same `sf`/`tf` combination, considering different directions independently (for a total of 3, 6 or 9 repetitions) or by pooling all directions together.
 
-Each matrix can be fitted to a 2D elliptical Gaussian function, adjusted to incorporate ξ, the skew of the temporal frequency tuning curve, which allows us to take into account the tuning for speed.
+Each matrix can be fitted with a 2D elliptical Gaussian function, adjusted to incorporate ξ, the skew of the temporal frequency tuning curve, which allows us to take into account the tuning for speed.
 
 Gaussian fitting calculations are performed by static methods in the `gaussian_calculations.py` file. It is used by the `FrequencyResponsiveness` class to pre-compute the fits for each ROI to be displayed by the dashboard. Since the fits are pre-computed, the dashboard will be able to run smoothly.
 
