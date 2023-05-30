@@ -1,4 +1,5 @@
 import logging
+import sys
 from multiprocessing import Pool
 from typing import Dict, Set, Tuple
 
@@ -460,10 +461,10 @@ class FrequencyResponsiveness:
     def get_median_subtracted_response_and_params(
         responses: pd.DataFrame,
         roi_id: int,
-        dir: int,
-        sf: np.ndarray,
-        tf: np.ndarray,
-        single_directions: bool = True,
+        sfs: np.ndarray,
+        tfs: np.ndarray,
+        pool_directions: bool = False,
+        dir: float = sys.float_info.min,
     ) -> Tuple[pd.DataFrame, float, float, float]:
         """Extracts the matrix of median subtracted responses for a given
         ROI and direction (or pooled across directions if `single_directions`
@@ -483,27 +484,33 @@ class FrequencyResponsiveness:
             The dataframe containing the subtracted responses.
         roi_id : int
             The ID of the ROI to extract the response matrix from.
-        dir : int
-            The direction to extract the response matrix from.
-            It won't be used if `single_directions` is set to False.
         sf : np.ndarray
-            All the possible SFs.
+            All the possible SFs, sorted in ascending order.
         tf : np.ndarray
-            All the possible TFs.
-        single_directions : bool, optional
+            All the possible TFs, sorted in ascending order.
+        pool_directions : bool, optional
             Whether to extract the response matrix for a single direction
-            or for all directions. By default True
-
+            or for all directions. By default False.
+        dir : int, optional
+            The direction to extract the response matrix from.
+            It won't be used if `pool_directions` is set to False.
+            By default sys.float_info.min.
         Returns
         -------
         Tuple[pd.DataFrame, float, float, float]
             A tuple containing the median subtracted response matrix,
             the peak SF, the peak TF and the peak response.
         """
+        assert (
+            not pool_directions and dir != sys.float_info.min
+        ) or pool_directions, (
+            "If not pooling directions, a direction must be specified"
+        )
+
         median_subtracted_response = (
             responses[
                 (responses.roi_id == roi_id) & (responses.direction == dir)
-                if single_directions
+                if not pool_directions
                 else (responses.roi_id == roi_id)
             ]
             .groupby(["sf", "tf"])[["subtracted"]]
@@ -514,13 +521,13 @@ class FrequencyResponsiveness:
         peak_response = median_subtracted_response.loc[(sf_0, tf_0)][
             "subtracted"
         ]
-        median_subtracted_response_2d_matrix = np.zeros((len(sf), len(tf)))
+        median_subtracted_response_2d_matrix = np.zeros((len(sfs), len(tfs)))
 
-        for i, s in enumerate(sf):
-            for j, t in enumerate(tf):
+        for i, sf in enumerate(sfs):
+            for j, tf in enumerate(tfs):
                 median_subtracted_response_2d_matrix[
                     i, j
-                ] = median_subtracted_response.loc[(s, t)]["subtracted"]
+                ] = median_subtracted_response.loc[(sf, tf)]["subtracted"]
 
         return median_subtracted_response_2d_matrix, sf_0, tf_0, peak_response
 
@@ -560,11 +567,11 @@ class FrequencyResponsiveness:
                 tf_0,
                 peak_response,
             ) = self.get_median_subtracted_response_and_params(
-                self.data.responses,
-                roi_id,
-                dir,
-                self.data.spatial_frequencies,
-                self.data.temporal_frequencies,
+                responses=self.data.responses,
+                roi_id=roi_id,
+                sfs=self.data.spatial_frequencies,
+                tfs=self.data.temporal_frequencies,
+                dir=dir,
             )
 
             parameters_to_fit_starting_point = [
@@ -597,12 +604,11 @@ class FrequencyResponsiveness:
             tf_0,
             peak_response,
         ) = self.get_median_subtracted_response_and_params(
-            self.data.responses,
-            roi_id,
-            0,  # dummy value
-            self.data.spatial_frequencies,
-            self.data.temporal_frequencies,
-            single_directions=False,
+            responses=self.data.responses,
+            roi_id=roi_id,
+            sfs=self.data.spatial_frequencies,
+            tfs=self.data.temporal_frequencies,
+            pool_directions=True,
         )
 
         parameters_to_fit_starting_point = [
