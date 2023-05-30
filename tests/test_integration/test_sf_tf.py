@@ -184,7 +184,7 @@ def test_calculate_oversampled_gaussian(response, expected_outputs, seed):
 
 
 @pytest.mark.parametrize("seed", seeds)
-def test_get_this_roi_fits_data(response, expected_outputs, seed):
+def test_get_gaussian_fits_for_roi(response, expected_outputs, seed):
     _response = response(seed)
     _response()
     outputs = expected_outputs[str(seed)]
