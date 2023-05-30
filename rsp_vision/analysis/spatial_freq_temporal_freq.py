@@ -531,7 +531,7 @@ class FrequencyResponsiveness:
 
         return median_subtracted_response_2d_matrix, sf_0, tf_0, peak_response
 
-    def get_this_roi_fits_data(self, roi_id: int) -> dict:
+    def get_gaussian_fits_for_roi(self, roi_id: int) -> dict:
         """Calculate the best fit parameters for each ROI and direction.
         This method takes as input the ROI index, and loops over the
         directions to calculate the best fit parameters for each spatial
@@ -562,7 +562,7 @@ class FrequencyResponsiveness:
         roi_data = {}
         for dir in self.data.directions:
             (
-                msr_array,
+                response_matrix,
                 sf_0,
                 tf_0,
                 peak_response,
@@ -574,7 +574,7 @@ class FrequencyResponsiveness:
                 dir=dir,
             )
 
-            parameters_to_fit_starting_point = [
+            initial_parameters = [
                 peak_response,
                 sf_0,
                 tf_0,
@@ -586,20 +586,20 @@ class FrequencyResponsiveness:
             best_result = fit_2D_gaussian_to_data(
                 self.data.spatial_frequencies,
                 self.data.temporal_frequencies,
-                msr_array,
-                parameters_to_fit_starting_point,
+                response_matrix,
+                initial_parameters,
                 self.data.config,
             )
 
             roi_data[dir] = (
                 (sf_0, tf_0, peak_response),
                 best_result.x,
-                msr_array,
+                response_matrix,
             )
 
         # now the same by pooling directions
         (
-            msr_array,
+            response_matrix,
             sf_0,
             tf_0,
             peak_response,
@@ -611,7 +611,7 @@ class FrequencyResponsiveness:
             pool_directions=True,
         )
 
-        parameters_to_fit_starting_point = [
+        initial_parameters = [
             peak_response,
             sf_0,
             tf_0,
@@ -623,15 +623,15 @@ class FrequencyResponsiveness:
         best_result = fit_2D_gaussian_to_data(
             self.data.spatial_frequencies,
             self.data.temporal_frequencies,
-            msr_array,
-            parameters_to_fit_starting_point,
+            response_matrix,
+            initial_parameters,
             self.data.config,
         )
 
         roi_data["pooled"] = (
             (sf_0, tf_0, peak_response),
             best_result.x,
-            msr_array,
+            response_matrix,
         )
 
         return roi_data
@@ -682,7 +682,7 @@ class FrequencyResponsiveness:
         with Pool() as p:
             # the roi order should be preserved
             roi_fit_data = p.map(
-                self.get_this_roi_fits_data, range(self.data.n_roi)
+                self.get_gaussian_fits_for_roi, range(self.data.n_roi)
             )
 
             for roi_id, roi_data in enumerate(roi_fit_data):
@@ -737,12 +737,7 @@ class FrequencyResponsiveness:
         It uses the fitted parameters obtained from fit_2D_gaussian_to_data to
         calculate the values of the Gaussian matrix. The spatial and temporal
         frequency arrays used to create the matrix are generated using NumPy's
-        logspace method with a base of 2. This conversion from a linear to a
-        logarithmic scale is done to facilitate visualization of the matrix and
-        to move the representation out of the frequency domain. Using a
-        logarithmic scale makes it easier to display the low-frequency
-        information, where the fit is more sensitive, and reduces the number of
-        values needed to accurately represent the data.
+        linspace method.
 
         The resulting Gaussian matrices are stored in the
         "oversampled_gaussian" dictionary of the PhotonData object, with keys
@@ -759,13 +754,11 @@ class FrequencyResponsiveness:
                         self.data.spatial_frequencies.min(),
                         self.data.spatial_frequencies.max(),
                         num=oversampling_factor,
-                        # base=2,
                     ),
                     np.linspace(
                         self.data.temporal_frequencies.min(),
                         self.data.temporal_frequencies.max(),
                         num=oversampling_factor,
-                        # base=2,
                     ),
                 )
 
@@ -778,12 +771,10 @@ class FrequencyResponsiveness:
                     self.data.spatial_frequencies.min(),
                     self.data.spatial_frequencies.max(),
                     num=oversampling_factor,
-                    # base=2,
                 ),
                 np.linspace(
                     self.data.temporal_frequencies.min(),
                     self.data.temporal_frequencies.max(),
                     num=oversampling_factor,
-                    # base=2,
                 ),
             )
