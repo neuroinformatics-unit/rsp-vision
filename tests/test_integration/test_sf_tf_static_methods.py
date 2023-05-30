@@ -39,8 +39,8 @@ def test_get_median_subtracted_response_and_params(responsiveness):
         responses=responses,
         roi_id=1,
         dir=0,
-        sf=np.array([0.1, 0.2]),
-        tf=np.array([0.1, 0.2]),
+        sfs=np.array([0.1, 0.2]),
+        tfs=np.array([0.1, 0.2]),
     )
 
     assert median_subtracted_response_2d_matrix.shape == (2, 2)
