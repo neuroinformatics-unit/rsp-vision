@@ -1,7 +1,7 @@
 import itertools
 import logging
 from datetime import datetime, timedelta
-from typing import Dict, Set, Tuple
+from typing import Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -89,10 +89,6 @@ class PhotonData:
     * fit_output (dict) - the output of the gaussian fit
     * median_subtracted_response (dict) - the median subtracted response
         (drift - baseline)
-    * downsampled_gaussian (dict) - for each roi, for each direction, the
-        gaussian fit of the median subtracted response oversampled
-    * oversampled_gaussian (dict) - for each roi, for each direction, the
-        gaussian fit of the median subtracted response
     """
 
     def __init__(
@@ -601,5 +597,3 @@ class PhotonData:
         self.measured_preference: dict
         self.fit_output: dict
         self.median_subtracted_response: dict
-        self.downsampled_gaussian: Dict[Tuple[int, int], np.ndarray]
-        self.oversampled_gaussian: Dict[Tuple[int, int], np.ndarray]

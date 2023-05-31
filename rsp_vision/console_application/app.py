@@ -50,10 +50,10 @@ def analysis_pipeline() -> None:
     # TODO: add TUI or GUI fuctionality to get input from user
     folder_name = Prompt.ask(
         " \
-        Please provide the experimental folder name.\n \
+        Please provide only the dataset name.\n \
         Format: Mouse_Id_Hemisphere_BrainRegion_Monitor_position.\n \
         Example: AK_1111739_hL_RSPd_monitor_front\n \
-        📁"
+        📄"
     )
 
     # load data
@@ -87,7 +87,7 @@ def start_logging(module=None):
         module = get_module_for_logging()
 
     fancylog.start_logging(
-        output_dir="./", package=module, filename="load_suite2p", verbose=False
+        output_dir="./", package=module, filename="rsp_vision", verbose=False
     )
 
 

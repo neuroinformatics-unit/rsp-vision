@@ -6,6 +6,7 @@ from rsp_vision.analysis.gaussians_calculations import (
     create_gaussian_matrix,
     elliptical_gaussian_andermann,
     fit_2D_gaussian_to_data,
+    get_gaussian_matrix_to_be_plotted,
     single_fit,
 )
 
@@ -147,3 +148,33 @@ def test_create_gaussian_matrix(parameters_to_fit):
         ]
     )
     assert np.allclose(result, expected_result, atol=1e-3)
+
+
+def test_gaussian_matrix_for_6x6_matrix_single_direction():
+    # Test case for a 6x6 matrix with a single direction
+    kind = "6x6 matrix"
+    roi_id = 1
+    direction = 0
+    fit_output = {(roi_id, direction): np.asarray([6, 5, 4, 3, 2, 1])}
+    sfs = np.array([0.1, 0.2, 0.3])
+    tfs = np.array([0.4, 0.5, 0.6])
+    pooled_directions = False
+    expected_matrix = np.array(
+        [
+            [6.981e-67, 2.853e-68, 1.538e-69],
+            [1.301e-43, 1.928e-44, 2.978e-45],
+            [1.287e-32, 4.050e-33, 1.157e-33],
+        ]
+    )
+
+    matrix = get_gaussian_matrix_to_be_plotted(
+        kind,
+        roi_id,
+        fit_output,
+        sfs,
+        tfs,
+        pooled_directions,
+        direction,
+    )
+
+    assert np.allclose(matrix, expected_matrix)
