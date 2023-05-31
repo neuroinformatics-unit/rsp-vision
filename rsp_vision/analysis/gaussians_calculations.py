@@ -1,3 +1,6 @@
+import logging
+import sys
+
 import numpy as np
 from numba import njit
 from scipy.optimize import OptimizeResult, least_squares
@@ -235,3 +238,112 @@ def create_gaussian_matrix(
             )
 
     return gaussian_matrix
+
+
+def get_gaussian_matrix_to_be_plotted(
+    kind: str,
+    roi_id: int,
+    fit_output: dict,
+    sfs: np.ndarray,
+    tfs: np.ndarray,
+    pooled_directions: bool = False,
+    direction: float = sys.float_info.max,
+    matrix_definition: int = 100,
+) -> np.ndarray:
+    """Returns a squared Gaussian matrix to be visualized in the dashboard
+    based on the fitting parameters precalculated.
+    To get a matrix for a single direction, set pooled_directions to False and
+    specify the direction. To get a matrix for all directions, set
+    pooled_directions to True.
+    `Kind` can be either "6x6 matrix" or "custom". If "6x6 matrix", the
+    Gaussian matrix will be calculated for the expetimental values of spatial
+    and temporal frequencies. If "custom", the Gaussian matrix will be
+    calculated for the values of spatial and temporal frequencies calculated
+    with `np.linspace(0, 1, matrix_definition)`. You can specify the
+    dimension of the squared matrix with the `matrix_definition` parameter.
+
+    Parameters
+    ----------
+    kind : str
+        Either "6x6 matrix" or "custom".
+    roi_id : int
+        Which ROI to calculate the Gaussian matrix for.
+    fit_output : dict
+        A dictionary containing the fitting parameters for each ROI.
+    sfs : np.ndarray
+        Sorted array of spatial frequencies.
+    tfs : np.ndarray
+        Sorted array of temporal frequencies.
+    pooled_directions : bool, optional
+        Whether to pool the directions or not, by default False
+    direction : float, optional
+        If pooled_directions is False, the direction to calculate the Gaussian
+        matrix for, by default sys.float_info.max
+    matrix_definition : int, optional
+        The dimension of the squared matrix, by default 100. Used if
+        `kind="custom"`.
+
+    Returns
+    -------
+    np.ndarray
+        A squared Gaussian matrix to be visualized in the dashboard.
+
+    Raises
+    ------
+    ValueError
+        If kind is not "6x6 matrix" or "custom".
+    """
+    if kind == "6x6 matrix":
+        if not pooled_directions:
+            assert (
+                direction != sys.float_info.max
+            ), "direction must be specified"
+            matrix = create_gaussian_matrix(
+                fit_output[(roi_id, direction)],
+                sfs,
+                tfs,
+            )
+        else:
+            matrix = create_gaussian_matrix(
+                fit_output[(roi_id, "pooled")],
+                sfs,
+                tfs,
+            )
+    elif kind == "custom":
+        logging.info(
+            "Creating custom matrix with definition %d", matrix_definition
+        )
+        if not pooled_directions:
+            assert (
+                direction != sys.float_info.max
+            ), "direction must be specified"
+            matrix = create_gaussian_matrix(
+                fit_output[(roi_id, direction)],
+                np.linspace(
+                    sfs.min(),
+                    tfs.max(),
+                    num=matrix_definition,
+                ),
+                np.linspace(
+                    tfs.min(),
+                    tfs.max(),
+                    num=matrix_definition,
+                ),
+            )
+        else:
+            matrix = create_gaussian_matrix(
+                fit_output[(roi_id, "pooled")],
+                np.linspace(
+                    sfs.min(),
+                    tfs.max(),
+                    num=matrix_definition,
+                ),
+                np.linspace(
+                    tfs.min(),
+                    tfs.max(),
+                    num=matrix_definition,
+                ),
+            )
+    else:
+        raise ValueError("kind must be '6x6 matrix' or 'custom'")
+    return matrix
