@@ -73,7 +73,7 @@ Three non-parametric statistics are computed to quantify whether the response to
 - The Wilcoxon rank-sum test
 - The sign-rank test
 
-The magnitude is also computed for each `sf`/`tf` combination. The magnitude is the difference between the mean of the median dF/F in the response window and the mean of the median dF/F in the baseline window, divided by the standard deviation of the median of the baseline window. It is computed for each repetition of the same `sf`/`tf` combinations. 
+The magnitude is also computed for each `sf`/`tf` combination. The magnitude is the difference between the mean of the median dF/F in the response window and the mean of the median dF/F in the baseline window, divided by the standard deviation of the median of the baseline window. It is computed for each repetition of the same `sf`/`tf` combinations.
 For each `sf`/`tf` combination:
 $$magnitude = \dfrac{mean(median(response)) - mean(median(baseline))}{std(baseline)}$$
 $`median(response)`$ is the median value across all the traces that have the same `sf`/`tf` combinations. If the direction of the grating changed is irrelevant.
