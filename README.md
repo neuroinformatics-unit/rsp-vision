@@ -73,7 +73,7 @@ Three non-parametric statistics are computed to quantify whether the response to
 - The Wilcoxon rank-sum test
 - The sign-rank test
 
-The magnitude is also computed for each `sf`/`tf` combination. The magnitude is the difference between the mean of the median dF/F in the response window and the mean of the median dF/F in the baseline window, divided by the standard deviation of the median of the baseline window. It is computed for each repetition of the same `sf`/`tf` combinations. 
+The magnitude is also computed for each `sf`/`tf` combination. The magnitude is the difference between the mean of the median dF/F in the response window and the mean of the median dF/F in the baseline window, divided by the standard deviation of the median of the baseline window. It is computed for each repetition of the same `sf`/`tf` combinations.
 For each `sf`/`tf` combination:
 $$magnitude = \dfrac{mean(median(response)) - mean(median(baseline))}{std(baseline)}$$
 $`median(response)`$ is the median value across all the traces that have the same `sf`/`tf` combinations. If the direction of the grating changed is irrelevant.
@@ -82,11 +82,11 @@ All the "mean of medians" are stored for each `sf`/`tf` combination in the `magn
 
 All statistical tests and magnitude calculations are done by pooling together all directions of the same `sf`/`tf` combination (24, 48 or 72 repetitions - 1, 2 or 3 days of recording).
 
-The threshold for the KW test and the magnitude is stored in the configuration file. The threshold for the Wilcoxon and sign-rank tests is set to 0.05. A ROI is significantly responsive if it passes the KW test and if its magnitude is above the threshold. The other two tests are currently not used.
+The threshold for the KW test and the magnitude are stored in the configuration file. The threshold for the Wilcoxon and sign-rank tests is set to 0.05. An ROI is significantly responsive if it passes the KW test and if its magnitude is above the threshold. The other two tests are currently not used.
 
 ### Response matrix and Gaussian fitting
 
-For each ROI we can identify a response matrix that we call `median_subtracted_response`. It is a n_sf x n_tf (6x6) matrix, where `n_sf` and `n_tf` are the number of unique spatial and temporal frequencies. Each element of the matrix is the median-subtracted response of the ROI to the corresponding `sf`/`tf` combination. It is subtracted because we are interested in the difference between the response to the drifting grating and the response to the static or gray part of the stimulus. The median is computed across the repetitions of the same `sf`/`tf` combination, considering different directions independently (for a total of 3, 6 or 9 repetitions) or by pooling all directions together.
+For each ROI we can identify a response matrix that we call `median_subtracted_response`. It is a n_sf x n_tf (6x6) matrix, where `n_sf` and `n_tf` are the number of unique spatial and temporal frequencies. Each element of the matrix is the median-subtracted response of the ROI to the corresponding `sf`/`tf` combination. It is subtracted because we are interested in the difference between the response to the drifting grating and the response to the static or grey part of the stimulus. The median is computed across the repetitions of the same `sf`/`tf` combination, considering different directions independently (for a total of 3, 6 or 9 repetitions) or by pooling all directions together.
 
 Each matrix can be fitted with a 2D elliptical Gaussian function, adjusted to incorporate ξ, the skew of the temporal frequency tuning curve, which allows us to take into account the tuning for speed.
 
