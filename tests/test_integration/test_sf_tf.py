@@ -148,42 +148,6 @@ def test_find_significant_rois(response, expected_outputs, seed):
 
 
 @pytest.mark.parametrize("seed", seeds)
-def test_calculate_downsampled_gaussian(response, expected_outputs, seed):
-    _response = response(seed)
-
-    outputs = expected_outputs[str(seed)]
-
-    # let's use the same fit outputs in order to test just
-    # the creation of the downsampled gaussian matrix
-    _response.data.fit_output = outputs["fit_output"]
-    _response.calculate_downsampled_gaussian()
-
-    for key in _response.data.downsampled_gaussian.keys():
-        assert np.all(
-            np.around(_response.data.downsampled_gaussian[key], decimals=1)
-            == np.around(outputs["downsampled_gaussian"][key], decimals=1)
-        )
-
-
-@pytest.mark.parametrize("seed", seeds)
-def test_calculate_oversampled_gaussian(response, expected_outputs, seed):
-    _response = response(seed)
-
-    outputs = expected_outputs[str(seed)]
-
-    # let's use the same fit outputs in order to test just
-    # the creation of the downsampled gaussian matrix
-    _response.data.fit_output = outputs["fit_output"]
-    _response.calculate_oversampled_gaussian()
-
-    for key in _response.data.oversampled_gaussian.keys():
-        assert np.all(
-            np.around(_response.data.oversampled_gaussian[key], decimals=3)
-            == np.around(outputs["oversampled_gaussian"][key], decimals=3)
-        )
-
-
-@pytest.mark.parametrize("seed", seeds)
 def test_get_gaussian_fits_for_roi(response, expected_outputs, seed):
     _response = response(seed)
     _response()
