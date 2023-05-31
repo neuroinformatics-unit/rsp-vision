@@ -36,8 +36,6 @@ def calculate_stats_outputs(seeds):
             "measured_preference": data.measured_preference,
             "fit_output": data.fit_output,
             "median_subtracted_response": data.median_subtracted_response,
-            "downsampled_gaussian": data.downsampled_gaussian,
-            "oversampled_gaussian": data.oversampled_gaussian,
         }
 
     path = pathlib.Path(__file__).parent.absolute()

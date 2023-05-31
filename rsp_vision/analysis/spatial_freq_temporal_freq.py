@@ -9,7 +9,6 @@ import scipy.stats as ss
 from scipy.optimize import OptimizeResult
 
 from rsp_vision.analysis.gaussians_calculations import (
-    create_gaussian_matrix,
     fit_2D_gaussian_to_data,
 )
 from rsp_vision.objects.photon_data import PhotonData
@@ -90,12 +89,6 @@ class FrequencyResponsiveness:
         # using multiprocessing, very slow step
         logging.info("Calculating Gaussian fits...")
         self.get_all_fits()
-        self.calculate_downsampled_gaussian()
-        self.calculate_oversampled_gaussian(
-            oversampling_factor=self.data.config["fitting"][
-                "oversampling_factor"
-            ]
-        )
         logging.info("Gaussian fits calculated")
 
         return self.data
@@ -705,87 +698,3 @@ class FrequencyResponsiveness:
                     self.data.median_subtracted_response[
                         (roi_id, key)
                     ] = roi_data[key][2]
-
-    def calculate_downsampled_gaussian(self) -> None:
-        """Calculate the 2D Gaussian fits for each ROI and direction using
-        the parameters obtained from fitting the 2D Gaussian model to the
-        median subtracted response matrix. Downsampled refers to the fact
-        that the Gaussian fit is calculated using the spatial and temporal
-        frequencies used in the original response matrix, rather than the
-        oversampled frequencies.
-
-        Returns:
-            None
-        """
-        self.data.downsampled_gaussian = {}
-        for roi_id in range(self.data.n_roi):
-            for dir in self.data.directions:
-                self.data.downsampled_gaussian[
-                    (roi_id, dir)
-                ] = create_gaussian_matrix(
-                    self.data.fit_output[(roi_id, dir)],
-                    self.data.spatial_frequencies,
-                    self.data.temporal_frequencies,
-                )
-
-            # now the same by pooling directions
-            self.data.downsampled_gaussian[
-                (roi_id, "pooled")
-            ] = create_gaussian_matrix(
-                self.data.fit_output[(roi_id, "pooled")],
-                self.data.spatial_frequencies,
-                self.data.temporal_frequencies,
-            )
-
-    def calculate_oversampled_gaussian(
-        self, oversampling_factor: int = 100
-    ) -> None:
-        """Calculate an oversampled Gaussian fit for each ROI and
-        direction.
-
-        The method creates a two-dimensional Gaussian matrix with an
-        oversampling factor of 100, in both the spatial and temporal domains.
-        It uses the fitted parameters obtained from fit_2D_gaussian_to_data to
-        calculate the values of the Gaussian matrix. The spatial and temporal
-        frequency arrays used to create the matrix are generated using NumPy's
-        linspace method.
-
-        The resulting Gaussian matrices are stored in the
-        "oversampled_gaussian" dictionary of the PhotonData object, with keys
-        corresponding to each ROI and direction.
-        """
-        self.data.oversampled_gaussian = {}
-        for roi_id in range(self.data.n_roi):
-            for dir in self.data.directions:
-                self.data.oversampled_gaussian[
-                    (roi_id, dir)
-                ] = create_gaussian_matrix(
-                    self.data.fit_output[(roi_id, dir)],
-                    np.linspace(
-                        self.data.spatial_frequencies.min(),
-                        self.data.spatial_frequencies.max(),
-                        num=oversampling_factor,
-                    ),
-                    np.linspace(
-                        self.data.temporal_frequencies.min(),
-                        self.data.temporal_frequencies.max(),
-                        num=oversampling_factor,
-                    ),
-                )
-
-            # now the same by pooling directions
-            self.data.oversampled_gaussian[
-                (roi_id, "pooled")
-            ] = create_gaussian_matrix(
-                self.data.fit_output[(roi_id, "pooled")],
-                np.linspace(
-                    self.data.spatial_frequencies.min(),
-                    self.data.spatial_frequencies.max(),
-                    num=oversampling_factor,
-                ),
-                np.linspace(
-                    self.data.temporal_frequencies.min(),
-                    self.data.temporal_frequencies.max(),
-                    num=oversampling_factor,
-                ),
-            )
