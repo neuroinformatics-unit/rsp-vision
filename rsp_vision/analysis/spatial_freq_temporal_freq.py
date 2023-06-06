@@ -542,6 +542,10 @@ class FrequencyResponsiveness:
         amplitude, the best fit parameter values obtained from the Gaussian
         fit, and the median-subtracted response matrix.
 
+        There are 10 possible attempts to fit the data. If the fit fails,
+        the method will try again with a different initial guess. If all
+        attempts fail, the fitting parameters will be set to 1.
+
         Args:
             roi_id (int): The index of the ROI for which to calculate the best
                 fit parameters.
