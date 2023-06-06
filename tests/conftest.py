@@ -1,5 +1,4 @@
 import pathlib
-from functools import lru_cache
 
 import pandas as pd
 import pytest
@@ -13,25 +12,37 @@ from tests.test_integration.generate_mock_data import (
 
 
 @pytest.fixture
-def experimental_variables():
+def one_day_objects():
+    return (
+        get_photon_data_mock(),
+        get_experimental_variables_mock(),
+        get_data_raw_object_mock(),
+    )
+
+
+@pytest.fixture
+def multiple_days_objects():
+    return (
+        get_photon_data_mock(multiple_days=True),
+        get_experimental_variables_mock(multiple_days=True),
+        get_data_raw_object_mock(multiple_days=True),
+    )
+
+
+@pytest.fixture
+def variables():
     return get_experimental_variables_mock()
 
 
 @pytest.fixture
-def data_raw():
-    return get_data_raw_object_mock()
-
-
-@pytest.fixture
-def photon_data():
-    return get_photon_data_mock()
+def var_mult_days():
+    return get_experimental_variables_mock(multiple_days=True)
 
 
 @pytest.fixture
 def response():
-    @lru_cache(maxsize=None)  # Cache all computed responses
-    def _responses(seed_number):
-        return get_response_mock(seed_number)
+    def _responses(seed_number, multiple_days=False):
+        return get_response_mock(seed_number, multiple_days=multiple_days)
 
     return _responses
 

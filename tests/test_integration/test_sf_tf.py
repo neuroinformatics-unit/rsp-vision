@@ -9,38 +9,41 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from tests.test_integration.generate_mock_data import (
+    n_roi,
+)
+
 seeds = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11]
 
 
-def test_get_response_and_baseline_windows(experimental_variables, response):
-    (
-        _,
-        n_roi,
-        _,
-        n_stim,
-        _,
-        _,
-    ) = experimental_variables
-
+def test_get_response_and_baseline_windows(variables, var_mult_days, response):
     # using any seed, it does not matter for this test
-    _response = response(1)
-    (
-        window_mask_response,
-        window_mask_baseline,
-    ) = _response.get_response_and_baseline_windows()
+    for v in [variables, var_mult_days]:
+        if v.n_days == 1:
+            _response = response(1)
+        else:
+            _response = response(1, multiple_days=True)
+        (
+            window_mask_response,
+            window_mask_baseline,
+        ) = _response.get_response_and_baseline_windows()
 
-    assert (
-        len(window_mask_baseline)
-        == len(window_mask_response)
-        == (n_stim * n_roi)
-    )
+        assert (
+            len(window_mask_baseline)
+            == len(window_mask_response)
+            == (v.n_stim * n_roi)
+        )
 
 
 @pytest.mark.parametrize("seed", seeds)
 def test_calculate_mean_response_and_baseline(
     response, expected_outputs, seed
 ):
-    _response = response(seed)
+    if seed < 11:
+        _response = response(seed)
+    else:
+        _response = response(seed, multiple_days=True)
+
     _response.calculate_mean_response_and_baseline()
 
     outputs = expected_outputs[str(seed)]
@@ -63,7 +66,11 @@ def test_calculate_mean_response_and_baseline(
 
 @pytest.mark.parametrize("seed", seeds)
 def test_nonparam_anova_over_rois(response, expected_outputs, seed):
-    _response = response(seed)
+    if seed < 11:
+        _response = response(seed)
+    else:
+        _response = response(seed, multiple_days=True)
+
     _response.calculate_mean_response_and_baseline()
     p_values = _response.nonparam_anova_over_rois()
 
@@ -83,7 +90,11 @@ def test_nonparam_anova_over_rois(response, expected_outputs, seed):
 
 @pytest.mark.parametrize("seed", seeds)
 def test_perform_sign_tests(response, expected_outputs, seed):
-    _response = response(seed)
+    if seed < 11:
+        _response = response(seed)
+    else:
+        _response = response(seed, multiple_days=True)
+
     _response.calculate_mean_response_and_baseline()
     p_st, p_wsrt = _response.perform_sign_tests()
 
@@ -112,7 +123,11 @@ def test_perform_sign_tests(response, expected_outputs, seed):
 
 @pytest.mark.parametrize("seed", seeds)
 def test_response_magnitude(response, expected_outputs, seed):
-    _response = response(seed)
+    if seed < 11:
+        _response = response(seed)
+    else:
+        _response = response(seed, multiple_days=True)
+
     _response.calculate_mean_response_and_baseline()
 
     magnitude = _response.response_magnitude()["magnitude"]
@@ -133,7 +148,11 @@ def test_response_magnitude(response, expected_outputs, seed):
 
 @pytest.mark.parametrize("seed", seeds)
 def test_find_significant_rois(response, expected_outputs, seed):
-    _response = response(seed)
+    if seed < 11:
+        _response = response(seed)
+    else:
+        _response = response(seed, multiple_days=True)
+
     _response.calculate_mean_response_and_baseline()
     p_values = pd.DataFrame()
     p_values["Kruskal-Wallis test"] = _response.nonparam_anova_over_rois()
@@ -149,7 +168,11 @@ def test_find_significant_rois(response, expected_outputs, seed):
 
 @pytest.mark.parametrize("seed", seeds)
 def test_get_gaussian_fits_for_roi(response, expected_outputs, seed):
-    _response = response(seed)
+    if seed < 11:
+        _response = response(seed)
+    else:
+        _response = response(seed, multiple_days=True)
+
     _response()
     outputs = expected_outputs[str(seed)]
 
