@@ -267,6 +267,9 @@ class PhotonData:
         """Make the signal dataframe, which will be filled up with the
         stimulus information later on.
 
+        Uses list comprehension to create the dataframe, which reduces the
+        complexity from O(n^2) to O(n).
+
         Parameters
         ----------
         data_raw : DataRaw
