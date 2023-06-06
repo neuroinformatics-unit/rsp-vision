@@ -24,6 +24,8 @@ def save_data(
 ) -> None:
     # does the table exist?
     reanalysis = False
+    sub = None
+    ses = None
     try:
         with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
             analysis_log = pd.read_csv(f, index_col=0, header=0)
@@ -78,6 +80,8 @@ def save_data(
                 reanalysis = True
 
     except FileNotFoundError:
+        sub = 0
+        ses = 0
         analysis_log = pd.DataFrame(
             columns=[
                 "folder name",
@@ -99,6 +103,8 @@ def save_data(
                 "days of the experiment",
             ],
         )
+    assert sub is not None
+    assert ses is not None
 
     subject_folder = SubjectFolder(
         swc_blueprint_spec=swc_blueprint_spec,
@@ -114,8 +120,6 @@ def save_data(
     subset = {
         "n_roi": photon_data.n_roi,
         "responsive_rois": photon_data.responsive_rois,
-        "downsampled_gaussians": photon_data.downsampled_gaussian,
-        "oversampled_gaussians": photon_data.oversampled_gaussian,
         "median_subtracted_responses": photon_data.median_subtracted_response,
         "fit_outputs": photon_data.fit_output,
     }
