@@ -10,79 +10,124 @@ from rsp_vision.objects.data_raw import DataRaw
 from rsp_vision.objects.enums import PhotonType
 from rsp_vision.objects.photon_data import PhotonData
 
-# Matrix of sf / tf / direction stims
-# Day 1 and day 2 are identical
-# Session 1 (combinations are repeated 3 times)
-# sf:   1 1 1  1 1 1  1 1 1  1 1 1
-# tf:   3 3 4  4 3 3  4 4 3  3 4 4
-# dir:  6 5 6  5 6 5  6 5 6  5 6 5
-#       *        *        *
-# Session 2 (combinations are repeated 3 times)
-# sf:   2 2 2  2 2 2  2 2 2  2 2 2
-# tf:   3 3 4  4 3 3  4 4 3  3 4 4
-# dir:  6 5 6  5 6 5  6 5 6  5 6 5
-
-#  All these variables are used locally to generate the mock data
-#  and are retreived from there by the tests
-#  It is useful to have them here more ecplicit for debugging purposes
-
-n_unique_stim = 8
-n_repetition = 3
-
-sf_values = [1, 2]
-tf_values = [3, 4]
-dir_values = [5, 6]
-
-session_1_sf = n_unique_stim * n_repetition * sf_values[0]
-session_2_sf = n_unique_stim * n_repetition * sf_values[1]
-
-session_1_tf = session_2_tf = np.tile(
-    [
-        tf_values[0],
-        tf_values[0],
-        tf_values[1],
-        tf_values[1],
-    ],
-    3,
-)
-
-session_1_dir = session_2_dir = np.tile(
-    [
-        dir_values[0],
-        dir_values[1],
-    ],
-    6,
-)
-
-n_roi = 5
-n_baseline_triggers = 4
-n_triggers_per_stim = 3
-n_frames_per_trigger = 75
 
 
-def get_experimental_variables_mock(multiple_days=False):
-    # Structure of a session
-    # --- Session 1 -----------------------------------
-    # === n_baseline_triggers =========================
-    # === a subset of n_unique_stim ===================
-    #  repeated n_repetition times
-    #  each stim contains n_triggers_per_stim triggers
-    #  repeated for ech ROI
-    # === n_baseline_triggers =========================
+def get_shared_variables_to_generate_mock_data():
+    """_summary_
 
+    Matrix of sf / tf / direction stims
+    Day 1 and day 2 are identical
+    Session 1 (combinations are repeated 3 times)
+    sf:   1 1 1  1 1 1  1 1 1  1 1 1
+    tf:   3 3 4  4 3 3  4 4 3  3 4 4
+    dir:  6 5 6  5 6 5  6 5 6  5 6 5
+          *        *        *
+    Session 2 (combinations are repeated 3 times)
+    sf:   2 2 2  2 2 2  2 2 2  2 2 2
+    tf:   3 3 4  4 3 3  4 4 3  3 4 4
+    dir:  6 5 6  5 6 5  6 5 6  5 6 5
+
+    All these variables are used locally to generate the mock data
+    and are retreived from there by the tests
+    It is useful to have them here more ecplicit for debugging purposes
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+    
+
+    parameters = namedtuple( "Parameters", [
+        "n_roi", 
+        "n_baseline_triggers", 
+        "n_triggers_per_stim", 
+        "n_frames_per_trigger",
+        "n_unique_stim",
+        "n_repetition",
+        ])
+
+    p = parameters(
+        n_roi = 5,
+        n_baseline_triggers = 4,
+        n_triggers_per_stim = 3,
+        n_frames_per_trigger = 75,
+        n_unique_stim = 8,
+        n_repetition = 3,
+    )
+
+    sf_values = [1, 2]
+    tf_values = [3, 4]
+    dir_values = [5, 6]
+
+    session = namedtuple( "SessionParameters", [
+        "sf", "tf", "dir"
+        ])
+    
+    session1 = session(
+        sf =  p.n_unique_stim * p.n_repetition * sf_values[0],
+        tf =  np.tile(
+            [
+                tf_values[0],
+                tf_values[0],
+                tf_values[1],
+                tf_values[1],
+            ], 3),
+        dir = np.tile(
+            [
+                dir_values[0],
+                dir_values[1],
+            ],6,),
+    )
+
+    session2 = session(
+        sf =  p.n_unique_stim * p.n_repetition * sf_values[1],
+        tf =  session1.tf,
+        dir = session1.dir,
+    )
+
+    return session1, session2, p
+        
+
+def make_variables_day_related(p, multiple_days=False):
+    """
+    Structure of a session
+    --- Session 1 -----------------------------------
+    === n_baseline_triggers =========================
+    === a subset of n_unique_stim ===================
+     repeated n_repetition times
+     each stim contains n_triggers_per_stim triggers
+     repeated for ech ROI
+    === n_baseline_triggers =========================
+
+    Parameters
+    ----------
+    p : _type_
+        _description_
+    multiple_days : bool, optional
+        _description_, by default False
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+
+    
+    
     if multiple_days:
         n_days = 2
     else:
         n_days = 1
     n_sessions = 2 * n_days
-    n_stim = n_unique_stim * n_repetition * n_days
+    n_stim = p.n_unique_stim * p.n_repetition * n_days
 
     len_session = int(
-        (2 * n_baseline_triggers + n_stim / n_sessions * n_triggers_per_stim)
-        * n_frames_per_trigger
+        (2 * p.n_baseline_triggers + n_stim / n_sessions * p.n_triggers_per_stim)
+        * p.n_frames_per_trigger
     )
 
-    day_stimulus = [1] * n_roi + [2] * n_roi if multiple_days else [1] * n_roi
+    day_stimulus = [1] * p.n_roi + [2] * p.n_roi if multiple_days else [1] * p.n_roi
 
     variables = namedtuple(
         "Variables",
@@ -128,7 +173,7 @@ def get_config_mock():
     }
 
 
-def get_stim_mock(
+def make_stim_dict(
     n_baseline_triggers,
     n_stim_per_session,
     n_triggers_per_stim,
@@ -152,7 +197,7 @@ def get_stim_mock(
     }
 
 
-def get_random_responses(seed_number, n_sessions, n_roi, len_session):
+def make_random_responses(seed_number, n_sessions, n_roi, len_session):
     np.random.seed(seed_number)
     expected_value = np.abs(np.random.randint(50))  # use positive values only
     data = np.random.poisson(
@@ -162,63 +207,56 @@ def get_random_responses(seed_number, n_sessions, n_roi, len_session):
     return data
 
 
-def get_raw_data_dict_mock(
-    n_sessions,
-    n_roi,
-    len_session,
-    n_stim,
-    n_baseline_triggers,
-    n_triggers_per_stim,
+def make_raw_data_dict_mock(
     seed_number,
-    n_days,
-    day_stimulus,
+    day_vars,
+    session1,
+    session2,
+    params,
 ):
     return {
         "day": {
             "roi": "roi",
             "roi_label": "roi_label",
-            "stimulus": day_stimulus,
+            "stimulus": day_vars.day_stimulus,
         },
         "imaging": "imaging",
-        "f": get_random_responses(seed_number, n_sessions, n_roi, len_session),
+        "f": make_random_responses(seed_number, day_vars.n_sessions, params.n_roi, params.len_session),
         "is_cell": "is_cell",
         "r_neu": "r_neu",
         "stim": [
-            get_stim_mock(
-                n_baseline_triggers,
-                n_stim // n_sessions,
-                n_triggers_per_stim,
-                session_1_sf,
-                session_1_tf,
-                session_1_dir,
+            make_stim_dict(
+                params.n_baseline_triggers,
+                day_vars.n_stim // day_vars.n_sessions,
+                params.n_triggers_per_stim,
+                session1.sf,
+                session1.tf,
+                session1.dir,
             ),
-            get_stim_mock(
-                n_baseline_triggers,
-                n_stim // n_sessions,
-                n_triggers_per_stim,
-                session_2_sf,
-                session_2_tf,
-                session_2_dir,
+            make_stim_dict(
+                params.n_baseline_triggers,
+                day_vars.n_stim // day_vars.n_sessions,
+                params.n_triggers_per_stim,
+                session2.sf,
+                session2.tf,
+                session2.dir,
             ),
         ]
-        * n_days,
+        * day_vars.n_days,
         "trig": "trig",
     }
 
 
 def get_data_raw_object_mock(seed_number=1, multiple_days=False):
-    variables = get_experimental_variables_mock(multiple_days)
-
-    data = get_raw_data_dict_mock(
-        variables.n_sessions,
-        n_roi,
-        variables.len_session,
-        variables.n_stim,
-        n_baseline_triggers,
-        n_triggers_per_stim,
+    session1, session2, params = get_shared_variables_to_generate_mock_data(multiple_days)
+    day_relate_vars = make_variables_day_related(params, multiple_days)
+    
+    data = make_raw_data_dict_mock(
         seed_number,
-        variables.n_days,
-        variables.day_stimulus,
+        day_relate_vars,
+        session1,
+        session2,
+        params,
     )
     data_raw = DataRaw(data, is_allen=False)
 
