@@ -5,9 +5,10 @@ import pytest
 
 from tests.test_integration.generate_mock_data import (
     get_data_raw_object_mock,
-    get_experimental_variables_mock,
+    make_variables_day_related,
     get_photon_data_mock,
     get_response_mock,
+    get_shared_variables_to_generate_mock_data,
 )
 
 
@@ -15,7 +16,7 @@ from tests.test_integration.generate_mock_data import (
 def one_day_objects():
     return (
         get_photon_data_mock(),
-        get_experimental_variables_mock(),
+        make_variables_day_related(),
         get_data_raw_object_mock(),
     )
 
@@ -24,19 +25,23 @@ def one_day_objects():
 def multiple_days_objects():
     return (
         get_photon_data_mock(multiple_days=True),
-        get_experimental_variables_mock(multiple_days=True),
+        make_variables_day_related(multiple_days=True),
         get_data_raw_object_mock(multiple_days=True),
     )
 
 
 @pytest.fixture
 def variables():
-    return get_experimental_variables_mock()
+    return make_variables_day_related()
 
+@pytest.fixture
+def n_roi():
+    _, _, params = get_shared_variables_to_generate_mock_data()
+    return params.n_roi
 
 @pytest.fixture
 def var_mult_days():
-    return get_experimental_variables_mock(multiple_days=True)
+    return make_variables_day_related(multiple_days=True)
 
 
 @pytest.fixture
