@@ -22,7 +22,56 @@ def save_data(
     photon_data: PhotonData,
     config_file: dict,
 ) -> None:
-    # does the table exist?
+    sub, ses, reanalysis, analysis_log = get_sub_and_ses(
+        folder_naming_specs, swc_blueprint_spec
+    )
+
+    subject_folder = SubjectFolder(
+        swc_blueprint_spec=swc_blueprint_spec,
+        folder_or_table=folder_naming_specs,
+        sub_num=sub,
+    )
+
+    session_folder = SessionFolder(
+        subject_folder=subject_folder,
+        folder_or_table=folder_naming_specs,
+        ses_num=ses,
+    )
+
+    Path(session_folder.ses_folder_path).mkdir(parents=True, exist_ok=True)
+
+    save_roi_info_and_fit_outputs(
+        photon_data=photon_data,
+        session_folder=session_folder,
+    )
+
+    save_signal_data_for_each_roi(
+        photon_data=photon_data,
+        session_folder=session_folder,
+    )
+
+    save_metadata_about_this_analysis(
+        folder_naming_specs=folder_naming_specs,
+        photon_data=photon_data,
+        session_folder=session_folder,
+        config_file=config_file,
+    )
+
+    save_info_in_main_log(
+        folder_naming_specs=folder_naming_specs,
+        photon_data=photon_data,
+        session_folder=session_folder,
+        analysis_log=analysis_log,
+        subject_folder=subject_folder,
+        reanalysis=reanalysis,
+        swc_blueprint_spec=swc_blueprint_spec,
+    )
+
+
+def get_sub_and_ses(
+    folder_naming_specs: FolderNamingSpecs,
+    swc_blueprint_spec: SWC_Blueprint_Spec,
+):
     reanalysis = False
     sub = None
     ses = None
@@ -106,16 +155,13 @@ def save_data(
     assert sub is not None
     assert ses is not None
 
-    subject_folder = SubjectFolder(
-        swc_blueprint_spec=swc_blueprint_spec,
-    ).make_from_folder_naming_specs(folder_naming_specs, sub)
+    return sub, ses, reanalysis, analysis_log
 
-    session_folder = SessionFolder(
-        subject_folder=subject_folder,
-    ).make_from_folder_naming_specs(folder_naming_specs, ses)
 
-    Path(session_folder.ses_folder_path).mkdir(parents=True, exist_ok=True)
-
+def save_roi_info_and_fit_outputs(
+    photon_data: PhotonData,
+    session_folder: SessionFolder,
+):
     # dict with subset of the data
     subset = {
         "n_roi": photon_data.n_roi,
@@ -131,6 +177,11 @@ def save_data(
     ) as f:
         pickle.dump(subset, f)
 
+
+def save_signal_data_for_each_roi(
+    photon_data: PhotonData,
+    session_folder: SessionFolder,
+):
     #  for each roi, save a subset of the signal dataframe in a pickle object
     for roi in range(photon_data.n_roi):
         with open(
@@ -142,6 +193,13 @@ def save_data(
                 photon_data.signal[photon_data.signal.roi_id == roi], f
             )
 
+
+def save_metadata_about_this_analysis(
+    photon_data: PhotonData,
+    session_folder: SessionFolder,
+    folder_naming_specs: FolderNamingSpecs,
+    config_file: dict,
+):
     #  save in a file details about the experimental data that was analysed
     metadata = {
         "folder_name": folder_naming_specs.folder_name,
@@ -158,6 +216,16 @@ def save_data(
     with open(session_folder.ses_folder_path / "metadata.yml", "w") as f:
         yaml.dump(metadata, f)
 
+
+def save_info_in_main_log(
+    folder_naming_specs: FolderNamingSpecs,
+    subject_folder: SubjectFolder,
+    session_folder: SessionFolder,
+    photon_data: PhotonData,
+    reanalysis: bool,
+    analysis_log: pd.DataFrame,
+    swc_blueprint_spec: SWC_Blueprint_Spec,
+):
     dict = {
         "folder name": folder_naming_specs.folder_name,
         "sub": subject_folder.sub_num,
