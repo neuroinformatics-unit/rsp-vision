@@ -57,7 +57,7 @@ def response():
 @pytest.fixture
 def expected_outputs():
     path = pathlib.Path(__file__).parent.absolute()
-    output_path = path / "test_integration" / "mock_data" / "outputs.plk"
+    output_path = path / "test_regression" / "mock_data" / "outputs.plk"
     with open(output_path, "rb") as f:
         outputs = pd.read_pickle(f)
     return outputs
