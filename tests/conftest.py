@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
+from rsp_vision.objects.SWC_Blueprint import SWC_Blueprint_Spec
 from tests.test_integration.generate_mock_data import (
     get_config_mock,
     get_data_raw_object_mock,
@@ -54,6 +55,17 @@ def folder_naming_specs(experimental_folders, config):
 @pytest.fixture
 def config():
     return get_config_mock()
+
+
+@pytest.fixture
+def blueprint_spec(tmp_path):
+    spec = SWC_Blueprint_Spec(
+        project_name="my_project",
+        raw_data=True,
+        derivatives=True,
+        local_path=tmp_path,
+    )
+    return spec
 
 
 @pytest.fixture
