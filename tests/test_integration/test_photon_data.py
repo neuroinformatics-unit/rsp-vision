@@ -1,6 +1,3 @@
-
-
-
 def test_set_general_variables(one_day_objects, multiple_days_objects, n_roi):
     for data, v, _ in [one_day_objects, multiple_days_objects]:
         assert data.total_n_days == v.n_days

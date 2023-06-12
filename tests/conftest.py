@@ -5,10 +5,10 @@ import pytest
 
 from tests.fixtures_helpers import (
     get_data_raw_object_mock,
-    make_variables_day_related,
     get_photon_data_mock,
     get_response_mock,
     get_shared_variables_to_generate_mock_data,
+    make_variables_day_related,
 )
 
 
@@ -34,10 +34,12 @@ def multiple_days_objects():
 def variables():
     return make_variables_day_related()
 
+
 @pytest.fixture
 def n_roi():
     _, _, params = get_shared_variables_to_generate_mock_data()
     return params.n_roi
+
 
 @pytest.fixture
 def var_mult_days():

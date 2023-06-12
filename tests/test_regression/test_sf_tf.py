@@ -12,7 +12,9 @@ import pytest
 seeds = [1, 2, 3, 4, 6, 7, 8, 9, 10, 11]
 
 
-def test_get_response_and_baseline_windows(variables, var_mult_days, response, n_roi):
+def test_get_response_and_baseline_windows(
+    variables, var_mult_days, response, n_roi
+):
     # using any seed, it does not matter for this test
     for v in [variables, var_mult_days]:
         if v.n_days == 1:

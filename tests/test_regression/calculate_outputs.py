@@ -1,8 +1,9 @@
 import pathlib
 import pickle
 
-from tests.fixtures_helpers import get_response_mock
 from tqdm import tqdm
+
+from tests.fixtures_helpers import get_response_mock
 
 
 def calculate_stats_outputs(seeds):
@@ -11,7 +12,7 @@ def calculate_stats_outputs(seeds):
     seeds = seeds[:-1]
     for seed in tqdm(seeds):
         response = get_response_mock(seed)
-        response() 
+        response()
         data = response.data
 
         outputs[str(seed)] = {
