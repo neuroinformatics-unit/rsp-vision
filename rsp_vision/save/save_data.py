@@ -93,7 +93,7 @@ def get_sub_and_ses(
                 analysis_log["folder name"] == folder_naming_specs.folder_name
             ].empty:
                 #  this subject was analysed before, but not this session
-                sub = analysis_log[
+                this_line_rows = analysis_log[
                     (
                         analysis_log["mouse line"]
                         == folder_naming_specs.mouse_line
@@ -102,7 +102,11 @@ def get_sub_and_ses(
                         analysis_log["mouse id"]
                         == folder_naming_specs.mouse_id
                     )
-                ]["sub"][0]
+                ]
+                assert len(this_line_rows) >= 1
+                assert len(this_line_rows["sub"].unique()) == 1
+                sub = this_line_rows["sub"].unique()[0]
+
                 ses = (
                     analysis_log[
                         (
@@ -118,14 +122,21 @@ def get_sub_and_ses(
                 )
             else:
                 # this subject and this session were analysed before
-                sub = analysis_log[
-                    analysis_log["folder name"]
-                    == folder_naming_specs.folder_name
-                ]["sub"][0]
-                ses = analysis_log[
-                    analysis_log["folder name"]
-                    == folder_naming_specs.folder_name
-                ]["ses"][0]
+                this_line_rows = analysis_log[
+                    (
+                        analysis_log["mouse line"]
+                        == folder_naming_specs.mouse_line
+                    )
+                    & (
+                        analysis_log["mouse id"]
+                        == folder_naming_specs.mouse_id
+                    )
+                ]
+                assert len(this_line_rows) >= 1
+                assert len(this_line_rows["sub"].unique()) == 1
+                sub = this_line_rows["sub"].unique()[0]
+
+                ses = this_line_rows["ses"].max()
                 reanalysis = True
 
     except FileNotFoundError:
