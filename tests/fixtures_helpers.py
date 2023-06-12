@@ -365,7 +365,7 @@ def make_raw_data_dict_mock(
         },
         "imaging": "imaging",
         "f": make_random_responses(
-            seed_number, day_vars.n_sessions, params.n_roi, params.len_session
+            seed_number, day_vars.n_sessions, params.n_roi, day_vars.len_session
         ),
         "is_cell": "is_cell",
         "r_neu": "r_neu",
@@ -408,9 +408,7 @@ def get_data_raw_object_mock(seed_number=1, multiple_days=False):
     DataRaw
         The mock `DataRaw` object.
     """
-    session1, session2, params = get_shared_variables_to_generate_mock_data(
-        multiple_days
-    )
+    session1, session2, params = get_shared_variables_to_generate_mock_data()
     day_relate_vars = make_variables_day_related(params, multiple_days)
 
     data = make_raw_data_dict_mock(
