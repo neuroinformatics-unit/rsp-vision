@@ -3,7 +3,7 @@ import pathlib
 import pandas as pd
 import pytest
 
-from tests.test_integration.generate_mock_data import (
+from tests.fixtures_helpers import (
     get_data_raw_object_mock,
     make_variables_day_related,
     get_photon_data_mock,
