@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union
 
 from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
 
@@ -72,10 +73,32 @@ class SubjectFolder:
         and a subject number.
     make_from_table_row(table_row)
         Create a `SubjectFolder` object from a table row.
+
+    Raises
+    ------
+    ValueError
+        If the argument `folder_or_table` is neither 'folder' nor 'table'.
     """
 
-    def __init__(self, swc_blueprint_spec: SWC_Blueprint_Spec):
+    def __init__(
+        self,
+        swc_blueprint_spec: SWC_Blueprint_Spec,
+        folder_or_table: Union[FolderNamingSpecs, dict],
+        sub_num: int,
+    ):
         self.swc_blueprint_spec = swc_blueprint_spec
+        if isinstance(folder_or_table, FolderNamingSpecs):
+            self.make_from_folder_naming_specs(folder_or_table, sub_num)
+        elif isinstance(folder_or_table, dict):
+            self.make_from_table_row(folder_or_table)
+        else:
+            raise ValueError(
+                "The argument `folder_or_table` must be an instance of "
+                + "`FolderNamingSpecs` or a dictionary."
+            )
+        self.sub_folder_path = Path(
+            self.swc_blueprint_spec.path / self.sub_folder_name
+        )
 
     def make_from_folder_naming_specs(
         self,
@@ -90,10 +113,6 @@ class SubjectFolder:
             + "_id-"
             + folder_naming_specs.mouse_id
         )
-        self.sub_folder_path = Path(
-            self.swc_blueprint_spec.path / self.sub_folder_name
-        )
-        return self
 
     def make_from_table_row(self, table_row: dict):
         self.sub_num = int(table_row["sub"])
@@ -104,10 +123,6 @@ class SubjectFolder:
             + "_id-"
             + str(table_row["mouse id"])
         )
-        self.sub_folder_path = Path(
-            self.swc_blueprint_spec.path / self.sub_folder_name
-        )
-        return self
 
 
 class SessionFolder:
@@ -142,13 +157,32 @@ class SessionFolder:
 
     make_from_table_row(table_row)
         Create a `SessionFolder` object from a table row.
+
+    Raises
+    ------
+    ValueError
+        If the argument `folder_or_table` is neither 'folder' nor 'table'.
     """
 
     def __init__(
         self,
         subject_folder: SubjectFolder,
+        folder_or_table: Union[FolderNamingSpecs, dict],
+        ses_num: int,
     ):
         self.subject_folder = subject_folder
+        if isinstance(folder_or_table, FolderNamingSpecs):
+            self.make_from_folder_naming_specs(folder_or_table, ses_num)
+        elif isinstance(folder_or_table, dict):
+            self.make_from_table_row(folder_or_table)
+        else:
+            raise ValueError(
+                "The argument `folder_or_table` must be an instance of "
+                + "`FolderNamingSpecs` or a dictionary."
+            )
+        self.ses_folder_path = Path(
+            self.subject_folder.sub_folder_path / self.ses_folder_name
+        )
 
     def make_from_folder_naming_specs(
         self,
@@ -180,10 +214,6 @@ class SessionFolder:
                 else ""
             )
         )
-        self.ses_folder_path = Path(
-            self.subject_folder.sub_folder_path / self.ses_folder_name
-        )
-        return self
 
     def make_from_table_row(self, table_row: dict):
         self.ses_num = int(table_row["ses"])
@@ -207,8 +237,3 @@ class SessionFolder:
                 else ""
             )
         )
-
-        self.ses_folder_path = Path(
-            self.subject_folder.sub_folder_path / self.ses_folder_name
-        )
-        return self
