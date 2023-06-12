@@ -117,9 +117,7 @@ def get_config_mock():
         "response_magnitude_threshold": 0.1,
         "consider_only_positive": False,
         "only_positive_threshold": 0.1,
-        # "spatial_frequencies": [0.01, 0.02, 0.04, 0.08, 0.16, 0.32],
-        # "temporal_frequencies": [0.5, 1, 2, 4, 8, 16],
-        # "directions": [0, 45, 90, 135, 180, 225, 270, 315],
+        "parser": "Parser2pRSP",
         "fitting": {
             "power_law_exp": 1,
             "lower_bounds": [-200, 0, 0, 0.01, 0.01, -np.inf],
@@ -127,6 +125,12 @@ def get_config_mock():
             "iterations_to_fit": 20,
             "jitter": 0.1,
             "oversampling_factor": 100,
+        },
+        "paths": {
+            "imaging": "test_data/",
+            "allen-dff": "test_data/allen_dff/",
+            "serial2p": "test_data/serial2p/",
+            "stimulus-ai-schedule": "test_data/stimulus_ai_schedule/",
         },
     }
 
