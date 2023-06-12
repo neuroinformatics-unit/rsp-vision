@@ -11,10 +11,12 @@ from tests.fixtures_helpers import (
     make_variables_day_related,
 )
 
+
 @pytest.fixture
 def general_variables():
     _, _, params = get_shared_variables_to_generate_mock_data()
     return params
+
 
 @pytest.fixture
 def one_day_objects(variables):

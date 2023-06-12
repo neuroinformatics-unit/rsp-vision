@@ -365,7 +365,10 @@ def make_raw_data_dict_mock(
         },
         "imaging": "imaging",
         "f": make_random_responses(
-            seed_number, day_vars.n_sessions, params.n_roi, day_vars.len_session
+            seed_number,
+            day_vars.n_sessions,
+            params.n_roi,
+            day_vars.len_session,
         ),
         "is_cell": "is_cell",
         "r_neu": "r_neu",
