@@ -32,6 +32,7 @@ with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
 
 dash.register_page(__name__, path="/")
 
+
 layout = dash.html.Div(
     [
         dmc.Title(
@@ -72,6 +73,21 @@ layout = dash.html.Div(
                     page_action="native",
                     page_current=0,
                     page_size=20,
+                    hidden_columns=[
+                        "index",
+                        "sub",
+                        "ses",
+                        "mouse line",
+                        "mouse id",
+                        "hemisphere",
+                        "brain region",
+                        "monitor position",
+                        "fov",
+                        "cre",
+                        "analysed",
+                        "commit hash",
+                        "microscope",
+                    ],
                 ),
             ],
             className="table",
@@ -104,10 +120,6 @@ def update_graphs(selected_rows):
             dataframe.iloc[selected_rows[0]].to_dict(),
             ses_num=0,  # irrelevant
         )
-
-        # session_folder = SessionFolder(
-        #     subject_folder=sub_folder
-        # ).make_from_table_row(dataframe.iloc[selected_rows[0]])
         print(session_folder)
 
         store = {
@@ -121,7 +133,7 @@ def update_graphs(selected_rows):
             "session_folder_path": str(session_folder.ses_folder_path),
         }
         return (
-            f'Selected data: {dataframe.iloc[selected_rows[0]]["mouse line"]}',
+            f'Selected data: {dataframe.iloc[selected_rows[0]]["folder name"]}',
             store,
             False,
         )

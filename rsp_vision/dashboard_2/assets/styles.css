@@ -1,34 +1,36 @@
 .header {
-    background-color: #bf8e8e;
+    background-color: #0c0223;
     margin: auto;
-    width: 50%;
+    width: 100%;
+    height: 50px;
 }
 
 .main-title {
-  color: #000000;
+  color: #ffffff;
   text-align: center;
 }
 
 .page-title{
-    color: #000000;
+    color: #0c0223;
     text-align: center;
 }
 
 .page{
-    padding: 3%;
-    background-color: rgb(180, 224, 224);
+    padding: 1%;
+    /* background-color: rgb(193, 192, 216); */
 }
 
 .table{
-    padding: 3%;
-    background-color: rgb(161, 219, 187);
+    padding: 2%;
+    /* background-color: rgb(161, 219, 187); */
 }
 
 .selected-data-container{
-    width: 60%;
+    width: 40%;
+    padding: 1%;
     margin: auto;
 
-    background-color: rgb(154, 196, 133);
+    /* background-color: rgb(154, 196, 133); */
 }
 
 .load-data-button{
@@ -39,10 +41,8 @@
     text-align: center;
 }
 
-/* button, when enabled do not underline */
 a:-webkit-any-link {
     text-decoration: none !important;
-    /* force font to be the default one, Open Sans; */
     font: -webkit-small-control;
     margin-right: 0;
     margin-left:auto;
