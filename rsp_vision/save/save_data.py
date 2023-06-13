@@ -22,6 +22,25 @@ def save_data(
     photon_data: PhotonData,
     config_file: dict,
 ) -> None:
+    """
+    This method saves the data in the appropriate folders, and updates the
+    analysis_log.csv file.
+
+    Parameters
+    ----------
+    swc_blueprint_spec : SWC_Blueprint_Spec
+        The object containing the information about the project
+        name and the path to the local folder where the data will be saved.
+    folder_naming_specs : FolderNamingSpecs
+        The object containing the information about the mouse line,
+        mouse id, folder name, and the path to the local folder where the
+        data will be saved.
+    photon_data : PhotonData
+        The object containing the data to be saved.
+    config_file : dict
+        The dictionary containing the information about the experimental
+        variables.
+    """
     sub, ses, reanalysis, analysis_log = get_sub_and_ses(
         folder_naming_specs, swc_blueprint_spec
     )
@@ -71,7 +90,36 @@ def save_data(
 def get_sub_and_ses(
     folder_naming_specs: FolderNamingSpecs,
     swc_blueprint_spec: SWC_Blueprint_Spec,
-):
+) -> tuple:
+    """
+    This method is charged with finding the subject and session numbers
+    for the current analysis. It also checks if the analysis is a reanalysis
+    of a previous one. If so, it returns the subject and session numbers
+    of the previous analysis.
+
+    There are 5 possible cases:
+    1. no data in the analysis.log file -> sub = 0, ses = 0
+    2. this subject was never analysed before -> sub = max(sub) + 1, ses = 0
+    3. this subject was analysed before, but not this session
+         -> sub = find(sub), ses = max(ses) + 1
+    4. this session was analysed before -> reanalysis = True,
+        sub = find(sub), ses = find(ses)
+    0. the analysis.log file does not exist -> sub = 0, ses = 0
+
+    Parameters
+    ----------
+    folder_naming_specs : FolderNamingSpecs
+        The FolderNamingSpecs object.
+    swc_blueprint_spec : SWC_Blueprint_Spec
+        The SWC_Blueprint_Spec object.
+
+    Returns
+    -------
+    tuple
+        The subject and session numbers, a boolean indicating if this
+        analysis is a reanalysis of a previous one, and the analysis_log
+        dataframe.
+    """
     reanalysis = False
     sub = None
     ses = None
@@ -178,6 +226,16 @@ def save_roi_info_and_fit_outputs(
     photon_data: PhotonData,
     session_folder: SessionFolder,
 ):
+    """
+    Save the roi info and the fit outputs in a pickle object.
+
+    Parameters
+    ----------
+    photon_data : PhotonData
+        The PhotonData object.
+    session_folder : SessionFolder
+        The SessionFolder object.
+    """
     # dict with subset of the data
     subset = {
         "n_roi": photon_data.n_roi,
@@ -198,6 +256,16 @@ def save_signal_data_for_each_roi(
     photon_data: PhotonData,
     session_folder: SessionFolder,
 ):
+    """
+    Save the signal dataframe for each roi in a pickle object.
+
+    Parameters
+    ----------
+    photon_data : PhotonData
+        The PhotonData object.
+    session_folder : SessionFolder
+        The SessionFolder object.
+    """
     #  for each roi, save a subset of the signal dataframe in a pickle object
     for roi in range(photon_data.n_roi):
         with open(
@@ -216,6 +284,20 @@ def save_metadata_about_this_analysis(
     folder_naming_specs: FolderNamingSpecs,
     config_file: dict,
 ):
+    """
+    Save metadata about this analysis in a yaml file.
+
+    Parameters
+    ----------
+    photon_data : PhotonData
+        The PhotonData object.
+    session_folder : SessionFolder
+        The SessionFolder object.
+    folder_naming_specs : FolderNamingSpecs
+        The FolderNamingSpecs object.
+    config_file : dict
+        The config file.
+    """
     #  save in a file details about the experimental data that was analysed
     metadata = {
         "folder_name": folder_naming_specs.folder_name,
@@ -242,6 +324,26 @@ def save_info_in_main_log(
     analysis_log: pd.DataFrame,
     swc_blueprint_spec: SWC_Blueprint_Spec,
 ):
+    """
+    Save info about this analysis in the main log file.
+
+    Parameters
+    ----------
+    folder_naming_specs : FolderNamingSpecs
+        The FolderNamingSpecs object.
+    subject_folder : SubjectFolder
+        The SubjectFolder object.
+    session_folder : SessionFolder
+        The SessionFolder object.
+    photon_data : PhotonData
+        The PhotonData object.
+    reanalysis : bool
+        Whether this is a reanalysis.
+    analysis_log : pd.DataFrame
+        The analysis log.
+    swc_blueprint_spec : SWC_Blueprint_Spec
+        The SWC_Blueprint_Spec object.
+    """
     dict = {
         "folder name": folder_naming_specs.folder_name,
         "sub": subject_folder.sub_num,
