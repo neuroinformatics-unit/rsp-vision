@@ -134,7 +134,7 @@ def update_graphs(selected_rows):
         }
         folder_name = dataframe.iloc[selected_rows[0]]["folder name"]
         return (
-            f'Selected data: {folder_name}',
+            f"Selected data: {folder_name}",
             store,
             False,
         )
