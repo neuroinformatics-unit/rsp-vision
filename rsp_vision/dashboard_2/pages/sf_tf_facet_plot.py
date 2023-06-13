@@ -1,12 +1,6 @@
-import pickle
-from pathlib import Path
-
 import dash
 import dash_mantine_components as dmc
-import numpy as np
-import pandas as pd
-import plotly.graph_objects as go
-from dash import Input, Output, callback, dcc, html
+from dash import html
 
 dash.register_page(__name__, path="/sf_tf_facet_plot")
 
