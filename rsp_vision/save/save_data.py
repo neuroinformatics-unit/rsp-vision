@@ -79,20 +79,24 @@ def get_sub_and_ses(
         with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
             analysis_log = pd.read_csv(f, index_col=0, header=0)
             if analysis_log.empty:
-                # no data at all
+                # CASE 1: no data at all
                 sub = 0
                 ses = 0
             elif analysis_log[
                 (analysis_log["mouse line"] == folder_naming_specs.mouse_line)
                 & (analysis_log["mouse id"] == folder_naming_specs.mouse_id)
             ].empty:
-                # this subject was never analysed before
+                # CASE 2: this subject was never analysed before
                 sub = analysis_log["sub"].max() + 1
                 ses = 0
             elif analysis_log[
                 analysis_log["folder name"] == folder_naming_specs.folder_name
             ].empty:
-                #  this subject was analysed before, but not this session
+                #  CASE 3: this subject was analysed before, but not this
+                #  session folder_name is the specific dataset name,
+                #  containing both info about the specific mouse and the
+                #  specific session this is why we use it to determine if
+                #  this session was analysed before
                 this_line_rows = analysis_log[
                     (
                         analysis_log["mouse line"]
@@ -121,7 +125,7 @@ def get_sub_and_ses(
                     + 1
                 )
             else:
-                # this subject and this session were analysed before
+                # CASE 4: this session was analysed before
                 this_line_rows = analysis_log[
                     (
                         analysis_log["mouse line"]
@@ -140,6 +144,7 @@ def get_sub_and_ses(
                 reanalysis = True
 
     except FileNotFoundError:
+        #  CASE 0: no analysis log file
         sub = 0
         ses = 0
         analysis_log = pd.DataFrame(

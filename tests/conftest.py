@@ -4,7 +4,11 @@ import pandas as pd
 import pytest
 
 from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
-from rsp_vision.objects.SWC_Blueprint import SWC_Blueprint_Spec
+from rsp_vision.objects.SWC_Blueprint import (
+    SessionFolder,
+    SubjectFolder,
+    SWC_Blueprint_Spec,
+)
 from tests.test_integration.generate_mock_data import (
     get_config_mock,
     get_data_raw_object_mock,
@@ -69,6 +73,21 @@ def blueprint_spec(tmp_path):
 
 
 @pytest.fixture
+def one_folder_naming_specs(folder_naming_specs):
+    return folder_naming_specs[0]
+
+
+@pytest.fixture
+def subject_folder(blueprint_spec, one_folder_naming_specs):
+    return SubjectFolder(blueprint_spec, one_folder_naming_specs, 4)
+
+
+@pytest.fixture
+def session_folder(subject_folder, one_folder_naming_specs):
+    return SessionFolder(subject_folder, one_folder_naming_specs, 0)
+
+
+@pytest.fixture
 def one_day_objects():
     return (
         get_photon_data_mock(),
@@ -94,6 +113,14 @@ def variables():
 @pytest.fixture
 def var_mult_days():
     return get_experimental_variables_mock(multiple_days=True)
+
+
+@pytest.fixture
+def photon_data():
+    # full photon data, as it becomes after the data is processed
+    response = get_response_mock(0)
+    response()
+    return response.data
 
 
 @pytest.fixture
