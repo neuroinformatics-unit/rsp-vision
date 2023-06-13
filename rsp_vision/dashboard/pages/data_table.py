@@ -14,6 +14,9 @@ from rsp_vision.objects.SWC_Blueprint import (
     SWC_Blueprint_Spec,
 )
 
+# the following code lives outside of the callback
+# because it is executed only once, when the app starts
+
 CONFIG_PATH = config("CONFIG_PATH")
 config_path = Path(__file__).parents[2] / CONFIG_PATH
 config = read_config_file(config_path)
@@ -30,13 +33,14 @@ with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
     dataframe = pd.read_csv(f, names=c, index_col=0)
     data = dataframe.to_dict(orient="records")
 
+
 dash.register_page(__name__, path="/")
 
 
 layout = dash.html.Div(
     [
         dmc.Title(
-            "Data Table",
+            "Selec dataset to be loaded",
             order=2,
             className="page-title",
         ),
@@ -44,7 +48,6 @@ layout = dash.html.Div(
             children=[
                 dmc.Text(
                     id="selected_data_str",
-                    className="selected-data-text",
                 ),
                 dbc.Button(
                     "Load Data",
@@ -105,22 +108,21 @@ layout = dash.html.Div(
     ],
     Input("table", "selected_rows"),
 )
-def update_graphs(selected_rows):
+def update_storage(selected_rows):
     if selected_rows is None or len(selected_rows) == 0:
-        return "Select data to be loaded", {}, True
+        return "No row selected", {}, True
+
     else:
         sub_folder = SubjectFolder(
             swc_blueprint_spec,
             dataframe.iloc[selected_rows[0]].to_dict(),
             sub_num=0,  # irrelevant
         )
-        print(sub_folder)
         session_folder = SessionFolder(
             sub_folder,
             dataframe.iloc[selected_rows[0]].to_dict(),
             ses_num=0,  # irrelevant
         )
-        print(session_folder)
 
         store = {
             "data": dataframe.iloc[selected_rows[0]],
@@ -132,7 +134,9 @@ def update_graphs(selected_rows):
             "subject_folder_path": str(sub_folder.sub_folder_path),
             "session_folder_path": str(session_folder.ses_folder_path),
         }
+
         folder_name = dataframe.iloc[selected_rows[0]]["folder name"]
+
         return (
             f"Selected data: {folder_name}",
             store,

@@ -103,7 +103,6 @@ def murakami_plot(store, show_only_responsive):
 
     responsive_rois = data["responsive_rois"]
     n_roi = data["n_roi"]
-    # oversampled_gaussians = data["oversampled_gaussians"]
     oversampling_factor = store["config"]["fitting"]["oversampling_factor"]
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
@@ -150,12 +149,14 @@ def murakami_plot(store, show_only_responsive):
         title_text="Temporal frequency (Hz)",
         showgrid=False,
         zeroline=False,
+        tickvals=[],
     )
     fig.update_yaxes(
         range=[0, 0.33],
         title_text="Spatial frequency (cycles/deg)",
         showgrid=False,
         zeroline=False,
+        tickvals=[],
     )
 
     #  draw horizontal lines
@@ -174,11 +175,12 @@ def murakami_plot(store, show_only_responsive):
             y=i,
             text=f"{i}",
             showarrow=False,
-            yshift=10,
-            xshift=10,
+            yshift=0,
+            xshift=-10,
             font=dict(color="Black"),
         )
 
+    #  draw vertical lines
     for i in temporal_frequencies:
         fig.add_shape(
             type="line",
@@ -194,8 +196,8 @@ def murakami_plot(store, show_only_responsive):
             y=0.001,
             text=f"{i}",
             showarrow=False,
-            yshift=10,
-            xshift=10,
+            yshift=510,
+            xshift=0,
             font=dict(color="Black"),
         )
 
@@ -241,10 +243,7 @@ def simplified_murakami_plot(
             x=[tf, median_peaks["temporal_frequency"][roi_id]],
             y=[sf, median_peaks["spatial_frequency"][roi_id]],
             mode="markers",
-            marker=dict(
-                # color=color,
-                size=20
-            ),
+            marker=dict(size=20),
             showlegend=True,
             name=f"ROI {roi_id}",
             marker_line_width=2 if roi_id in responsive_rois else 0,
