@@ -132,8 +132,9 @@ def update_graphs(selected_rows):
             "subject_folder_path": str(sub_folder.sub_folder_path),
             "session_folder_path": str(session_folder.ses_folder_path),
         }
+        folder_name = dataframe.iloc[selected_rows[0]]["folder name"]
         return (
-            f'Selected data: {dataframe.iloc[selected_rows[0]]["folder name"]}',
+            f'Selected data: {folder_name}',
             store,
             False,
         )
