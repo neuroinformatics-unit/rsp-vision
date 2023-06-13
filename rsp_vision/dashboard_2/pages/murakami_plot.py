@@ -65,6 +65,7 @@ layout = html.Div(
                         ),
                     ],
                     span="auto",
+                    offset=1,
                 ),
             ],
             className="murakami-container",
@@ -82,7 +83,7 @@ def update_selected_data_str(store):
     if store == {}:
         return "No data selected"
     else:
-        return f'Dataset loaded is: {store["data"][2]}'
+        return f'Dataset loaded is: {store["data"][0]}'
 
 
 @callback(
@@ -133,15 +134,14 @@ def murakami_plot(store, show_only_responsive):
         )
 
     fig.update_layout(
-        title="Murakami plot",
         yaxis_title="Spatial frequency (cycles/deg)",
         xaxis_title="Temporal frequency (Hz)",
         legend_title="ROI",
         plot_bgcolor="rgba(0, 0, 0, 0)",
-        # paper_bgcolor="rgba(0, 0, 0, 0)",
+        paper_bgcolor="rgba(0, 0, 0, 0)",
         autosize=False,
-        width=1000,
-        height=800,
+        width=600,
+        height=600,
         margin=dict(t=50, b=50, l=50, r=50),
     )
 
@@ -157,6 +157,7 @@ def murakami_plot(store, show_only_responsive):
         showgrid=False,
         zeroline=False,
     )
+
     #  draw horizontal lines
     for i in spatial_frequencies:
         fig.add_shape(
@@ -165,7 +166,7 @@ def murakami_plot(store, show_only_responsive):
             y0=i,
             x1=16.1,
             y1=i,
-            line=dict(color="LightGray", width=1),
+            line=dict(color="Black", width=1),
         )
         #  add annotations for horizontal lines
         fig.add_annotation(
@@ -175,7 +176,7 @@ def murakami_plot(store, show_only_responsive):
             showarrow=False,
             yshift=10,
             xshift=10,
-            font=dict(color="LightGray"),
+            font=dict(color="Black"),
         )
 
     for i in temporal_frequencies:
@@ -185,7 +186,7 @@ def murakami_plot(store, show_only_responsive):
             y0=0.001,
             x1=i,
             y1=0.33,
-            line=dict(color="LightGray", width=1),
+            line=dict(color="Black", width=1),
         )
         #  add annotations for vertical lines
         fig.add_annotation(
@@ -195,7 +196,7 @@ def murakami_plot(store, show_only_responsive):
             showarrow=False,
             yshift=10,
             xshift=10,
-            font=dict(color="LightGray"),
+            font=dict(color="Black"),
         )
 
     return dcc.Graph(id="gaussian_plot", figure=fig)
