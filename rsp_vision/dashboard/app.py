@@ -24,7 +24,7 @@ def get_app() -> Dash:
         height=70,
         children=[
             dmc.Title(
-                "RSP neuroimaging data dashboard",
+                "RSP vision 👁️",
                 order=1,
                 className="main-title",
             )
