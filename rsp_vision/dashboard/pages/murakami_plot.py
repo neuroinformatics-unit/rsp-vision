@@ -34,6 +34,13 @@ layout = html.Div(
                             checked=True,
                         ),
                         html.Br(),
+                        dmc.Alert(
+                            "No responsive ROIs found",
+                            id="responsive-rois-warnings",
+                            title="Warning",
+                            color="yellow",
+                            hide=True,
+                        ),
                         html.Br(),
                         dmc.NavLink(
                             label="Back to Data Table",
@@ -78,6 +85,23 @@ layout = html.Div(
 
 
 @callback(
+    Output("responsive-rois-warnings", "hide"),
+    Input("store", "data"),
+)
+def responsive_rois_warnings(store):
+    if store == {}:
+        return True
+    else:
+        data = load_data(store)
+        responsive_rois = data["responsive_rois"]
+        print(responsive_rois)
+        if (responsive_rois == 0) | (responsive_rois == set()):
+            return False
+        else:
+            return True
+
+
+@callback(
     Output("selected_data_str_murakami", "children"),
     Input("store", "data"),
 )
@@ -101,37 +125,43 @@ def murakami_plot(store, show_only_responsive):
 
     data = load_data(store)
 
+    # prepare data
     responsive_rois = data["responsive_rois"]
     n_roi = data["n_roi"]
-    oversampling_factor = store["config"]["fitting"]["oversampling_factor"]
+    matrix_definition = 100
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
 
-    oversampled_gaussians = call_get_gaussian_matrix_to_be_plotted(
+    fitted_gaussian_matrix = call_get_gaussian_matrix_to_be_plotted(
         n_roi,
         data,
         spatial_frequencies,
         temporal_frequencies,
-        oversampling_factor,
+        matrix_definition,
     )
-
-    print(f"n_roi: {n_roi}")
 
     total_roi = responsive_rois if show_only_responsive else list(range(n_roi))
 
+    # plot
     fig = go.Figure()
-
     for roi_id in total_roi:
-        fig = simplified_murakami_plot(
+        fig = add_data_in_figure(
             roi_id=roi_id,
             fig=fig,
-            oversampling_factor=oversampling_factor,
+            matrix_definition=matrix_definition,
             responsive_rois=responsive_rois,
-            oversampled_gaussians=oversampled_gaussians[(roi_id, "pooled")],
+            fitted_gaussian_matrix=fitted_gaussian_matrix[(roi_id, "pooled")],
             spatial_frequencies=spatial_frequencies,
             temporal_frequencies=temporal_frequencies,
         )
+    fig = prettify_murakami_plot(
+        fig, spatial_frequencies, temporal_frequencies
+    )
 
+    return dcc.Graph(figure=fig)
+
+
+def prettify_murakami_plot(fig, spatial_frequencies, temporal_frequencies):
     fig.update_layout(
         yaxis_title="Spatial frequency (cycles/deg)",
         xaxis_title="Temporal frequency (Hz)",
@@ -145,7 +175,7 @@ def murakami_plot(store, show_only_responsive):
     )
 
     fig.update_xaxes(
-        range=[-0.05, 16.1],
+        range=[-0.05, 17],
         title_text="Temporal frequency (Hz)",
         showgrid=False,
         zeroline=False,
@@ -200,25 +230,24 @@ def murakami_plot(store, show_only_responsive):
             xshift=0,
             font=dict(color="Black"),
         )
+    return fig
 
-    return dcc.Graph(id="gaussian_plot", figure=fig)
 
-
-def simplified_murakami_plot(
+def add_data_in_figure(
     roi_id,
     fig,
-    oversampling_factor,
+    matrix_definition,
     responsive_rois,
-    oversampled_gaussians,
+    fitted_gaussian_matrix,
     spatial_frequencies,
     temporal_frequencies,
 ):
     peaks = {
         roi_id: find_peak_coordinates(
-            oversampled_gaussian=oversampled_gaussians,
+            fitted_gaussian_matrix=fitted_gaussian_matrix,
             spatial_frequencies=np.asarray(spatial_frequencies),
             temporal_frequencies=np.asarray(temporal_frequencies),
-            oversampling_factor=oversampling_factor,
+            matrix_definition=matrix_definition,
         )
     }
 
@@ -267,24 +296,24 @@ def load_data(store):
 
 
 def find_peak_coordinates(
-    oversampled_gaussian: np.ndarray,
+    fitted_gaussian_matrix: np.ndarray,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    oversampling_factor: int,
+    matrix_definition: int,
 ):
     peak_indices = np.unravel_index(
-        np.argmax(oversampled_gaussian), oversampled_gaussian.shape
+        np.argmax(fitted_gaussian_matrix), fitted_gaussian_matrix.shape
     )
 
     spatial_freq_linspace = np.linspace(
         spatial_frequencies.min(),
         spatial_frequencies.max(),
-        oversampling_factor,
+        matrix_definition,
     )
     temporal_freq_linspace = np.linspace(
         temporal_frequencies.min(),
         temporal_frequencies.max(),
-        oversampling_factor,
+        matrix_definition,
     )
 
     sf = spatial_freq_linspace[peak_indices[0]]
@@ -297,14 +326,12 @@ def call_get_gaussian_matrix_to_be_plotted(
     data: dict,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    oversampling_factor: int,
+    matrix_definition: int,
 ):
-    oversampled_gaussians = {}
+    fitted_gaussian_matrix = {}
 
     for roi_id in range(n_roi):
-        print((roi_id, "pooled"))
-        print(data["fit_outputs"][(roi_id, "pooled")])
-        oversampled_gaussians[
+        fitted_gaussian_matrix[
             (roi_id, "pooled")
         ] = get_gaussian_matrix_to_be_plotted(
             kind="custom",
@@ -313,7 +340,7 @@ def call_get_gaussian_matrix_to_be_plotted(
             sfs=np.asarray(spatial_frequencies),
             tfs=np.asarray(temporal_frequencies),
             pooled_directions=True,
-            matrix_definition=oversampling_factor,
+            matrix_definition=matrix_definition,
         )
 
-    return oversampled_gaussians
+    return fitted_gaussian_matrix

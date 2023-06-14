@@ -4,7 +4,7 @@ import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import pandas as pd
-from dash import Input, Output, callback, dash_table
+from dash import Input, Output, callback, dash_table, html
 from decouple import config
 
 from rsp_vision.load.load_data import read_config_file
@@ -40,27 +40,24 @@ dash.register_page(__name__, path="/")
 layout = dash.html.Div(
     [
         dmc.Title(
-            "Selec dataset to be loaded",
+            "Select dataset to be loaded 👇",
             order=2,
             className="page-title",
         ),
-        dmc.Grid(
+        dmc.Container(
             children=[
                 dmc.Text(
                     id="selected_data_str",
                 ),
                 dbc.Button(
-                    "Load Data",
+                    "Load ✨",
                     id="button",
                     className="load-data-button",
                     href="/murakami_plot",
                     n_clicks=0,
                 ),
-            ],
-            className="selected-data-container",
-        ),
-        dmc.Container(
-            children=[
+                html.Br(),
+                html.Br(),
                 dash_table.DataTable(
                     id="table",
                     columns=columns,
@@ -110,27 +107,22 @@ layout = dash.html.Div(
 )
 def update_storage(selected_rows):
     if selected_rows is None or len(selected_rows) == 0:
-        return "No row selected", {}, True
+        return "No row selected 🤷🏻‍♀️", {}, True
 
     else:
         sub_folder = SubjectFolder(
             swc_blueprint_spec,
             dataframe.iloc[selected_rows[0]].to_dict(),
-            sub_num=0,  # irrelevant
         )
         session_folder = SessionFolder(
             sub_folder,
             dataframe.iloc[selected_rows[0]].to_dict(),
-            ses_num=0,  # irrelevant
         )
 
         store = {
             "data": dataframe.iloc[selected_rows[0]],
             "path": str(swc_blueprint_spec.path),
             "config": config,
-            "oversampling_factor": int(
-                config["fitting"]["oversampling_factor"]
-            ),
             "subject_folder_path": str(sub_folder.sub_folder_path),
             "session_folder_path": str(session_folder.ses_folder_path),
         }
@@ -138,7 +130,7 @@ def update_storage(selected_rows):
         folder_name = dataframe.iloc[selected_rows[0]]["folder name"]
 
         return (
-            f"Selected data: {folder_name}",
+            f"Dataset selected: {folder_name}",
             store,
             False,
         )

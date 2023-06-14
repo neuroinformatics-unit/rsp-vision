@@ -30,16 +30,41 @@
 }
 
 .load-data-button{
-    margin-right: 0;
-    margin-left:auto;
+    margin: 1%;
+
     border-radius: 8px;
     border-width: 0;
     text-align: center;
 }
 
 a:-webkit-any-link {
+    text-align: center;
     text-decoration: none !important;
+    text-rendering: auto;
+    text-transform: none;
+    text-indent: 0px;
+    text-shadow: none;
+
+    letter-spacing: normal;
+    word-spacing: normal;
+    line-height: normal;
     font: -webkit-small-control;
-    margin-right: 0;
-    margin-left:auto;
+
+    color: rgba(0, 0, 0);
+    border-color: rgba(0, 0, 0, 0.3);
+
+    appearance: auto;
+    display: inline-block;
+    align-items: flex-start;
+    cursor: default;
+    margin: 1%;
+    padding: 1px 6px;
+
+    box-sizing: border-box;
+    border-radius: 8px;
+    border-width: 0;
+    border-width: 2px;
+    border-style: outset;
+    border-color: buttonborder;
+    border-image: initial;
 }

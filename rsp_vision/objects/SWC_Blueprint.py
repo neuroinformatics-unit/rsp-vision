@@ -84,7 +84,7 @@ class SubjectFolder:
         self,
         swc_blueprint_spec: SWC_Blueprint_Spec,
         folder_or_table: Union[FolderNamingSpecs, dict],
-        sub_num: int,
+        sub_num: int = 0,
     ):
         self.swc_blueprint_spec = swc_blueprint_spec
         if isinstance(folder_or_table, FolderNamingSpecs):
@@ -168,7 +168,7 @@ class SessionFolder:
         self,
         subject_folder: SubjectFolder,
         folder_or_table: Union[FolderNamingSpecs, dict],
-        ses_num: int,
+        ses_num: int = 0,
     ):
         self.subject_folder = subject_folder
         if isinstance(folder_or_table, FolderNamingSpecs):
