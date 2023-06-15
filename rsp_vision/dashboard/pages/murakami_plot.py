@@ -28,20 +28,6 @@ layout = html.Div(
                             id="selected_data_str_murakami",
                         ),
                         html.Br(),
-                        dmc.Switch(
-                            id="show-only-responsive",
-                            label="Show only responsive ROIs",
-                            checked=True,
-                        ),
-                        html.Br(),
-                        dmc.Alert(
-                            "No responsive ROIs found",
-                            id="responsive-rois-warnings",
-                            title="Warning",
-                            color="yellow",
-                            hide=True,
-                        ),
-                        html.Br(),
                         dmc.NavLink(
                             label="Back to Data Table",
                             href="/",
@@ -62,6 +48,28 @@ layout = html.Div(
                             label="Polar plots",
                             href="/polar_plots",
                             className="navlink",
+                        ),
+                        html.Br(),
+                        dmc.Switch(
+                            id="show-only-responsive",
+                            label="Show only responsive ROIs",
+                            checked=True,
+                            className="responsive-switch",
+                        ),
+                        html.Br(),
+                        dmc.Text(
+                            "Responsive ROIs are shown in red, "
+                            + "non-responsive ROIs are shown in black.",
+                            size="xs",
+                            color="grey",
+                            className="responsive-switch-text",
+                        ),
+                        dmc.Alert(
+                            "No responsive ROIs found",
+                            id="responsive-rois-warnings",
+                            title="Warning",
+                            color="yellow",
+                            hide=True,
                         ),
                     ],
                     span=2,
@@ -144,16 +152,15 @@ def murakami_plot(store, show_only_responsive):
 
     # plot
     fig = go.Figure()
-    for roi_id in total_roi:
-        fig = add_data_in_figure(
-            roi_id=roi_id,
-            fig=fig,
-            matrix_definition=matrix_definition,
-            responsive_rois=responsive_rois,
-            fitted_gaussian_matrix=fitted_gaussian_matrix[(roi_id, "pooled")],
-            spatial_frequencies=spatial_frequencies,
-            temporal_frequencies=temporal_frequencies,
-        )
+    fig = add_data_in_figure(
+        all_roi=total_roi,
+        fig=fig,
+        matrix_definition=matrix_definition,
+        responsive_rois=responsive_rois,
+        fitted_gaussian_matrix=fitted_gaussian_matrix,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
+    )
     fig = prettify_murakami_plot(
         fig, spatial_frequencies, temporal_frequencies
     )
@@ -197,7 +204,7 @@ def prettify_murakami_plot(fig, spatial_frequencies, temporal_frequencies):
             y0=i,
             x1=16.1,
             y1=i,
-            line=dict(color="Black", width=1),
+            line=dict(color="Grey", width=1),
         )
         #  add annotations for horizontal lines
         fig.add_annotation(
@@ -218,7 +225,7 @@ def prettify_murakami_plot(fig, spatial_frequencies, temporal_frequencies):
             y0=0.001,
             x1=i,
             y1=0.33,
-            line=dict(color="Black", width=1),
+            line=dict(color="Grey", width=1),
         )
         #  add annotations for vertical lines
         fig.add_annotation(
@@ -234,7 +241,7 @@ def prettify_murakami_plot(fig, spatial_frequencies, temporal_frequencies):
 
 
 def add_data_in_figure(
-    roi_id,
+    all_roi,
     fig,
     matrix_definition,
     responsive_rois,
@@ -244,11 +251,12 @@ def add_data_in_figure(
 ):
     peaks = {
         roi_id: find_peak_coordinates(
-            fitted_gaussian_matrix=fitted_gaussian_matrix,
+            fitted_gaussian_matrix=fitted_gaussian_matrix[(roi_id, "pooled")],
             spatial_frequencies=np.asarray(spatial_frequencies),
             temporal_frequencies=np.asarray(temporal_frequencies),
             matrix_definition=matrix_definition,
         )
+        for roi_id in all_roi
     }
 
     p = pd.DataFrame(
@@ -256,28 +264,41 @@ def add_data_in_figure(
             "roi_id": roi_id,
             "temporal_frequency": peaks[roi_id][0],
             "spatial_frequency": peaks[roi_id][1],
-        },
-        index=[0],
+        }
+        for roi_id in all_roi
     )
 
-    median_peaks = p.groupby("roi_id").median(
-        ["temporal_frequency", "spatial_frequency"]
-    )
+    median_peaks = p.median()
 
-    row = p[(p.roi_id == roi_id)].iloc[0]
-    tf = row["temporal_frequency"]
-    sf = row["spatial_frequency"]
-    fig.add_trace(
-        go.Scatter(
-            x=[tf, median_peaks["temporal_frequency"][roi_id]],
-            y=[sf, median_peaks["spatial_frequency"][roi_id]],
-            mode="markers",
-            marker=dict(size=20),
-            showlegend=True,
-            name=f"ROI {roi_id}",
-            marker_line_width=2 if roi_id in responsive_rois else 0,
+    #  dots for ROIs
+    for roi_id in all_roi:
+        row = p[(p.roi_id == roi_id)].iloc[0]
+        tf = row["temporal_frequency"]
+        sf = row["spatial_frequency"]
+        fig.add_trace(
+            go.Scatter(
+                x=[tf, median_peaks["temporal_frequency"]],
+                y=[sf, median_peaks["spatial_frequency"]],
+                mode="markers",
+                marker=dict(
+                    color="red" if roi_id in responsive_rois else "black",
+                    size=10,
+                ),
+                name=f"ROI {roi_id + 1}",
+                showlegend=False,
+            )
         )
-    )
+
+        # lines to connect to the median dot
+        fig.add_trace(
+            go.Scatter(
+                x=[tf, median_peaks["temporal_frequency"]],
+                y=[sf, median_peaks["spatial_frequency"]],
+                mode="lines",
+                line=dict(color="Grey", width=1),
+                showlegend=False,
+            )
+        )
 
     return fig
 
