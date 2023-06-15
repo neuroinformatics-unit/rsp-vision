@@ -527,122 +527,124 @@ class FrequencyResponsiveness:
         return median_subtracted_response_2d_matrix, sf_0, tf_0, peak_response
 
     def get_gaussian_fits_for_roi(self, roi_id: int) -> dict:
-        """Calculate the best fit parameters for each ROI and direction.
-        This method takes as input the ROI index, and loops over the
-        directions to calculate the best fit parameters for each spatial
-        and temporal frequency. First, it calls the
-        get_median_subtracted_response_and_params method to extract the
-        median subtracted response matrix for the given ROI and direction.
+        """Calculates the best fit parameters for each direction and for
+        the pooled data for a given ROI. It calls the `manage_fitting`
+        method in oredr to find the best fit parameters.
 
-        Then, the method performs a 2D Gaussian fit to the 2D response
-        matrix using the fit_2D_gaussian_to_data method. The resulting best
-        fit parameters are stored in a dictionary, where the keys are the
-        directions, and the values are tuples containing the
-        preferred spatial and temporal frequencies and the peak response
-        amplitude, the best fit parameter values obtained from the Gaussian
-        fit, and the median-subtracted response matrix.
+        Parameters
+        ----------
+        roi_id (int)
+            The index of the ROI for which to calculate the best
+            fit parameters.
 
-        There are 10 possible attempts to fit the data. If the fit fails,
-        the method will try again with a different initial guess. If all
-        attempts fail, the fitting parameters will be set to 1.
-
-        Args:
-            roi_id (int): The index of the ROI for which to calculate the best
-                fit parameters.
-
-        Returns:
-            dict: A dictionary with the best fit parameters for each direction.
-                The keys are the directions, and the values are tuples
-                containing the preferred spatial and temporal frequencies
-                and the peak response amplitude, the best fit parameter values
-                obtained from the Gaussian fit, and the median-subtracted
-                response matrix.
+        Returns
+        -------
+        dict
+            A dictionary with the best fit parameters for each direction
+            and for the pooled data.The keys are the directions, and the
+            values are tuples containing the preferred spatial and temporal
+            frequencies and the peak response amplitude, the best fit parameter
+            values obtained from the Gaussian fit, and the median-subtracted
+            response matrix.
         """
-
-        def manage_fitting(
-            responses: np.ndarray,
-            roi_id: int,
-            spatial_frequencies: np.ndarray,
-            temporal_frequencies: np.ndarray,
-            pool_directions: bool = False,
-            direction: float = sys.float_info.min,
-        ) -> Tuple[Tuple[float, float, float], np.ndarray, np.ndarray]:
-            #  Internal method to avoid code repetition
-            (
-                response_matrix,
-                sf_0,
-                tf_0,
-                peak_response,
-            ) = self.get_median_subtracted_response_and_params(
-                responses=responses,
-                roi_id=roi_id,
-                sfs=spatial_frequencies,
-                tfs=temporal_frequencies,
-                dir=direction,
-                pool_directions=pool_directions,
-            )
-
-            initial_parameters = [
-                peak_response,
-                sf_0,
-                tf_0,
-                np.std(spatial_frequencies, ddof=1),
-                np.std(temporal_frequencies, ddof=1),
-                self.data.config["fitting"]["power_law_exp"],
-            ]
-
-            best_result = None
-            tentatives = 0
-            while best_result is None and tentatives < 10:
-                best_result = fit_2D_gaussian_to_data(
-                    spatial_frequencies,
-                    temporal_frequencies,
-                    response_matrix,
-                    initial_parameters,
-                    self.data.config,
-                )
-                if best_result is None:
-                    logging.warning(
-                        f"ROI {roi_id} and direction {dir} failed to fit."
-                        + f"Trying again... Tentative {tentatives + 1} of 10"
-                    )
-                    tentatives += 1
-
-            if best_result is None:
-                logging.warning(
-                    f"ROI {roi_id} and direction {dir} failed to fit."
-                    + "Skipping..."
-                )
-                best_result = OptimizeResult()
-                best_result.x = np.nan * np.ones(6)
-
-            return (
-                (sf_0, tf_0, peak_response),
-                best_result.x,
-                response_matrix,
-            )
 
         roi_data = {}
         for dir in self.data.directions:
-            roi_data[dir] = manage_fitting(
-                responses=self.data.responses,
+            roi_data[dir] = self.manage_fitting(
                 roi_id=roi_id,
                 direction=dir,
-                spatial_frequencies=self.data.spatial_frequencies,
-                temporal_frequencies=self.data.temporal_frequencies,
                 pool_directions=False,
             )
 
         # now the same by pooling directions
-        roi_data["pooled"] = manage_fitting(
-            responses=self.data.responses,
+        roi_data["pooled"] = self.manage_fitting(
             roi_id=roi_id,
-            spatial_frequencies=self.data.spatial_frequencies,
-            temporal_frequencies=self.data.temporal_frequencies,
             pool_directions=True,
         )
 
         return roi_data
+
+    def manage_fitting(
+        self,
+        roi_id: int,
+        pool_directions: bool = False,
+        direction: float = sys.float_info.min,
+    ) -> Tuple[Tuple[float, float, float], np.ndarray, np.ndarray]:
+        """
+        This method is called by the get_gaussian_fits_for_roi method.
+        It calls the get_median_subtracted_response_and_params method to
+        extract the median subtracted response matrix for the given ROI and
+        direction. Then, it calls the fit_2D_gaussian_to_data method to
+        perform a 2D Gaussian fit to the 2D response matrix. The resulting
+        best fit parameters are stored in a tuple, where the first element
+        is the peak response amplitude, the second element is the best fit
+        parameter values obtained from the Gaussian fit, and the third
+        element is the median-subtracted response matrix.
+
+        Parameters
+        ----------
+        roi_id : int
+            The ID of the ROI to extract the response matrix from.
+        pool_directions : bool, optional
+            Whether to extract the response matrix for a single direction,
+            by default False
+        direction : float, optional
+            The direction to extract the response matrix from. To be used
+            only if `pool_directions` is set to False. By default
+            sys.float_info.min
+
+        Returns
+        -------
+        Tuple[Tuple[float, float, float], np.ndarray, np.ndarray]
+            A tuple containing the peak response amplitude and its
+            corresponding SF and TF, the best fit parameter values
+            obtained from the Gaussian fit, and the median-subtracted
+            response matrix.
+        """
+        (
+            response_matrix,
+            sf_0,
+            tf_0,
+            peak_response,
+        ) = self.get_median_subtracted_response_and_params(
+            responses=self.data.responses,
+            roi_id=roi_id,
+            sfs=self.data.spatial_frequencies,
+            tfs=self.data.temporal_frequencies,
+            dir=direction,
+            pool_directions=pool_directions,
+        )
+
+        initial_parameters = [
+            peak_response,
+            sf_0,
+            tf_0,
+            np.std(self.data.spatial_frequencies, ddof=1),
+            np.std(self.data.temporal_frequencies, ddof=1),
+            self.data.config["fitting"]["power_law_exp"],
+        ]
+
+        best_result = fit_2D_gaussian_to_data(
+            self.data.spatial_frequencies,
+            self.data.temporal_frequencies,
+            response_matrix,
+            initial_parameters,
+            self.data.config,
+        )
+
+        if best_result is None:
+            logging.warning(
+                f"ROI {roi_id} and direction {dir} failed to fit."
+                + "Skipping..."
+            )
+            best_result = OptimizeResult()
+            best_result.x = np.nan * np.ones(6)
+
+        return (
+            (sf_0, tf_0, peak_response),
+            best_result.x,
+            response_matrix,
+        )
 
     def get_all_fits(self) -> None:
         """Calculate the Gaussian fits for all ROIs using multiprocessing.
