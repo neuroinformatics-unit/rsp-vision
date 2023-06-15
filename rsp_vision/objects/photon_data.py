@@ -5,6 +5,7 @@ from typing import Set, Tuple
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 
 from rsp_vision.load.config_switches import get_fps
 from rsp_vision.objects.data_raw import DataRaw
@@ -42,6 +43,7 @@ class PhotonData:
     * n_roi (int) - the number of roi
     * n_frames_per_session (int) - the number of frames per session
     * day_stim (np.ndarray) - the day of the stimulus
+    * total_n_days (int) - the total number of days
     * grey_or_static (str) - the string defining the type of protocol
         in use
     * is_grey (bool) - whether there was a grey baseline stimulus
@@ -165,7 +167,9 @@ class PhotonData:
         self.n_sessions: int = data_raw.frames.shape[0]
         self.n_roi: int = data_raw.frames[0].shape[0]
         self.n_frames_per_session: int = data_raw.frames[0].shape[1]
-        self.day_stim: np.ndarray = data_raw.day["stimulus"]  # seems useless
+        self.day_stim: np.ndarray = data_raw.day["stimulus"]
+        self.total_n_days = int(max(self.day_stim))
+        logging.info(f"Total number of days: {self.total_n_days}")
 
         grey_or_static = "".join(
             [
@@ -263,6 +267,9 @@ class PhotonData:
         """Make the signal dataframe, which will be filled up with the
         stimulus information later on.
 
+        Uses list comprehension to create the dataframe, which reduces the
+        complexity from O(n^2) to O(n).
+
         Parameters
         ----------
         data_raw : DataRaw
@@ -273,20 +280,63 @@ class PhotonData:
         signal : pd.DataFrame
             Initialized dataframe with only partial information
         """
+        logging.info("Creating lists for signal dataframe...")
+
+        day_tmp = []
+        time_from_beginning_tmp = []
+        frames_id_tmp = []
+        signal_tmp = []
+        roi_id_tmp = []
+        session_id_tmp = []
+        sf_tmp = []
+        tf_tmp = []
+        direction_tmp = []
+        stimulus_onset_tmp = []
+
+        # Use lists to create the dataframe
+        # reduces the complexity from O(n^2) to O(n)
+        # n = number of frames
+        for session in range(self.n_sessions):
+            for roi in range(self.n_roi):
+                if self.total_n_days in (2, 3):
+                    day = (
+                        session * self.total_n_days + self.n_sessions - 1
+                    ) // self.n_sessions
+                else:
+                    day = 1
+
+                day_tmp += [day] * self.n_frames_per_session
+                time_from_beginning_tmp += self.get_timing_array().tolist()
+                frames_id_tmp += list(
+                    range(
+                        self.n_frames_per_session * session,
+                        self.n_frames_per_session * (session + 1),
+                    )
+                )
+                signal_tmp += data_raw.frames[session][roi, :].tolist()
+                roi_id_tmp += [roi] * self.n_frames_per_session
+                session_id_tmp += [session] * self.n_frames_per_session
+                sf_tmp += [np.nan] * self.n_frames_per_session
+                tf_tmp += [np.nan] * self.n_frames_per_session
+                direction_tmp += [np.nan] * self.n_frames_per_session
+                stimulus_onset_tmp += [False] * self.n_frames_per_session
+
+        logging.info("Lists created, creating dataframe...")
         signal = pd.DataFrame(
-            columns=[
-                "day",
-                "time from beginning",
-                "frames_id",
-                "signal",
-                "roi_id",
-                "session_id",
-                "sf",
-                "tf",
-                "direction",
-                "stimulus_onset",
-            ]
+            {
+                "day": day_tmp,
+                "time from beginning": time_from_beginning_tmp,
+                "frames_id": frames_id_tmp,
+                "signal": signal_tmp,
+                "roi_id": roi_id_tmp,
+                "session_id": session_id_tmp,
+                "sf": sf_tmp,
+                "tf": tf_tmp,
+                "direction": direction_tmp,
+                "stimulus_onset": stimulus_onset_tmp,
+            }
         )
+
         signal = signal.astype(
             {
                 "day": "int32",
@@ -301,36 +351,6 @@ class PhotonData:
                 "stimulus_onset": "bool",
             }
         )
-
-        for session in range(self.n_sessions):
-            for roi in range(self.n_roi):
-                df = pd.DataFrame(
-                    {
-                        "day": np.repeat(
-                            self.day_stim[0], self.n_frames_per_session
-                        ),
-                        "time from beginning": self.get_timing_array(),
-                        "frames_id": np.arange(
-                            self.n_frames_per_session * session,
-                            self.n_frames_per_session * (session + 1),
-                        ),
-                        "signal": data_raw.frames[session][roi, :],
-                        "roi_id": np.repeat(roi, self.n_frames_per_session),
-                        "session_id": np.repeat(
-                            session, self.n_frames_per_session
-                        ),
-                        "sf": np.repeat(np.nan, self.n_frames_per_session),
-                        "tf": np.repeat(np.nan, self.n_frames_per_session),
-                        "direction": np.repeat(
-                            np.nan, self.n_frames_per_session
-                        ),
-                        "stimulus_onset": np.repeat(
-                            False, self.n_frames_per_session
-                        ),
-                    }
-                )
-
-                signal = pd.concat([signal, df], ignore_index=True)
 
         # columns initialized to nan that will be
         # filled when performing the analysis
@@ -368,6 +388,7 @@ class PhotonData:
             Dataframe with the stimuli information
         """
         # dataframe of ordered stimuli to be mapped to signal table
+        logging.info("Creating stimuli dataframe...")
         stimuli = pd.DataFrame(columns=["sf", "tf", "direction", "session"])
         for signal_idx in range(self.n_sessions):
             df = pd.DataFrame(
@@ -387,6 +408,7 @@ class PhotonData:
                 }
             )
             stimuli = pd.concat([stimuli, df])
+        logging.info("Stimuli dataframe created")
 
         return stimuli
 
@@ -455,7 +477,10 @@ class PhotonData:
                     + "missing or duplicated"
                 )
 
-            if np.any(pivot_table.values != self.n_triggers_per_stimulus):
+            if np.any(
+                pivot_table.values
+                != self.n_triggers_per_stimulus * self.total_n_days
+            ):
                 logging.error(f"Pivot table: {pivot_table}")
                 raise RuntimeError(
                     "Number of stimuli is not correct, some combinations are "
@@ -479,10 +504,11 @@ class PhotonData:
         signal : pd.DataFrame
             Final signal dataframe with stimulus information
         """
-
         # register only the stimulus onset
-        for stimulus_index, start_frame in enumerate(
-            self.stimulus_start_frames
+        for stimulus_index, start_frame in tqdm(
+            enumerate(self.stimulus_start_frames),
+            desc="Adding stimulus information to signal dataframe",
+            total=self.n_of_stimuli_across_all_sessions,
         ):
             mask = signal["frames_id"] == start_frame
             signal_idxs = signal.index[mask]
@@ -524,7 +550,9 @@ class PhotonData:
             pivot_table = signal[signal.stimulus_onset].pivot_table(
                 index=["sf", "tf", "direction"], aggfunc="size"
             )
-            expected = self.n_triggers_per_stimulus * self.n_roi
+            expected = (
+                self.n_triggers_per_stimulus * self.n_roi * self.total_n_days
+            )
             if not np.all(pivot_table == expected):
                 raise ValueError(
                     f"Signal table was not populated correctly \
