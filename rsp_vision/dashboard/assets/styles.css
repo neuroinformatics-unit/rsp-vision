@@ -68,3 +68,11 @@ a:-webkit-any-link {
     border-color: buttonborder;
     border-image: initial;
 }
+
+.responsive-switch{
+    margin: 5%;
+}
+
+.responsive-switch-text{
+    margin: 5%;
+}
