@@ -21,6 +21,7 @@ if __name__ == "__main__":
                 "allen-dff": "/path/to/allen_dff",
                 "serial2p": "/path/to/serial2p",
                 "stimulus-ai-schedule": "/path/to/stimulus_AI_schedule_files",
+                "output": "/path/to/output",
             },
             "use-allen-dff": "true",
             "analysis-type": "sf_tf",

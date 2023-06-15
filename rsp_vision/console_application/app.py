@@ -1,6 +1,7 @@
 import logging
 import pickle
 import sys
+from pathlib import Path
 
 import rich
 from fancylog import fancylog
@@ -47,12 +48,15 @@ def analysis_pipeline() -> None:
     # pipeline draft
     start_logging()
 
-    # TODO: add TUI or GUI fuctionality to get input from user
     folder_name = Prompt.ask(
         " \
         Please provide only the dataset name.\n \
         Format: Mouse_Id_Hemisphere_BrainRegion_Monitor_position.\n \
-        Example: AK_1111739_hL_RSPd_monitor_front\n \
+        Example (1 day): AK_1111739_hL_RSPd_monitor_front\n \
+        Example (2 days): BY_IAA_1117276_hR_RSPg_monitor_front\n \
+        Example (1 day, BIG): AS_1112809_hL_V1_monitor_front-right_low\n \
+        Example (2 days, big file): CX_1112654_hL_RSPd_monitor_front\n \
+        Example (2 days, big file): CX_1112837_hL_RSPd_monitor_front\n \
         📄"
     )
 
@@ -71,7 +75,10 @@ def analysis_pipeline() -> None:
     logging.info("Analysis finished")
     logging.info(f"Updated photon_data object: {photon_data}")
 
-    with open(f"{folder_name}_data.pickle", "wb") as f:
+    saving_path = (
+        Path(config["paths"]["output"]) / f"{folder_name}_data.pickle"
+    )
+    with open(saving_path, "wb") as f:
         pickle.dump(photon_data, f)
         logging.info("Analysis saved")
 
