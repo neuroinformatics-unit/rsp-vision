@@ -1,9 +1,4 @@
-from tests.test_integration.generate_mock_data import (
-    n_roi,
-)
-
-
-def test_set_general_variables(one_day_objects, multiple_days_objects):
+def test_set_general_variables(one_day_objects, multiple_days_objects, n_roi):
     for data, v, _ in [one_day_objects, multiple_days_objects]:
         assert data.total_n_days == v.n_days
         assert data.n_sessions == v.n_sessions
@@ -14,7 +9,7 @@ def test_set_general_variables(one_day_objects, multiple_days_objects):
         assert data.n_of_stimuli_across_all_sessions == (v.n_stim)
 
 
-def test_make_signal_dataframe(one_day_objects, multiple_days_objects):
+def test_make_signal_dataframe(one_day_objects, multiple_days_objects, n_roi):
     for data, v, data_raw in [one_day_objects, multiple_days_objects]:
         signal = data.make_signal_dataframe(data_raw)
 

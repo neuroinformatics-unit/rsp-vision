@@ -9,12 +9,13 @@ from rsp_vision.objects.SWC_Blueprint import (
     SubjectFolder,
     SWC_Blueprint_Spec,
 )
-from tests.test_integration.generate_mock_data import (
+from tests.fixtures_helpers import (
     get_config_mock,
     get_data_raw_object_mock,
-    get_experimental_variables_mock,
     get_photon_data_mock,
     get_response_mock,
+    get_shared_variables_to_generate_mock_data,
+    make_variables_day_related,
 )
 
 
@@ -88,31 +89,42 @@ def session_folder(subject_folder, one_folder_naming_specs):
 
 
 @pytest.fixture
-def one_day_objects():
+def general_variables():
+    _, _, params = get_shared_variables_to_generate_mock_data()
+    return params
+
+
+@pytest.fixture
+def one_day_objects(variables):
     return (
         get_photon_data_mock(),
-        get_experimental_variables_mock(),
+        variables,
         get_data_raw_object_mock(),
     )
 
 
 @pytest.fixture
-def multiple_days_objects():
+def multiple_days_objects(var_mult_days):
     return (
         get_photon_data_mock(multiple_days=True),
-        get_experimental_variables_mock(multiple_days=True),
+        var_mult_days,
         get_data_raw_object_mock(multiple_days=True),
     )
 
 
 @pytest.fixture
-def variables():
-    return get_experimental_variables_mock()
+def variables(general_variables):
+    return make_variables_day_related(general_variables)
 
 
 @pytest.fixture
-def var_mult_days():
-    return get_experimental_variables_mock(multiple_days=True)
+def n_roi(general_variables):
+    return general_variables.n_roi
+
+
+@pytest.fixture
+def var_mult_days(general_variables):
+    return make_variables_day_related(general_variables, multiple_days=True)
 
 
 @pytest.fixture
@@ -134,7 +146,7 @@ def response():
 @pytest.fixture
 def expected_outputs():
     path = pathlib.Path(__file__).parent.absolute()
-    output_path = path / "test_integration" / "mock_data" / "outputs.plk"
+    output_path = path / "test_regression" / "mock_data" / "outputs.plk"
     with open(output_path, "rb") as f:
         outputs = pd.read_pickle(f)
     return outputs
