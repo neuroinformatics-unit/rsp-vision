@@ -139,10 +139,10 @@ def murakami_plot(store, show_only_responsive):
     matrix_definition = 100
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
-
+    fit_outputs = data["fit_outputs"]
     fitted_gaussian_matrix = call_get_gaussian_matrix_to_be_plotted(
         n_roi,
-        data,
+        fit_outputs,
         spatial_frequencies,
         temporal_frequencies,
         matrix_definition,
@@ -344,7 +344,7 @@ def find_peak_coordinates(
 
 def call_get_gaussian_matrix_to_be_plotted(
     n_roi: int,
-    data: dict,
+    fit_outputs: dict,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
     matrix_definition: int,
@@ -357,7 +357,7 @@ def call_get_gaussian_matrix_to_be_plotted(
         ] = get_gaussian_matrix_to_be_plotted(
             kind="custom",
             roi_id=roi_id,
-            fit_output=data["fit_outputs"],
+            fit_output=fit_outputs,
             sfs=np.asarray(spatial_frequencies),
             tfs=np.asarray(temporal_frequencies),
             pooled_directions=True,
