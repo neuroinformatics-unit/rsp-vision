@@ -35,12 +35,6 @@ layout = html.Div(
                             id="selected_data_str_sf_tf",
                         ),
                         html.Br(),
-                        # dmc.Switch(
-                        #     id="show-only-responsive",
-                        #     label="Show only responsive ROIs",
-                        #     checked=True,
-                        # ),
-                        html.Br(),
                         html.Br(),
                         dmc.NavLink(
                             label="Back to Data Table",
@@ -62,6 +56,13 @@ layout = html.Div(
                             label="Polar plots",
                             href="/polar_plots",
                             className="navlink",
+                        ),
+                        dmc.Text(
+                            "Choose your ROI, the responsive ones are in red",
+                        ),
+                        html.Div(
+                            id="roi_selection_heatmap",
+                            className="roi-selection-heatmap",
                         ),
                     ],
                     span=2,
@@ -90,6 +91,85 @@ layout = html.Div(
     ],
     className="page",
 )
+
+@callback(
+    Output("roi_selection_heatmap", "children"),
+    Input("store", "data"),
+)
+def responsive_roi_heatmap(
+        store):
+    if store == {}:
+        return "No data to plot"
+    data = load_data(store)
+    n_roi = data["n_roi"]
+    responsive_rois = data["responsive_rois"]
+
+    n_columns = 8
+    n_rows = int(np.ceil(n_roi / n_columns))
+
+    #  make heatmap, if the roi is responsive make the square red
+    #  if not make it gray
+    #  also write the roi number in it
+
+    fig = go.Figure()
+    for i in range(n_roi):
+        fig.add_shape(
+            type="rect",
+            x0=i % n_columns,
+            y0=i // n_columns,
+            x1=(i % n_columns) + 1,
+            y1=(i // n_columns) + 1,
+            fillcolor="red" if i in responsive_rois else "gray",
+            line=dict(
+                color="black",
+                width=2,
+            ),
+        )
+        fig.add_annotation(
+            x=(i % n_columns) + 0.5,
+            y=(i // n_columns) + 0.5,
+            text=str(i + 1),
+            showarrow=False,
+            font=dict(
+                size=10,
+                color="white",
+            ),
+        )
+    
+    fig.update_layout(
+        width=200,
+        height=200,
+        margin=dict(
+            l=0,
+            r=0,
+            b=0,
+            t=0,
+            pad=0
+        ),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        showlegend=False,
+        xaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+        ),
+        yaxis=dict( 
+            showgrid=False,
+            zeroline=False,
+            showticklabels=False,
+        ),
+    )
+
+
+
+    
+    return dcc.Graph(
+        figure=fig,
+    )            
+
+    
+        
 
 
 def load_data(store):
