@@ -104,7 +104,7 @@ def get_sub_and_ses(
          -> sub = find(sub), ses = max(ses) + 1
     4. this session was analysed before -> reanalysis = True,
         sub = find(sub), ses = find(ses)
-    0. the analysis.log file does not exist -> sub = 0, ses = 0
+    5. the analysis.log file does not exist -> sub = 0, ses = 0
 
     Parameters
     ----------
@@ -141,7 +141,7 @@ def get_sub_and_ses(
                 analysis_log["folder name"] == folder_naming_specs.folder_name
             ].empty:
                 #  CASE 3: this subject was analysed before, but not this
-                #  session folder_name is the specific dataset name,
+                #  session. `folder_name` is the specific dataset name,
                 #  containing both info about the specific mouse and the
                 #  specific session this is why we use it to determine if
                 #  this session was analysed before
@@ -155,8 +155,11 @@ def get_sub_and_ses(
                         == folder_naming_specs.mouse_id
                     )
                 ]
-                assert len(this_line_rows) >= 1
-                assert len(this_line_rows["sub"].unique()) == 1
+                assert len(this_line_rows) >= 1, "Mouse line and id not found"
+                assert len(this_line_rows["sub"].unique()) == 1, (
+                    "More than one subject number found "
+                    + "for this mouse line and id"
+                )
                 sub = this_line_rows["sub"].unique()[0]
 
                 ses = (
@@ -192,7 +195,7 @@ def get_sub_and_ses(
                 reanalysis = True
 
     except FileNotFoundError:
-        #  CASE 0: no analysis log file
+        #  CASE 5: no analysis log file
         sub = 0
         ses = 0
         analysis_log = pd.DataFrame(
