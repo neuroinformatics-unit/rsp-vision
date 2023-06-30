@@ -13,6 +13,7 @@ exclude tox.ini
 exclude .flake8
 
 recursive-exclude tests *
+recursive-exclude docs *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 recursive-exclude * *.yml
