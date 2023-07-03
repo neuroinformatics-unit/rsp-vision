@@ -92,12 +92,12 @@ layout = html.Div(
     className="page",
 )
 
+
 @callback(
     Output("roi_selection_heatmap", "children"),
     Input("store", "data"),
 )
-def responsive_roi_heatmap(
-        store):
+def responsive_roi_heatmap(store):
     if store == {}:
         return "No data to plot"
     data = load_data(store)
@@ -105,7 +105,6 @@ def responsive_roi_heatmap(
     responsive_rois = data["responsive_rois"]
 
     n_columns = 8
-    n_rows = int(np.ceil(n_roi / n_columns))
 
     #  make heatmap, if the roi is responsive make the square red
     #  if not make it gray
@@ -114,7 +113,7 @@ def responsive_roi_heatmap(
     fig = go.Figure()
     for i in range(n_roi):
         fig.add_shape(
-            type="rect",
+            type="circle",
             x0=i % n_columns,
             y0=i // n_columns,
             x1=(i % n_columns) + 1,
@@ -135,17 +134,11 @@ def responsive_roi_heatmap(
                 color="white",
             ),
         )
-    
+
     fig.update_layout(
         width=200,
-        height=200,
-        margin=dict(
-            l=0,
-            r=0,
-            b=0,
-            t=0,
-            pad=0
-        ),
+        height=150,
+        margin=dict(l=0, r=0, b=0, t=0, pad=0),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
@@ -154,22 +147,16 @@ def responsive_roi_heatmap(
             zeroline=False,
             showticklabels=False,
         ),
-        yaxis=dict( 
+        yaxis=dict(
             showgrid=False,
             zeroline=False,
             showticklabels=False,
         ),
     )
 
-
-
-    
     return dcc.Graph(
         figure=fig,
-    )            
-
-    
-        
+    )
 
 
 def load_data(store):
