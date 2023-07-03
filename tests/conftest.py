@@ -48,6 +48,21 @@ def experimental_folders(tmp_path):
 
     return folder_test_list
 
+@pytest.fixture
+def table_row():
+    return {
+        "sub": "000",
+        "ses": "000",
+        "mouse id": "1111877",
+        "mouse line": "hL_V1",
+        "hemisphere": "left",
+        "brain region": "V1",
+        "monitor position": "front",
+        "cre": "off",
+        "fov": "3c",
+    }
+    
+
 
 @pytest.fixture
 def folder_naming_specs(experimental_folders, config):
