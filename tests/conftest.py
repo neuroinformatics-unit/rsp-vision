@@ -54,11 +54,11 @@ def table_row():
     return {
         "sub": "000",
         "ses": "000",
-        "mouse id": "1111877",
-        "mouse line": "hL_V1",
+        "mouse_id": "1111877",
+        "mouse_line": "hL_V1",
         "hemisphere": "left",
-        "brain region": "V1",
-        "monitor position": "front",
+        "brain_region": "V1",
+        "monitor_position": "front",
         "cre": "off",
         "fov": "3c",
     }

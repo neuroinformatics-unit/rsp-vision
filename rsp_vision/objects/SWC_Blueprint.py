@@ -120,9 +120,9 @@ class SubjectFolder:
         self.sub_folder_name = (
             f"sub-{self.sub_num:03d}"
             + "_line-"
-            + table_row["mouse line"]
+            + table_row["mouse_line"]
             + "_id-"
-            + str(table_row["mouse id"])
+            + str(table_row["mouse_id"])
         )
 
 
@@ -218,13 +218,13 @@ class SessionFolder:
 
     def make_from_table_row(self, table_row: dict):
         self.ses_num = int(table_row["ses"])
-        self.monitor = table_row["monitor position"]
+        self.monitor = table_row["monitor_position"]
         self.ses_folder_name = (
             f"ses-{self.ses_num:03d}"
             + "_hemisphere-"
             + table_row["hemisphere"]
             + "_region-"
-            + table_row["brain region"]
+            + table_row["brain_region"]
             + "_monitor-"
             + self.monitor
             + (

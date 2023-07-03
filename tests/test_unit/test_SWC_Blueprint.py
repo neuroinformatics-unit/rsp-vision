@@ -46,7 +46,7 @@ def test_SubjectFolder_with_table_row(tmp_path, blueprint_spec, table_row):
     assert (
         subject_folder.sub_folder_name
         == f"sub-{table_row['sub']}_line-"
-        + f"{table_row['mouse line']}_id-{table_row['mouse id']}"
+        + f"{table_row['mouse_line']}_id-{table_row['mouse_id']}"
     )
 
 
@@ -105,8 +105,8 @@ def test_SessionFolder_table_row(tmp_path, blueprint_spec, table_row):
 
     test_name = (
         f"ses-{table_row['ses']}_hemisphere-{table_row['hemisphere']}_"
-        + f"region-{table_row['brain region']}"
-        + f"_monitor-{table_row['monitor position']}"
+        + f"region-{table_row['brain_region']}"
+        + f"_monitor-{table_row['monitor_position']}"
     )
 
     if (table_row["fov"] is None) and (table_row["cre"] is None):
