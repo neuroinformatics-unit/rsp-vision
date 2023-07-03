@@ -51,9 +51,9 @@ def test_get_sub_and_ses_case_subject_never_analysed_before(
 ):
     analysis_log = pd.DataFrame(
         {
-            "folder name": ["folder_1", "folder_2", "folder_3"],
-            "mouse line": ["line_1", "line_2", "line_3"],
-            "mouse id": ["id_1", "id_2", "id_3"],
+            "folder_name": ["folder_1", "folder_2", "folder_3"],
+            "mouse_line": ["line_1", "line_2", "line_3"],
+            "mouse_id": ["id_1", "id_2", "id_3"],
             "sub": [0, 1, 2],
             "ses": [0, 0, 0],
         }
