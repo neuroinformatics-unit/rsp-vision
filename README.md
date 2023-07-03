@@ -18,7 +18,8 @@ Second, set up the environmental variables and the config file by executing:
 ```bash
 python3 setup_for_demo.py
 ```
-Then edit the config file with the correct paths to the data by overwriting `/path/to/`. The only path that matters at this stage is the `allen_dff` path, which should point to the folder where you stored the pre-processed data.
+Then edit the config file with the correct paths to the data by overwriting `/path/to/`. 
+Please edit the `allen_dff` path to point to the folder where you stored the pre-processed data and the `output` path to point to the folder where you want to store the analysis output.
 
 Finally, run `python3 demo_cli.py` to run the analysis. The script will create a file containing the analysis output which will then be used by the dashboard.
 
