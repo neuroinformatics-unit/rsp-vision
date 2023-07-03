@@ -48,6 +48,7 @@ def experimental_folders(tmp_path):
 
     return folder_test_list
 
+
 @pytest.fixture
 def table_row():
     return {
@@ -61,7 +62,6 @@ def table_row():
         "cre": "off",
         "fov": "3c",
     }
-    
 
 
 @pytest.fixture
