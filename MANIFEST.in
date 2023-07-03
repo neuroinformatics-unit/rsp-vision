@@ -11,6 +11,7 @@ exclude *.cruft.json
 exclude *.yaml
 exclude tox.ini
 exclude .flake8
+exclude .coverage
 
 recursive-exclude tests *
 recursive-exclude docs *
