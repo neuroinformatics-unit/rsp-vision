@@ -51,9 +51,9 @@ def test_get_sub_and_ses_case_subject_never_analysed_before(
 ):
     analysis_log = pd.DataFrame(
         {
-            "folder name": ["folder_1", "folder_2", "folder_3"],
-            "mouse line": ["line_1", "line_2", "line_3"],
-            "mouse id": ["id_1", "id_2", "id_3"],
+            "folder_name": ["folder_1", "folder_2", "folder_3"],
+            "mouse_line": ["line_1", "line_2", "line_3"],
+            "mouse_id": ["id_1", "id_2", "id_3"],
             "sub": [0, 1, 2],
             "ses": [0, 0, 0],
         }
@@ -82,13 +82,13 @@ def test_get_sub_and_ses_case_subject_already_analysed(
 ):
     analysis_log = pd.DataFrame(
         {
-            "folder name": ["folder_1", "folder_2", "folder_3"],
-            "mouse line": [
+            "folder_name": ["folder_1", "folder_2", "folder_3"],
+            "mouse_line": [
                 "line_1",
                 "line_2",
                 one_folder_naming_specs.mouse_line,
             ],
-            "mouse id": ["id_1", "id_2", one_folder_naming_specs.mouse_id],
+            "mouse_id": ["id_1", "id_2", one_folder_naming_specs.mouse_id],
             "sub": [0, 1, 2],
             "ses": [0, 0, 0],
         }
@@ -117,17 +117,17 @@ def test_get_sub_and_ses_case_subject_and_session_already_analysed(
 ):
     analysis_log = pd.DataFrame(
         {
-            "folder name": [
+            "folder_name": [
                 "folder_1",
                 "folder_2",
                 one_folder_naming_specs.folder_name,
             ],
-            "mouse line": [
+            "mouse_line": [
                 "line_1",
                 "line_2",
                 one_folder_naming_specs.mouse_line,
             ],
-            "mouse id": ["id_1", "id_2", one_folder_naming_specs.mouse_id],
+            "mouse_id": ["id_1", "id_2", one_folder_naming_specs.mouse_id],
             "sub": [0, 1, 2],
             "ses": [0, 0, 0],
         }
@@ -195,9 +195,9 @@ def test_save_analysis_log(
     reanalysis = False
     analysis_log = pd.DataFrame(
         {
-            "folder name": ["folder_1", "folder_2", "folder_3"],
-            "mouse line": ["line_1", "line_2", "line_3"],
-            "mouse id": ["id_1", "id_2", "id_3"],
+            "folder_name": ["folder_1", "folder_2", "folder_3"],
+            "mouse_line": ["line_1", "line_2", "line_3"],
+            "mouse_id": ["id_1", "id_2", "id_3"],
             "sub": [0, 1, 2],
             "ses": [0, 0, 0],
         }
@@ -221,5 +221,5 @@ def test_save_analysis_log(
     )
     assert analysis_log.shape == (4, 17)
     assert analysis_log[
-        analysis_log["folder name"] == one_folder_naming_specs.folder_name
+        analysis_log["folder_name"] == one_folder_naming_specs.folder_name
     ].shape == (1, 17)

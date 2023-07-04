@@ -30,6 +30,7 @@ dependencies = [
     "scipy",
     "numba",
     "tqdm",
+    "GitPython",
 ]
 
 [project.urls]
@@ -51,6 +52,8 @@ dev = [
   "ruff",
   "setuptools_scm",
   "check-manifest",
+  "pytest-mock",
+  "GitPython",
 ]
 
 [build-system]
