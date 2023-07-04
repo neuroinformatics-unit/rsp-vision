@@ -30,6 +30,7 @@ dependencies = [
     "scipy",
     "numba",
     "tqdm",
+    "GitPython",
 ]
 
 [project.urls]
