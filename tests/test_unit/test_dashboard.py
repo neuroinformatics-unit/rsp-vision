@@ -1,5 +1,7 @@
 from dash.testing.composite import DashComposite
+
 from rsp_vision.dashboard.app import app
+
 
 def test_app_starts(
     dash_duo: DashComposite,
