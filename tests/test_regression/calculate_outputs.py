@@ -1,9 +1,9 @@
 import pathlib
 import pickle
-import time
 
-from generate_mock_data import get_response_mock
 from tqdm import tqdm
+
+from tests.fixtures_helpers import get_response_mock
 
 
 def calculate_stats_outputs(seeds):
@@ -12,22 +12,7 @@ def calculate_stats_outputs(seeds):
     seeds = seeds[:-1]
     for seed in tqdm(seeds):
         response = get_response_mock(seed)
-
-        max_attempts = 20
-
-        for _ in range(max_attempts):
-            try:
-                response()
-                break
-            except AttributeError:
-                print("Failed to get a valid response. Trying again...")
-                time.sleep(0.5)
-                pass
-        else:
-            message = "Failed to get a valid response \
-                after {max_attempts} attempts. Seed: {seed}"
-            raise RuntimeError(message)
-
+        response()
         data = response.data
 
         outputs[str(seed)] = {

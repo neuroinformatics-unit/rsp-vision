@@ -104,7 +104,7 @@ def get_sub_and_ses(
          -> sub = find(sub), ses = max(ses) + 1
     4. this session was analysed before -> reanalysis = True,
         sub = find(sub), ses = find(ses)
-    0. the analysis.log file does not exist -> sub = 0, ses = 0
+    5. the analysis.log file does not exist -> sub = 0, ses = 0
 
     Parameters
     ----------
@@ -131,42 +131,45 @@ def get_sub_and_ses(
                 sub = 0
                 ses = 0
             elif analysis_log[
-                (analysis_log["mouse line"] == folder_naming_specs.mouse_line)
-                & (analysis_log["mouse id"] == folder_naming_specs.mouse_id)
+                (analysis_log["mouse_line"] == folder_naming_specs.mouse_line)
+                & (analysis_log["mouse_id"] == folder_naming_specs.mouse_id)
             ].empty:
                 # CASE 2: this subject was never analysed before
                 sub = analysis_log["sub"].max() + 1
                 ses = 0
             elif analysis_log[
-                analysis_log["folder name"] == folder_naming_specs.folder_name
+                analysis_log["folder_name"] == folder_naming_specs.folder_name
             ].empty:
                 #  CASE 3: this subject was analysed before, but not this
-                #  session folder_name is the specific dataset name,
+                #  session. `folder_name` is the specific dataset name,
                 #  containing both info about the specific mouse and the
                 #  specific session this is why we use it to determine if
                 #  this session was analysed before
                 this_line_rows = analysis_log[
                     (
-                        analysis_log["mouse line"]
+                        analysis_log["mouse_line"]
                         == folder_naming_specs.mouse_line
                     )
                     & (
-                        analysis_log["mouse id"]
+                        analysis_log["mouse_id"]
                         == folder_naming_specs.mouse_id
                     )
                 ]
-                assert len(this_line_rows) >= 1
-                assert len(this_line_rows["sub"].unique()) == 1
+                assert len(this_line_rows) >= 1, "Mouse line and id not found"
+                assert len(this_line_rows["sub"].unique()) == 1, (
+                    "More than one subject number found "
+                    + "for this mouse line and id"
+                )
                 sub = this_line_rows["sub"].unique()[0]
 
                 ses = (
                     analysis_log[
                         (
-                            analysis_log["mouse line"]
+                            analysis_log["mouse_line"]
                             == folder_naming_specs.mouse_line
                         )
                         & (
-                            analysis_log["mouse id"]
+                            analysis_log["mouse_id"]
                             == folder_naming_specs.mouse_id
                         )
                     ]["ses"].max()
@@ -176,11 +179,11 @@ def get_sub_and_ses(
                 # CASE 4: this session was analysed before
                 this_line_rows = analysis_log[
                     (
-                        analysis_log["mouse line"]
+                        analysis_log["mouse_line"]
                         == folder_naming_specs.mouse_line
                     )
                     & (
-                        analysis_log["mouse id"]
+                        analysis_log["mouse_id"]
                         == folder_naming_specs.mouse_id
                     )
                 ]
@@ -192,28 +195,28 @@ def get_sub_and_ses(
                 reanalysis = True
 
     except FileNotFoundError:
-        #  CASE 0: no analysis log file
+        #  CASE 5: no analysis log file
         sub = 0
         ses = 0
         analysis_log = pd.DataFrame(
             columns=[
-                "folder name",
+                "folder_name",
                 "sub",
                 "ses",
-                "mouse line",
-                "mouse id",
+                "mouse_line",
+                "mouse_id",
                 "hemisphere",
-                "brain region",
-                "monitor position",
+                "brain_region",
+                "monitor_position",
                 "fov",
                 "cre",
                 "analysed",
-                "analysis date",
-                "commit hash",
+                "analysis_date",
+                "commit_hash",
                 "microscope",
-                "n roi",
-                "n responsive roi",
-                "days of the experiment",
+                "n_roi",
+                "n_responsive_roi",
+                "days_of_the_experiment",
             ],
         )
     assert sub is not None
@@ -345,34 +348,34 @@ def save_info_in_main_log(
         The SWC_Blueprint_Spec object.
     """
     dict = {
-        "folder name": folder_naming_specs.folder_name,
+        "folder_name": folder_naming_specs.folder_name,
         "sub": subject_folder.sub_num,
         "ses": session_folder.ses_num,
-        "mouse line": folder_naming_specs.mouse_line,
-        "mouse id": folder_naming_specs.mouse_id,
+        "mouse_line": folder_naming_specs.mouse_line,
+        "mouse_id": folder_naming_specs.mouse_id,
         "hemisphere": folder_naming_specs.hemisphere,
-        "brain region": folder_naming_specs.brain_region,
-        "monitor position": session_folder.monitor,
+        "brain_region": folder_naming_specs.brain_region,
+        "monitor_position": session_folder.monitor,
         "fov": folder_naming_specs.fov if folder_naming_specs.fov else "",
         "cre": folder_naming_specs.cre if folder_naming_specs.cre else "",
         "analysed": True,
-        "analysis date": str(datetime.datetime.now()),
-        "commit hash": str(
+        "analysis_date": str(datetime.datetime.now()),
+        "commit_hash": str(
             git.Repo(search_parent_directories=True).head.object.hexsha
         ),
-        "microscope": "two photon"
+        "microscope": "two_photon"
         if photon_data.photon_type == PhotonType.TWO_PHOTON
-        else "three photon",
-        "n roi": photon_data.n_roi,
-        "n responsive roi": len(photon_data.responsive_rois),
-        "days of the experiment": photon_data.total_n_days,
+        else "three_photon",
+        "n_roi": photon_data.n_roi,
+        "n_responsive_roi": len(photon_data.responsive_rois),
+        "days_of_the_experiment": photon_data.total_n_days,
     }
 
     if not reanalysis:
         analysis_log = pd.concat([analysis_log, pd.DataFrame(dict, index=[0])])
     else:
         analysis_log.loc[
-            analysis_log["folder name"] == folder_naming_specs.folder_name
+            analysis_log["folder_name"] == folder_naming_specs.folder_name
         ] = dict
 
     analysis_log.to_csv(swc_blueprint_spec.path / "analysis_log.csv")
