@@ -1,11 +1,17 @@
+# This file is used to create the Dash app and the scaffold layout.
 import dash
 import dash_mantine_components as dmc
 from dash import Dash, dcc, html
 
-link = "https://fonts.googleapis.com/css2?family=Open+Sans&display=swap"
+# I am using Open Sans font from Google Fonts for the whole app.
+# The design of the app is controlled by the CSS file in
+# rsp_vision/dashboard/assets/style.css.
+google_fonts_link = (
+    "https://fonts.googleapis.com/css2?family=Open+Sans&display=swap"
+)
 external_stylesheets = [
     {
-        "href": link,
+        "href": google_fonts_link,
         "rel": "stylesheet",
     }
 ]
@@ -30,6 +36,10 @@ header = dmc.Header(
     className="header",
 )
 
+# Here I define the layout of the app. The layout is a composition of
+# Mantine components and Dash components.
+# Importantly, here I define the `Store` component, which is fundamental
+# to share information between pages.
 app.layout = html.Div(
     [
         dcc.Store(id="store", data={}),

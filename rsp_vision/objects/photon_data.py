@@ -293,8 +293,9 @@ class PhotonData:
         direction_tmp = []
         stimulus_onset_tmp = []
 
-        # Use list comprehension to create the dataframe
+        # Use lists to create the dataframe
         # reduces the complexity from O(n^2) to O(n)
+        # n = number of frames
         for session in range(self.n_sessions):
             for roi in range(self.n_roi):
                 if self.total_n_days in (2, 3):

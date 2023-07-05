@@ -14,9 +14,10 @@ from rsp_vision.objects.SWC_Blueprint import (
     SWC_Blueprint_Spec,
 )
 
-# the following code lives outside of the callback
+# The following code lives outside of the callback
 # because it is executed only once, when the app starts
-
+# It reads the config file and creates the SWC_Blueprint_Spec object
+# that is used to load the data.
 CONFIG_PATH = config("CONFIG_PATH")
 config_path = Path(__file__).parents[2] / CONFIG_PATH
 config = read_config_file(config_path)
@@ -77,15 +78,15 @@ layout = dash.html.Div(
                         "index",
                         "sub",
                         "ses",
-                        "mouse line",
-                        "mouse id",
+                        "mouse_line",
+                        "mouse_id",
                         "hemisphere",
-                        "brain region",
-                        "monitor position",
+                        "brain_region",
+                        "monitor_position",
                         "fov",
                         "cre",
                         "analysed",
-                        "commit hash",
+                        "commit_hash",
                         "microscope",
                     ],
                 ),
@@ -105,7 +106,25 @@ layout = dash.html.Div(
     ],
     Input("table", "selected_rows"),
 )
-def update_storage(selected_rows):
+def update_storage(selected_rows: list) -> tuple:
+    """This callback is triggered when the user selects a row in the table.
+    It updates the `Store` component with the information about the selected
+    row, i.e. the dataset that the user wants to load.
+
+    Parameters
+    ----------
+    selected_rows : list
+        List of selected rows in the Dash table.
+
+    Returns
+    -------
+    tuple
+        A tuple containing the following elements:
+        - A string with the name of the selected dataset.
+        - A dictionary containing the information about the selected dataset.
+        - A boolean indicating whether the button for loading the data should
+        be disabled or not.
+    """
     if selected_rows is None or len(selected_rows) == 0:
         return "No row selected 🤷🏻‍♀️", {}, True
 
@@ -127,7 +146,7 @@ def update_storage(selected_rows):
             "session_folder_path": str(session_folder.ses_folder_path),
         }
 
-        folder_name = dataframe.iloc[selected_rows[0]]["folder name"]
+        folder_name = dataframe.iloc[selected_rows[0]]["folder_name"]
 
         return (
             f"Dataset selected: {folder_name}",
