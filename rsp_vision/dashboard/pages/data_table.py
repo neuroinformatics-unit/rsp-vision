@@ -77,15 +77,15 @@ layout = dash.html.Div(
                         "index",
                         "sub",
                         "ses",
-                        "mouse line",
-                        "mouse id",
+                        "mouse_line",
+                        "mouse_id",
                         "hemisphere",
-                        "brain region",
-                        "monitor position",
+                        "brain_region",
+                        "monitor_position",
                         "fov",
                         "cre",
                         "analysed",
-                        "commit hash",
+                        "commit_hash",
                         "microscope",
                     ],
                 ),
@@ -127,7 +127,7 @@ def update_storage(selected_rows):
             "session_folder_path": str(session_folder.ses_folder_path),
         }
 
-        folder_name = dataframe.iloc[selected_rows[0]]["folder name"]
+        folder_name = dataframe.iloc[selected_rows[0]]["folder_name"]
 
         return (
             f"Dataset selected: {folder_name}",
