@@ -23,6 +23,11 @@ Please edit the `allen_dff` path to point to the folder where you stored the pre
 
 Finally, run `python3 demo_cli.py` to run the analysis. The script will create a file containing the analysis output which will then be used by the dashboard.
 
+### Run the analysis
+There is a script called `demo_cli.py` that runs the analysis and stores the output. You can run it with:
+```bash
+python3 demo_cli.py
+```
 ### Data processing
 
 The original data is stored as a nested dictionary, usually referred to as the data_raw attribute. It contains the following keys: `day`, `imaging`, `f`, `is_cell`, `r_neu`, `stim`, `trig`. For our analysis, we focus mainly on `f` and `stim`.
@@ -97,4 +102,34 @@ After the fit, the Gaussian is sampled to generate a 6x6 and a 100x100 matrix, w
 
 ### Schema of the current analysis pipeline
 A schematic representation of the process is shown below:
-![Responsiveness analysis diagram](https://github.com/neuroinformatics-unit/rsp-vision/assets/29216006/e4af3107-2f3b-431f-98f7-8ead20e3de04)	![Responsiveness analysis diagram](https://raw.githubusercontent.com/neuroinformatics-unit/rsp-vision/565b6ef3288cc5bec37341c796f11bd5e185c61a/docs/Responsiveness%20analysis%20diagram.png?token=AG642BSFJXAYISC6PI73XGDEN5QPY)
+![Responsiveness analysis diagram](https://raw.githubusercontent.com/neuroinformatics-unit/rsp-vision/565b6ef3288cc5bec37341c796f11bd5e185c61a/docs/Responsiveness%20analysis%20diagram.png?token=AG642BSFJXAYISC6PI73XGDEN5QPY)
+
+
+### Data saving
+The output of the analysis is saved in the folder specified in the config file as `path:output`. Folder names are generated automatically according to [SWC_Blueprint specifications](https://swc-blueprint.neuroinformatics.dev/). Filenames do not follow the convention right now.
+
+Schematic representation of the output folder structure:
+```
+rsp_vision
+├── logs/
+│   ├── log_file_1.log
+├── devirvatives/
+│   ├── analysis_log.csv
+│   ├── subject_level_folder/
+│   │   ├── session_level_folder/
+│   │   │   ├── metadata.yml
+│   │   │   ├── roi_1.pkl
+```
+The files are currently saved as pickle files. Each session folder, in addition to the pickle files, contains a `metadata.yml` file, with the parameters that were used for that analysis.
+
+In the same project folder, you will find in addition to the `deirvatives` folder, a `logs` folder, where the logs of the analysis are saved. Inside the derivatives folder, you will find the `analysis_log.csv` file, a table containing the records of which datasets have already been analyised. This file is updated at the end of each analysis.
+
+Check `rsp_vision/save/save_data.py` and `rsp_vision/objects/SWC_Blueprint.py` for more details.
+
+```
+## Dashboard
+You can browse the analysed data via a Dash app. The app is currently in development, but you can already run it.
+Run the following command in the terminal:
+```
+python3 demo_dash.py
+```
