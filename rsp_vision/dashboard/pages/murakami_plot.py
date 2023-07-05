@@ -102,7 +102,6 @@ def responsive_rois_warnings(store):
     else:
         data = load_data(store)
         responsive_rois = data["responsive_rois"]
-        print(responsive_rois)
         if (responsive_rois == 0) | (responsive_rois == set()):
             return False
         else:
