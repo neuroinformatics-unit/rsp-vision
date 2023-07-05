@@ -10,7 +10,7 @@ class SWC_Blueprint_Spec:
         project_name: str,
         raw_data: bool = False,
         derivatives: bool = True,
-        local_path: Path = Path("."),
+        local_path: Path = Path().absolute(),
     ) -> None:
         """
         Create a `SWC_Blueprint_Spec` object to specify the location of the
@@ -30,7 +30,7 @@ class SWC_Blueprint_Spec:
             by default True.
         local_path : Path, optional
             The path to the local folder where you want to create the project,
-            by default Path(".").
+            by default Path().absolute().
         """
         self.project_name = project_name
         self.raw_data = raw_data
@@ -72,7 +72,8 @@ class SubjectFolder:
         Create a `SubjectFolder` object from a `FolderNamingSpecs` object
         and a subject number.
     make_from_table_row(table_row)
-        Create a `SubjectFolder` object from a table row.
+        Create a `SubjectFolder` object from a row of a table (a dict which
+        corresponds to a row of the "analysis_log.csv" file).
 
     Raises
     ------
@@ -119,9 +120,9 @@ class SubjectFolder:
         self.sub_folder_name = (
             f"sub-{self.sub_num:03d}"
             + "_line-"
-            + table_row["mouse line"]
+            + table_row["mouse_line"]
             + "_id-"
-            + str(table_row["mouse id"])
+            + str(table_row["mouse_id"])
         )
 
 
@@ -217,13 +218,13 @@ class SessionFolder:
 
     def make_from_table_row(self, table_row: dict):
         self.ses_num = int(table_row["ses"])
-        self.monitor = table_row["monitor position"]
+        self.monitor = table_row["monitor_position"]
         self.ses_folder_name = (
             f"ses-{self.ses_num:03d}"
             + "_hemisphere-"
             + table_row["hemisphere"]
             + "_region-"
-            + table_row["brain region"]
+            + table_row["brain_region"]
             + "_monitor-"
             + self.monitor
             + (

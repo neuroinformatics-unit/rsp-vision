@@ -96,13 +96,24 @@ layout = html.Div(
     Output("responsive-rois-warnings", "hide"),
     Input("store", "data"),
 )
-def responsive_rois_warnings(store):
+def responsive_rois_warnings(store: dict) -> bool:
+    """This callback hides the warning message if there are responsive ROIs,
+    and shows it if there are not. By default, the warning message is hidden.
+    Parameters
+    ----------
+    store : dict
+        The store contains the data that is loaded from the data table.
+
+    Returns
+    -------
+    bool
+        Whether to hide the warning message or not.
+    """
     if store == {}:
         return True
     else:
         data = load_data(store)
         responsive_rois = data["responsive_rois"]
-        print(responsive_rois)
         if (responsive_rois == 0) | (responsive_rois == set()):
             return False
         else:
@@ -113,7 +124,20 @@ def responsive_rois_warnings(store):
     Output("selected_data_str_murakami", "children"),
     Input("store", "data"),
 )
-def update_selected_data_str(store):
+def update_selected_data_str(store: dict) -> str:
+    """This callback updates the text that shows the dataset that has been
+    loaded.
+
+    Parameters
+    ----------
+    store : dict
+        The store contains the data that is loaded from the data table.
+
+    Returns
+    -------
+    str
+        The name of the dataset that has been choosen.
+    """
     if store == {}:
         return "No data selected"
     else:
@@ -127,7 +151,28 @@ def update_selected_data_str(store):
         Input("show-only-responsive", "checked"),
     ],
 )
-def murakami_plot(store, show_only_responsive):
+def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
+    """This callback generates the Murakami plot. It is called Murakami plot
+    because it is inspired by the visualization on Murakami et al. (2017).
+    Peak responses for each roi are shown as a "scatter plot" in a 2D space,
+    where the x-axis is the spatial frequency and the y-axis is the temporal
+    frequency. The dots are connected by lines to the median dot creating
+    a start shape.
+    The peak responses represent the spatial and temporal frequency that
+    maximizes the response of the roi.
+
+    Parameters
+    ----------
+    store : dict
+        The store contains the data that is loaded from the data table.
+    show_only_responsive : bool
+        Whether to show only the responsive ROIs or not.
+
+    Returns
+    -------
+    dcc.Graph
+        The Murakami plot.
+    """
     if store == {}:
         return "No data to plot"
 
@@ -168,7 +213,28 @@ def murakami_plot(store, show_only_responsive):
     return dcc.Graph(figure=fig)
 
 
-def prettify_murakami_plot(fig, spatial_frequencies, temporal_frequencies):
+def prettify_murakami_plot(
+    fig: go.Figure,
+    spatial_frequencies: np.ndarray,
+    temporal_frequencies: np.ndarray,
+) -> go.Figure:
+    """This method takes a figure and edits its aesthetics by manipulating
+    the properties of the figure. It is specific for the Murakami plot.
+
+    Parameters
+    ----------
+    fig : go.Figure
+        The figure to be edited.
+    spatial_frequencies : np.ndarray
+        The spatial frequencies that are used in the experiment.
+    temporal_frequencies : np.ndarray
+        The temporal frequencies that are used in the experiment.
+
+    Returns
+    -------
+    go.Figure
+        The edited figure.
+    """
     fig.update_layout(
         yaxis_title="Spatial frequency (cycles/deg)",
         xaxis_title="Temporal frequency (Hz)",
@@ -241,14 +307,42 @@ def prettify_murakami_plot(fig, spatial_frequencies, temporal_frequencies):
 
 
 def add_data_in_figure(
-    all_roi,
-    fig,
-    matrix_definition,
-    responsive_rois,
-    fitted_gaussian_matrix,
-    spatial_frequencies,
-    temporal_frequencies,
-):
+    all_roi: list,
+    fig: go.Figure,
+    matrix_definition: int,
+    responsive_rois: list,
+    fitted_gaussian_matrix: pd.DataFrame,
+    spatial_frequencies: np.ndarray,
+    temporal_frequencies: np.ndarray,
+) -> go.Figure:
+    """For each roi, this method adds a dot in the Murakami plot (representing
+    the peak response of the roi) and the lines connecting the dots to the
+    median dot.
+
+    Parameters
+    ----------
+    all_roi : list
+        The list of all the ROIs.
+    fig : go.Figure
+        The figure to which the data is to be added.
+    matrix_definition : int
+        The matrix definition used in the experiment. It specifies
+        the precision of the sf/tf peaks that are to be found. Needs to match
+        the matrix definition used to generate the fitted_gaussian_matrix.
+    responsive_rois : list
+        The list of responsive ROIs.
+    fitted_gaussian_matrix : pd.DataFrame
+        The fitted gaussian matrix obtained from the precalculated fits.
+    spatial_frequencies : np.ndarray
+        The spatial frequencies that are used in the experiment.
+    temporal_frequencies : np.ndarray
+        The temporal frequencies that are used in the experiment.
+
+    Returns
+    -------
+    go.Figure
+        The figure with the data added.
+    """
     peaks = {
         roi_id: find_peak_coordinates(
             fitted_gaussian_matrix=fitted_gaussian_matrix[(roi_id, "pooled")],
@@ -303,7 +397,19 @@ def add_data_in_figure(
     return fig
 
 
-def load_data(store):
+def load_data(store: dict) -> dict:
+    """This method loads the data from the pickle file.
+
+    Parameters
+    ----------
+    store : dict
+        The store object.
+
+    Returns
+    -------
+    dict
+        The data from the pickle file.
+    """
     path = (
         Path(store["path"])
         / store["subject_folder_path"]
@@ -321,7 +427,25 @@ def find_peak_coordinates(
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
     matrix_definition: int,
-):
+) -> tuple:
+    """This method finds the peak coordinates of the fitted gaussian matrix.
+
+    Parameters
+    ----------
+    fitted_gaussian_matrix : np.ndarray
+        The fitted gaussian matrix obtained from the precalculated fits.
+    spatial_frequencies : np.ndarray
+        The spatial frequencies that are used in the experiment.
+    temporal_frequencies : np.ndarray
+        The temporal frequencies that are used in the experiment.
+    matrix_definition : int
+        The matrix definition used to generate the fitted_gaussian_matrix.
+
+    Returns
+    -------
+    tuple
+        The peak coordinates of the fitted gaussian matrix.
+    """
     peak_indices = np.unravel_index(
         np.argmax(fitted_gaussian_matrix), fitted_gaussian_matrix.shape
     )
@@ -348,7 +472,28 @@ def call_get_gaussian_matrix_to_be_plotted(
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
     matrix_definition: int,
-):
+) -> dict:
+    """This method is a wrapper for the get_gaussian_matrix_to_be_plotted
+    method that iterates over all the ROIs.
+
+    Parameters
+    ----------
+    n_roi : int
+        The number of ROIs.
+    fit_outputs : dict
+        The fit outputs obtained from the precalculated fits.
+    spatial_frequencies : np.ndarray
+        The spatial frequencies that are used in the experiment.
+    temporal_frequencies : np.ndarray
+        The temporal frequencies that are used in the experiment.
+    matrix_definition : int
+        The matrix definition used to generate the fitted_gaussian_matrix.
+
+    Returns
+    -------
+    dict
+        The fitted gaussian matrix obtained from the precalculated fits.
+    """
     fitted_gaussian_matrix = {}
 
     for roi_id in range(n_roi):
