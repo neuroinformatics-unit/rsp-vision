@@ -109,8 +109,7 @@ After the fit, the Gaussian is sampled to generate a 6x6 and a 100x100 matrix, w
 
 ### Schema of the current analysis pipeline
 A schematic representation of the process is shown below:
-![Responsiveness analysis diagram](https://raw.githubusercontent.com/neuroinformatics-unit/rsp-vision/565b6ef3288cc5bec37341c796f11bd5e185c61a/docs/Responsiveness%20analysis%20diagram.png?token=AG642BSFJXAYISC6PI73XGDEN5QPY)
-
+<img src="./docs/Responsiveness analysis diagram.svg">
 
 ### Data saving
 The output of the analysis is saved in the folder specified in the config file as `path:output`. Folder names are generated automatically according to [SWC_Blueprint specifications](https://swc-blueprint.neuroinformatics.dev/). Filenames do not follow the convention right now.
@@ -133,7 +132,6 @@ In the same project folder, you will find in addition to the `deirvatives` folde
 
 Check `rsp_vision/save/save_data.py` and `rsp_vision/objects/SWC_Blueprint.py` for more details.
 
-```
 ## Dashboard
 You can browse the analysed data via a Dash app. The app is currently in development, but you can already run it.
 Run the following command in the terminal:
