@@ -17,7 +17,6 @@ from scipy.stats import pearsonr
 from rsp_vision.analysis.gaussians_calculations import (
     get_gaussian_matrix_to_be_plotted,
 )
-from rsp_vision.objects.photon_data import PhotonData
 
 dash.register_page(__name__, path="/sf_tf_facet_plot")
 
@@ -33,6 +32,9 @@ layout = html.Div(
                     [
                         dmc.Text(
                             id="selected_data_str_sf_tf",
+                        ),
+                        dmc.Text(
+                            id="selected_ROI",
                         ),
                         html.Br(),
                         html.Br(),
@@ -61,8 +63,8 @@ layout = html.Div(
                             "Choose your ROI, the responsive ones are in red",
                         ),
                         html.Div(
-                            id="roi_selection_heatmap",
-                            className="roi-selection-heatmap",
+                            id="roi_and_direction_selection_bubble_plot",
+                            className="roi-and-direction-selection-bubble-plot",
                         ),
                     ],
                     span=2,
@@ -94,69 +96,89 @@ layout = html.Div(
 
 
 @callback(
-    Output("roi_selection_heatmap", "children"),
+    Output("selected_data_str_sf_tf", "children"),
     Input("store", "data"),
 )
-def responsive_roi_heatmap(store):
+def update_selected_data_str(store: dict) -> str:
+    """This callback updates the text that shows the dataset that has been
+    loaded.
+
+    Parameters
+    ----------
+    store : dict
+        The store contains the data that is loaded from the data table.
+
+    Returns
+    -------
+    str
+        The name of the dataset that has been choosen.
+    """
+    if store == {}:
+        return "No data selected"
+    else:
+        return f'Dataset loaded is: {store["data"][0]}'
+
+
+@callback(
+    Output("roi_and_direction_selection_bubble_plot", "children"),
+    Input("store", "data"),
+)
+def rois_and_direction_plot(store):
     if store == {}:
         return "No data to plot"
     data = load_data(store)
     n_roi = data["n_roi"]
     responsive_rois = data["responsive_rois"]
 
-    n_columns = 8
+    # make radius list
+    #  for the first 36 rois, radius = 1, then it grows by 1 for every 36 rois
+    angle_diff = 30
+    circle = int(360 / angle_diff)
+    radius = [1] * n_roi
+    for i in range(1, n_roi // circle + 1):
+        radius[i * circle :] = [i + 1] * (n_roi - i * circle)
+    print(radius)
 
-    #  make heatmap, if the roi is responsive make the square red
-    #  if not make it gray
-    #  also write the roi number in it
-
-    fig = go.Figure()
-    for i in range(n_roi):
-        fig.add_shape(
-            type="circle",
-            x0=i % n_columns,
-            y0=i // n_columns,
-            x1=(i % n_columns) + 1,
-            y1=(i // n_columns) + 1,
-            fillcolor="red" if i in responsive_rois else "gray",
-            line=dict(
-                color="black",
-                width=2,
-            ),
-        )
-        fig.add_annotation(
-            x=(i % n_columns) + 0.5,
-            y=(i // n_columns) + 0.5,
-            text=str(i + 1),
-            showarrow=False,
-            font=dict(
-                size=10,
-                color="white",
-            ),
-        )
+    fig = px.scatter_polar(
+        r=radius,
+        theta=range(0, angle_diff * n_roi, angle_diff),
+        range_theta=[0, 360],
+        range_r=[0, (n_roi // circle + 1) + 1],
+        start_angle=0,
+        direction="counterclockwise",
+        color=[i in responsive_rois for i in range(n_roi)],
+        color_discrete_sequence=["gray", "red"],
+        hover_name=[str(i) for i in range(n_roi)],
+        size=[3] * n_roi,
+    )
 
     fig.update_layout(
         width=200,
-        height=150,
-        margin=dict(l=0, r=0, b=0, t=0, pad=0),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
+        height=200,
+        margin=dict(l=0, r=0, t=0, b=0),
+        polar=dict(
+            radialaxis=dict(visible=False),
+            angularaxis=dict(visible=False),
+        ),
         showlegend=False,
-        xaxis=dict(
-            showgrid=False,
-            zeroline=False,
-            showticklabels=False,
-        ),
-        yaxis=dict(
-            showgrid=False,
-            zeroline=False,
-            showticklabels=False,
-        ),
     )
 
     return dcc.Graph(
+        id="roi_and_direction_selection_bubble_plot",
         figure=fig,
     )
+
+
+@callback(
+    Output("selected_ROI", "children"),
+    #  callback on clicking on shape in heatmap - clickdata does not work
+    Input("roi_and_direction_selection_bubble_plot", "clickData"),
+)
+def update_selected_ROI(clickData):
+    if clickData is None:
+        return "No ROI selected"
+    else:
+        return f'ROI selected is: {clickData["points"][0]["hovertext"]}'
 
 
 def load_data(store):
@@ -217,7 +239,7 @@ def sf_tf_grid(
     )
     total_n_days = signal.day.max()
 
-    Data = namedtuple("data", ["sf_tf_combinations", "total_n_days"])
+    Data = namedtuple("Data", ["sf_tf_combinations", "total_n_days"])
     data = Data(sf_tf_combinations, total_n_days)
 
     if direction == "all":
@@ -378,7 +400,7 @@ def get_dataframe_for_facet_plot_pooled_directions(
 
 def get_dataframe_for_facet_plot(
     signal: pd.DataFrame,
-    data: PhotonData,
+    data,
     counts: np.ndarray,
     roi_id: int,
     direction: int,
@@ -503,7 +525,7 @@ def gaussian_plot(
     )
     total_n_days = signal.day.max()
 
-    Data = namedtuple("data", ["sf_tf_combinations", "total_n_days"])
+    Data = namedtuple("Data", ["sf_tf_combinations", "total_n_days"])
     data = Data(sf_tf_combinations, total_n_days)
 
     # direction = direction_input["value"]
