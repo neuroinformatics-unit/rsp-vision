@@ -582,23 +582,22 @@ class PhotonData:
     def add_stimulus_frames_count_to_signal_df(
         self,
     ):
-        n_frames_per_stimulus = (
+        self.signal["stimulus_frames"] = np.nan
+        n_frames_per_stim = int(
             self.n_frames_per_trigger * self.n_triggers_per_stimulus
         )
-        stimulus_frames = np.arange(n_frames_per_stimulus)
-        combined_frames_per_stimulus = np.asarray(
-            [stimulus_frames]
-            * self.n_roi
-            * self.n_of_stimuli_per_session
-            * self.n_sessions
-        ).flatten()
-        start_idx = self.signal[self.signal["stimulus_onset"]].index[0]
-        full_length = np.zeros(len(self.signal))
-        full_length[
-            start_idx : start_idx + len(combined_frames_per_stimulus)
-        ] = np.asarray(combined_frames_per_stimulus).flatten()
+        counts = np.arange(0, n_frames_per_stim)
+        start_frames_indexes = self.signal[self.signal["stimulus_onset"]].index
 
-        self.signal["stimulus_frames"] = full_length
+        for idx in start_frames_indexes:
+            start = idx
+            end = idx + n_frames_per_stim - 1
+            self.signal.loc[start:end, "stimulus_frames"] = counts
+            self.signal.loc[start:end, "sf"] = self.signal.loc[idx, "sf"]
+            self.signal.loc[start:end, "tf"] = self.signal.loc[idx, "tf"]
+            self.signal.loc[start:end, "direction"] = self.signal.loc[
+                idx, "direction"
+            ]
 
     def set_post_data_extraction_variables(self) -> None:
         """Sets instance variables for signal and stimuli data extraction.
