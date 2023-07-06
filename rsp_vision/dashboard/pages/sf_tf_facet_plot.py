@@ -4,6 +4,7 @@ from collections import namedtuple
 from pathlib import Path
 
 import dash
+import dash_loading_spinners as dls
 import dash_mantine_components as dmc
 import numpy as np
 import pandas as pd
@@ -36,6 +37,7 @@ layout = html.Div(
                         dmc.Text(
                             id="selected_ROI",
                         ),
+                        dcc.Store(id="store_choosen_roi_and_dir", data={}),
                         html.Br(),
                         html.Br(),
                         dmc.NavLink(
@@ -71,9 +73,11 @@ layout = html.Div(
                 ),
                 dmc.Col(
                     [
-                        html.Div(
-                            id="sf-tf-plot",
-                            className="sf-tf-plot",
+                        dls.GridFade(
+                            html.Div(
+                                id="sf-tf-plot",
+                                className="sf-tf-plot",
+                            ),
                         ),
                     ],
                     span="auto",
@@ -137,7 +141,6 @@ def rois_and_direction_plot(store):
     radius = [1] * n_roi
     for i in range(1, n_roi // circle + 1):
         radius[i * circle :] = [i + 1] * (n_roi - i * circle)
-    print(radius)
 
     fig = px.scatter_polar(
         r=radius,
@@ -170,15 +173,20 @@ def rois_and_direction_plot(store):
 
 
 @callback(
-    Output("selected_ROI", "children"),
+    [
+        Output("selected_ROI", "children"),
+        Output("store_choosen_roi_and_dir", "data"),
+    ],
     #  callback on clicking on shape in heatmap - clickdata does not work
     Input("roi_and_direction_selection_bubble_plot", "clickData"),
 )
 def update_selected_ROI(clickData):
     if clickData is None:
-        return "No ROI selected"
+        default_roi_id = 0
+        return "ROI 1 selected", {"roi_id": default_roi_id}
     else:
-        return f'ROI selected is: {clickData["points"][0]["hovertext"]}'
+        roi_id = int(clickData["points"][0]["hovertext"])
+        return f"ROI {roi_id + 1} selected", {"roi_id": roi_id}
 
 
 def load_data(store):
@@ -194,14 +202,14 @@ def load_data(store):
     return data
 
 
-def load_data_of_signal_dataframe(store):
+def load_data_of_signal_dataframe(store, roi_id):
     path = (
         Path(store["path"])
         / store["subject_folder_path"]
         / store["session_folder_path"]
     )
 
-    with open(path / "roi_0_signal_dataframe.pickle", "rb") as f:
+    with open(path / f"roi_{roi_id}_signal_dataframe.pickle", "rb") as f:
         signal = pickle.load(f)
 
     return signal
@@ -211,27 +219,27 @@ def load_data_of_signal_dataframe(store):
     Output("sf-tf-plot", "children"),
     Input("store", "data"),
     # [
-    #     # Input("roi-choice-dropdown", "value"),
+    Input("store_choosen_roi_and_dir", "data"),
     #     # Input("direction-store", "data"),
     #     # Input("toggle-traces", "value"),
     # ],
 )
 def sf_tf_grid(
     store,
-    # roi_id: int, direction_input: dict, toggle_value: str
+    store_choosen_roi_and_dir,
 ) -> dcc.Graph:
     if store == {}:
         return "No data to plot"
 
-    signal = load_data_of_signal_dataframe(store)
+    roi_id = store_choosen_roi_and_dir["roi_id"]
+    signal = load_data_of_signal_dataframe(store, roi_id)
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
 
     # direction = direction_input["value"]
     direction = 90
-    roi_id = 0
-    toggle_value = "ALL"
-    counts = get_df_sf_tf_combo_plot(signal)
+
+    store["config"]["n_frames_per_session"]
 
     #  from data I need: n_days, sf_tf_combinations
     sf_tf_combinations = itertools.product(
@@ -240,17 +248,16 @@ def sf_tf_grid(
     total_n_days = signal.day.max()
 
     Data = namedtuple("Data", ["sf_tf_combinations", "total_n_days"])
-    data = Data(sf_tf_combinations, total_n_days)
+    Data(sf_tf_combinations, total_n_days)
 
     if direction == "all":
-        dataframe = get_dataframe_for_facet_plot_pooled_directions(
-            signal, roi_id
-        )
+        dataframe = get_dataframe_for_facet_plot_pooled_directions(signal)
     else:
         assert isinstance(direction, int)
-        dataframe = get_dataframe_for_facet_plot(
-            signal, data, counts, roi_id, direction
-        )
+        dataframe = get_dataframe_for_facet_plot(signal, direction)
+
+    print(dataframe.head())
+    print(dataframe["stimulus_repetition"].unique())
 
     fig = px.line(
         dataframe,
@@ -261,8 +268,8 @@ def sf_tf_grid(
         facet_col_spacing=0.005,
         facet_row_spacing=0.005,
         # width=2000,
-        height=1200,
-        color="signal_kind",
+        height=800,
+        color="stimulus_repetition",
         category_orders={
             "sf": spatial_frequencies[::-1],
             "tf": temporal_frequencies,
@@ -278,17 +285,17 @@ def sf_tf_grid(
     for trace in fig.data:
         if "mean" in trace.name:
             trace.line.color = "black"
-            trace.line.width = 3
+            trace.line.width = 1
             trace.line.dash = "solid"
         elif "median" in trace.name:
             trace.line.color = "red"
-            trace.line.width = 3
+            trace.line.width = 1
             trace.line.dash = "solid"
         else:
-            if "ALL" not in toggle_value:
-                trace.visible = False
-            else:
-                trace.line.width = 0.5
+            # if "ALL" not in toggle_value:
+            #     trace.visible = False
+            # else:
+            trace.line.width = 0.5
 
     for x0, x1, text, color in [
         (0, 75, "gray", "green"),
@@ -336,168 +343,65 @@ def sf_tf_grid(
     )
 
 
-def get_df_sf_tf_combo_plot(signal: pd.DataFrame) -> np.ndarray:
-    signal["stimulus_frames"] = np.nan
-    n_frames_per_stim = int(
-        75
-        * 3
-        # data.n_frames_per_trigger * data.n_triggers_per_stimulus
-    )
-    counts = np.arange(0, n_frames_per_stim)
-    start_frames_indexes = signal[signal["stimulus_onset"]].index
-
-    for idx in start_frames_indexes:
-        start = idx
-        end = idx + n_frames_per_stim - 1
-        signal.loc[start:end, "stimulus_frames"] = counts
-        signal.loc[start:end, "sf"] = signal.loc[idx, "sf"]
-        signal.loc[start:end, "tf"] = signal.loc[idx, "tf"]
-        signal.loc[start:end, "direction"] = signal.loc[idx, "direction"]
-        signal.loc[start:end, "roi_id"] = signal.loc[idx, "roi_id"]
-        signal.loc[start:end, "session_id"] = signal.loc[idx, "session_id"]
-
-    return counts
-
-
 def get_dataframe_for_facet_plot_pooled_directions(
     signal: pd.DataFrame,
-    roi_id: int,
 ) -> pd.DataFrame:
-    this_roi_df = signal[
-        (signal["roi_id"] == roi_id)
-        & signal.sf.notnull()
-        & signal.tf.notnull()
-    ]
-
-    this_roi_df["signal_kind"] = (
-        this_roi_df["session_id"].astype(str)
-        + "_"
-        + this_roi_df["direction"].astype(str)
-    )
-    this_roi_df.drop(columns=["session_id", "direction"], inplace=True)
-    this_roi_df = this_roi_df[
-        ["stimulus_frames", "signal", "sf", "tf", "signal_kind"]
-    ]
-
     mean_df = (
-        this_roi_df.groupby(["sf", "tf", "stimulus_frames"])
+        signal.groupby(["sf", "tf", "stimulus_frames"])
         .agg({"signal": "mean"})
         .reset_index()
     )
-    mean_df["signal_kind"] = "mean"
-    combined_df = pd.concat([this_roi_df, mean_df], ignore_index=True)
+    mean_df["stimulus_repetition"] = "mean"
+    combined_df = pd.concat([signal, mean_df], ignore_index=True)
 
     median_df = (
-        this_roi_df.groupby(["sf", "tf", "stimulus_frames"])
+        signal.groupby(["sf", "tf", "stimulus_frames"])
         .agg({"signal": "median"})
         .reset_index()
     )
-    median_df["signal_kind"] = "median"
+    median_df["stimulus_repetition"] = "median"
     combined_df = pd.concat([combined_df, median_df], ignore_index=True)
+
+    print(combined_df["stimulus_repetition"].unique())
 
     return combined_df
 
 
 def get_dataframe_for_facet_plot(
     signal: pd.DataFrame,
-    data,
-    counts: np.ndarray,
-    roi_id: int,
     direction: int,
 ) -> pd.DataFrame:
-    this_roi_df = signal[
-        (signal["roi_id"] == roi_id)
-        & signal.sf.notnull()
-        & signal.tf.notnull()
-    ]
-
-    columns = [
-        "stimulus_frames",
-        "mean_signal",
-        "median_signal",
-        "sf",
-        "tf",
-        "dir",
-    ]
-    reps = [
-        "signal_rep_1",
-        "signal_rep_2",
-        "signal_rep_3",
-    ]
-    if data.total_n_days > 1:
-        reps += [
-            "signal_rep_4",
-            "signal_rep_5",
-            "signal_rep_6",
-        ]
-    if data.total_n_days > 2:
-        reps += [
-            "signal_rep_7",
-            "signal_rep_8",
-            "signal_rep_9",
-        ]
-    columns += reps
-
-    horizontal_df = pd.DataFrame(
-        columns=columns,
+    signal = signal[signal.direction == direction]
+    mean_df = (
+        signal.groupby(["sf", "tf", "stimulus_frames"])
+        .agg({"signal": "mean"})
+        .reset_index()
     )
+    mean_df["stimulus_repetition"] = "mean"
+    combined_df = pd.concat([signal, mean_df], ignore_index=True)
 
-    for sf_tf in data.sf_tf_combinations:
-        repetitions = this_roi_df[
-            (this_roi_df.sf == sf_tf[0])
-            & (this_roi_df.tf == sf_tf[1])
-            & (this_roi_df.direction == direction)
-        ]
-
-        df = repetitions.pivot(index="stimulus_frames", columns="session_id")[
-            "signal"
-        ]
-        cols = df.keys().values
-
-        df.rename(
-            columns=dict(zip(cols, reps)),
-            inplace=True,
-        )
-        df["stimulus_frames"] = counts
-        df["sf"] = repetitions.sf.iloc[0]
-        df["tf"] = repetitions.tf.iloc[0]
-        df["dir"] = repetitions.direction.iloc[0]
-        df["mean_signal"] = df[reps].mean(axis=1)
-        df["median_signal"] = df[reps].median(axis=1)
-
-        horizontal_df = pd.concat([horizontal_df, df], ignore_index=True)
-
-    vertical_df = pd.melt(
-        horizontal_df,
-        id_vars=[
-            "stimulus_frames",
-            "sf",
-            "tf",
-            "dir",
-        ],
-        value_vars=reps
-        + [
-            "mean_signal",
-            "median_signal",
-        ],
-        var_name="signal_kind",
-        value_name="signal",
+    median_df = (
+        signal.groupby(["sf", "tf", "stimulus_frames"])
+        .agg({"signal": "median"})
+        .reset_index()
     )
+    median_df["stimulus_repetition"] = "median"
+    combined_df = pd.concat([combined_df, median_df], ignore_index=True)
 
-    return vertical_df
+    return combined_df
 
 
 @callback(
     Output("gaussian-graph-andermann", "children"),
-    Input("store", "data"),
-    # [
-    #     Input("roi-choice-dropdown", "value"),
-    #     Input("direction-store", "data"),
-    # ],
+    [
+        Input("store", "data"),
+        Input("store_choosen_roi_and_dir", "data"),
+        #     Input("direction-store", "data"),
+    ],
 )
 def gaussian_plot(
     store: dict,
-    # roi_id: int, direction_input: dict
+    store_choosen_roi_and_dir: dict,
 ) -> html.Div:
     if store == {}:
         return "No data to plot"
@@ -510,14 +414,13 @@ def gaussian_plot(
     if store == {}:
         return "No data to plot"
 
-    signal = load_data_of_signal_dataframe(store)
+    roi_id = store_choosen_roi_and_dir["roi_id"]
+    signal = load_data_of_signal_dataframe(store, roi_id)
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
 
     # direction = direction_input["value"]
     direction = 90
-    roi_id = 0
-    get_df_sf_tf_combo_plot(signal)
 
     #  from data I need: n_days, sf_tf_combinations
     sf_tf_combinations = itertools.product(
