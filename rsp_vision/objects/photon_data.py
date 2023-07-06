@@ -108,6 +108,7 @@ class PhotonData:
         self.set_general_variables(data_raw)
 
         self.signal, self.stimuli = self.get_signal_and_stimuli_df(data_raw)
+        self.add_stimulus_frames_count_to_signal_df()
 
         self.set_post_data_extraction_variables()
         self.check_consistency_of_stimuli_df(self.stimuli)
@@ -559,6 +560,27 @@ class PhotonData:
                     with stimulus information.\nPivot table:{pivot_table}, \
                     expercted:{expected}"
                 )
+
+    def add_stimulus_frames_count_to_signal_df(
+        self,
+    ):
+        n_frames_per_stimulus = (
+            self.n_frames_per_trigger * self.n_triggers_per_stimulus
+        )
+        stimulus_frames = np.arange(n_frames_per_stimulus)
+        combined_frames_per_stimulus = np.asarray(
+            [stimulus_frames]
+            * self.n_roi
+            * self.n_of_stimuli_per_session
+            * self.n_sessions
+        ).flatten()
+        start_idx = self.signal[self.signal["stimulus_onset"]].index[0]
+        full_length = np.zeros(len(self.signal))
+        full_length[
+            start_idx : start_idx + len(combined_frames_per_stimulus)
+        ] = np.asarray(combined_frames_per_stimulus).flatten()
+
+        self.signal["stimulus_frames"] = full_length
 
     def set_post_data_extraction_variables(self) -> None:
         """Sets instance variables for signal and stimuli data extraction.
