@@ -256,9 +256,6 @@ def sf_tf_grid(
         assert isinstance(direction, int)
         dataframe = get_dataframe_for_facet_plot(signal, direction)
 
-    print(dataframe.head())
-    print(dataframe["stimulus_repetition"].unique())
-
     fig = px.line(
         dataframe,
         x="stimulus_frames",
@@ -361,8 +358,6 @@ def get_dataframe_for_facet_plot_pooled_directions(
     )
     median_df["stimulus_repetition"] = "median"
     combined_df = pd.concat([combined_df, median_df], ignore_index=True)
-
-    print(combined_df["stimulus_repetition"].unique())
 
     return combined_df
 
