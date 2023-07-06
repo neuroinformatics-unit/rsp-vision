@@ -1,7 +1,7 @@
 import itertools
 import logging
 from datetime import datetime, timedelta
-from typing import Set, Tuple
+from typing import Dict, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -506,6 +506,10 @@ class PhotonData:
             Final signal dataframe with stimulus information
         """
         # register only the stimulus onset
+
+        signal["stimulus_repetition"] = np.nan
+        stim_combo_occurrencies: Dict[tuple, int] = {}
+
         for stimulus_index, start_frame in tqdm(
             enumerate(self.stimulus_start_frames),
             desc="Adding stimulus information to signal dataframe",
@@ -517,6 +521,17 @@ class PhotonData:
             # starting frames and stimuli are alligned in source data
             stimulus = stimuli.iloc[stimulus_index]
 
+            # check if the stimulus combination has already been registered
+            stim_combo = (
+                stimulus["sf"],
+                stimulus["tf"],
+                stimulus["direction"],
+            )
+            if stim_combo in stim_combo_occurrencies:
+                stim_combo_occurrencies[stim_combo] += 1
+            else:
+                stim_combo_occurrencies[stim_combo] = 1
+
             if len(signal_idxs) != self.n_roi and self.using_real_data:
                 raise RuntimeError(
                     f"Number of instances for stimulus {stimulus} is wrong."
@@ -527,6 +542,9 @@ class PhotonData:
             signal.loc[mask, "tf"] = stimulus["tf"]
             signal.loc[mask, "direction"] = stimulus["direction"]
             signal.loc[mask, "stimulus_onset"] = True
+            signal.loc[mask, "stimulus_repetition"] = stim_combo_occurrencies[
+                stim_combo
+            ]
 
         logging.info("Stimulus information added to signal dataframe")
 
