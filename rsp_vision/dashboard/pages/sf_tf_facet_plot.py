@@ -34,10 +34,7 @@ layout = html.Div(
                         dmc.Text(
                             id="selected_data_str_sf_tf",
                         ),
-                        dmc.Text(
-                            id="selected_ROI",
-                        ),
-                        dcc.Store(id="store_choosen_roi_and_dir", data={}),
+                        dcc.Store(id="store_choosen_roi", data={}),
                         html.Br(),
                         html.Br(),
                         dmc.NavLink(
@@ -64,9 +61,17 @@ layout = html.Div(
                         dmc.Text(
                             "Choose your ROI, the responsive ones are in red",
                         ),
+                        dmc.Text(
+                            id="selected_ROI",
+                        ),
+                        dmc.Text(
+                            id="selected_direction",
+                        ),
                         html.Div(
-                            id="roi_and_direction_selection_bubble_plot",
-                            className="roi-and-direction-selection-bubble-plot",
+                            id="roi-selection-bubble-plot",
+                        ),
+                        html.Div(
+                            id="direction-selection-bubble-plot",
                         ),
                     ],
                     span=2,
@@ -124,35 +129,86 @@ def update_selected_data_str(store: dict) -> str:
 
 
 @callback(
-    Output("roi_and_direction_selection_bubble_plot", "children"),
+    Output("roi-selection-bubble-plot", "children"),
     Input("store", "data"),
 )
-def rois_and_direction_plot(store):
+def roi_selection_plot(store):
     if store == {}:
         return "No data to plot"
     data = load_data(store)
     n_roi = data["n_roi"]
     responsive_rois = data["responsive_rois"]
 
-    # make radius list
-    #  for the first 36 rois, radius = 1, then it grows by 1 for every 36 rois
-    angle_diff = 30
-    circle = int(360 / angle_diff)
-    radius = [1] * n_roi
-    for i in range(1, n_roi // circle + 1):
-        radius[i * circle :] = [i + 1] * (n_roi - i * circle)
+    rois = list(range(1, n_roi + 1))
+    col_n = 10
+    row_n = n_roi // col_n + 1
+
+    x = np.linspace(0, 1, col_n)
+    y = np.linspace(0, 1, row_n)
+
+    fig = go.Figure()
+    for i, roi in enumerate(rois):
+        fig.add_trace(
+            go.Scatter(
+                x=[x[i % col_n]],
+                y=[-y[i // col_n]],
+                mode="markers",
+                marker=dict(
+                    size=20,
+                    color="red" if roi in responsive_rois else "gray",
+                ),
+                hovertemplate=f"ROI: {roi}",
+            )
+        )
+
+    # annotate, add roi number
+    for i, roi in enumerate(rois):
+        fig.add_annotation(
+            x=x[i % col_n],
+            y=-y[i // col_n],
+            text=str(roi),
+            showarrow=False,
+            font=dict(
+                size=10,
+                color="white",
+            ),
+        )
+
+    fig.update_layout(
+        width=300,
+        height=300,
+        margin=dict(l=0, r=0, t=0, b=0),
+        showlegend=False,
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+    )
+
+    fig.update_xaxes(showticklabels=False)
+    fig.update_yaxes(showticklabels=False)
+
+    return dcc.Graph(
+        id="roi-selection-bubble-plot",
+        figure=fig,
+    )
+
+
+@callback(
+    Output("direction-selection-bubble-plot", "children"),
+    Input("store", "data"),
+)
+def direction_selection_plot(store):
+    if store == {}:
+        return "No data to plot"
+    load_data(store)
+    directions = store["config"]["directions"]
 
     fig = px.scatter_polar(
-        r=radius,
-        theta=range(0, angle_diff * n_roi, angle_diff),
+        r=[1] * len(directions),
+        theta=directions,
         range_theta=[0, 360],
-        range_r=[0, (n_roi // circle + 1) + 1],
+        range_r=[0, 2],
         start_angle=0,
         direction="counterclockwise",
-        color=[i in responsive_rois for i in range(n_roi)],
-        color_discrete_sequence=["gray", "red"],
-        hover_name=[str(i) for i in range(n_roi)],
-        size=[3] * n_roi,
     )
 
     fig.update_layout(
@@ -162,12 +218,16 @@ def rois_and_direction_plot(store):
         polar=dict(
             radialaxis=dict(visible=False),
             angularaxis=dict(visible=False),
+            bgcolor="rgba(0,0,0,0)",
         ),
+        # remove background circle
+        paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
     )
+    fig.update_traces(marker=dict(size=10))
 
     return dcc.Graph(
-        id="roi_and_direction_selection_bubble_plot",
+        id="direction-selection-bubble-plot",
         figure=fig,
     )
 
@@ -175,18 +235,31 @@ def rois_and_direction_plot(store):
 @callback(
     [
         Output("selected_ROI", "children"),
-        Output("store_choosen_roi_and_dir", "data"),
+        Output("store_choosen_roi", "data"),
     ],
     #  callback on clicking on shape in heatmap - clickdata does not work
-    Input("roi_and_direction_selection_bubble_plot", "clickData"),
+    Input("roi-selection-bubble-plot", "clickData"),
 )
 def update_selected_ROI(clickData):
     if clickData is None:
         default_roi_id = 0
         return "ROI 1 selected", {"roi_id": default_roi_id}
     else:
-        roi_id = int(clickData["points"][0]["hovertext"])
+        roi_id = int(clickData["points"][0]["curveNumber"])
         return f"ROI {roi_id + 1} selected", {"roi_id": roi_id}
+
+
+@callback(
+    Output("selected_direction", "children"),
+    Input("direction-selection-bubble-plot", "clickData"),
+)
+def update_selected_direction(clickData):
+    if clickData is None:
+        default_direction = 0
+        return f"Direction {default_direction} selected"
+    else:
+        direction = clickData["points"][0]["theta"]
+        return f"Direction {direction} selected"
 
 
 def load_data(store):
@@ -218,26 +291,28 @@ def load_data_of_signal_dataframe(store, roi_id):
 @callback(
     Output("sf-tf-plot", "children"),
     Input("store", "data"),
-    # [
-    Input("store_choosen_roi_and_dir", "data"),
-    #     # Input("direction-store", "data"),
+    Input("store_choosen_roi", "data"),
+    Input("direction-selection-bubble-plot", "clickData"),
     #     # Input("toggle-traces", "value"),
     # ],
 )
 def sf_tf_grid(
     store,
-    store_choosen_roi_and_dir,
+    store_choosen_roi,
+    direction_input,
 ) -> dcc.Graph:
     if store == {}:
         return "No data to plot"
 
-    roi_id = store_choosen_roi_and_dir["roi_id"]
+    roi_id = store_choosen_roi["roi_id"]
     signal = load_data_of_signal_dataframe(store, roi_id)
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
 
-    # direction = direction_input["value"]
-    direction = 90
+    if direction_input is None:
+        direction = "pooled"
+    else:
+        direction = direction_input["points"][0]["theta"]
 
     store["config"]["n_frames_per_session"]
 
@@ -250,7 +325,7 @@ def sf_tf_grid(
     Data = namedtuple("Data", ["sf_tf_combinations", "total_n_days"])
     Data(sf_tf_combinations, total_n_days)
 
-    if direction == "all":
+    if direction == "pooled":
         dataframe = get_dataframe_for_facet_plot_pooled_directions(signal)
     else:
         assert isinstance(direction, int)
@@ -390,13 +465,14 @@ def get_dataframe_for_facet_plot(
     Output("gaussian-graph-andermann", "children"),
     [
         Input("store", "data"),
-        Input("store_choosen_roi_and_dir", "data"),
-        #     Input("direction-store", "data"),
+        Input("store_choosen_roi", "data"),
+        Input("direction-selection-bubble-plot", "clickData"),
     ],
 )
 def gaussian_plot(
     store: dict,
-    store_choosen_roi_and_dir: dict,
+    store_choosen_roi: dict,
+    direction_input: dict,
 ) -> html.Div:
     if store == {}:
         return "No data to plot"
@@ -409,13 +485,15 @@ def gaussian_plot(
     if store == {}:
         return "No data to plot"
 
-    roi_id = store_choosen_roi_and_dir["roi_id"]
+    roi_id = store_choosen_roi["roi_id"]
     signal = load_data_of_signal_dataframe(store, roi_id)
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
 
-    # direction = direction_input["value"]
-    direction = 90
+    if direction_input is None:
+        direction = "pooled"
+    else:
+        direction = direction_input["points"][0]["theta"]
 
     #  from data I need: n_days, sf_tf_combinations
     sf_tf_combinations = itertools.product(
@@ -426,7 +504,6 @@ def gaussian_plot(
     Data = namedtuple("Data", ["sf_tf_combinations", "total_n_days"])
     data = Data(sf_tf_combinations, total_n_days)
 
-    # direction = direction_input["value"]
     low_res_gaussian = get_6x6_gaussian(
         roi_id,
         fit_outputs,
@@ -454,7 +531,7 @@ def gaussian_plot(
     )
     uniform_sfs = uniform_tfs = np.arange(0, len(spatial_frequencies), 1)
 
-    if isinstance(direction, int) and direction != "all":
+    if isinstance(direction, int) and direction != "pooled":
         #  Add the heatmap for the median subtracted response
         fig.add_trace(
             go.Heatmap(
