@@ -224,7 +224,7 @@ def direction_selection_plot(store):
         paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
     )
-    fig.update_traces(marker=dict(size=10))
+    fig.update_traces(marker=dict(size=30))
 
     return dcc.Graph(
         id="direction-selection-bubble-plot",
@@ -327,6 +327,9 @@ def sf_tf_grid(
 
     if direction == "pooled":
         dataframe = get_dataframe_for_facet_plot_pooled_directions(signal)
+        dataframe["stimulus_repetition"] = (
+            dataframe["stimulus_repetition"] + dataframe["direction"]
+        )
     else:
         assert isinstance(direction, int)
         dataframe = get_dataframe_for_facet_plot(signal, direction)
@@ -357,17 +360,17 @@ def sf_tf_grid(
     for trace in fig.data:
         if "mean" in trace.name:
             trace.line.color = "black"
-            trace.line.width = 1
+            trace.line.width = 2
             trace.line.dash = "solid"
         elif "median" in trace.name:
             trace.line.color = "red"
-            trace.line.width = 1
+            trace.line.width = 2
             trace.line.dash = "solid"
         else:
             # if "ALL" not in toggle_value:
             #     trace.visible = False
             # else:
-            trace.line.width = 0.5
+            trace.line.width = 0.3
 
     for x0, x1, text, color in [
         (0, 75, "gray", "green"),
