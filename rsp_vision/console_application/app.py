@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -44,23 +45,7 @@ def exception_handler(func: object) -> object:
     return inner_function
 
 
-@exception_handler
-def analysis_pipeline() -> None:
-    """Entry point of the program.
-
-    CLI or GUI functionality is added here.
-    """
-    config = read_config_file(config_path)
-    swc_blueprint_spec = SWC_Blueprint_Spec(
-        project_name="rsp_vision",
-        raw_data=False,
-        derivatives=True,
-        local_path=Path(config["paths"]["output"]),
-    )
-    start_logging(swc_blueprint_spec)
-    logging.debug(f"Config file read from {config_path}")
-    logging.debug(f"Config file content: {config}")
-
+def cli_entry_point_local():
     folder_name = Prompt.ask(
         " \
         Please provide only the dataset name.\n \
@@ -72,7 +57,40 @@ def analysis_pipeline() -> None:
         Example (2 days, big file): CX_1112837_hL_RSPd_monitor_front\n \
         📄"
     )
+    config, swc_blueprint_spec = read_config_and_logging()
+    analysis_pipeline(folder_name, config, swc_blueprint_spec)
 
+
+def cli_entry_point_batch():
+    config, swc_blueprint_spec = read_config_and_logging()
+    allen_folder = config["batch"]["allen_dff"]
+    only_sf_tf_files = []
+    for filename in os.listdir(allen_folder):
+        if "sf_tf" in filename:
+            filename = filename.split("_sf_tf")[0]
+            only_sf_tf_files.append(filename)
+
+    for filename in only_sf_tf_files:
+        analysis_pipeline(filename, config, swc_blueprint_spec)
+
+
+def read_config_and_logging():
+    config = read_config_file(config_path)
+    swc_blueprint_spec = SWC_Blueprint_Spec(
+        project_name="rsp_vision",
+        raw_data=False,
+        derivatives=True,
+        local_path=Path(config["paths"]["output"]),
+    )
+    start_logging(swc_blueprint_spec)
+    logging.debug(f"Config file read from {config_path}")
+    logging.debug(f"Config file content: {config}")
+
+    return config, swc_blueprint_spec
+
+
+@exception_handler
+def analysis_pipeline(folder_name, config, swc_blueprint_spec) -> None:
     # load data
     data, folder_naming = load_data(folder_name, config)
 

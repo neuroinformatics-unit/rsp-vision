@@ -1,5 +1,5 @@
-from rsp_vision.console_application.app import analysis_pipeline
+from rsp_vision.console_application.app import cli_entry_point_local
 
 if __name__ == "__main__":
-    if callable(analysis_pipeline):
-        analysis_pipeline()
+    if callable(cli_entry_point_local):
+        cli_entry_point_local()
