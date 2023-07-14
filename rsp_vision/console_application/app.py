@@ -85,7 +85,7 @@ def read_config_and_logging(is_local=True):
         else Path(config["batch-paths"]["output"]),
     )
     if not is_local:
-        config["path"] = config["batch-paths"]
+        config["paths"] = config["batch-paths"]
     start_logging(swc_blueprint_spec)
     logging.debug(f"Config file read from {config_path}")
     logging.debug(f"Config file content: {config}")
