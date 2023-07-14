@@ -62,7 +62,7 @@ def cli_entry_point_local():
 
 
 def cli_entry_point_batch():
-    config, swc_blueprint_spec = read_config_and_logging()
+    config, swc_blueprint_spec = read_config_and_logging(is_local=False)
     allen_folder = config["batch"]["allen_dff"]
     only_sf_tf_files = []
     for filename in os.listdir(allen_folder):
@@ -74,14 +74,18 @@ def cli_entry_point_batch():
         analysis_pipeline(filename, config, swc_blueprint_spec)
 
 
-def read_config_and_logging():
+def read_config_and_logging(is_local=True):
     config = read_config_file(config_path)
     swc_blueprint_spec = SWC_Blueprint_Spec(
         project_name="rsp_vision",
         raw_data=False,
         derivatives=True,
-        local_path=Path(config["paths"]["output"]),
+        local_path=Path(config["paths"]["output"])
+        if is_local
+        else Path(config["batch-paths"]["output"]),
     )
+    if not is_local:
+        config["path"] = config["batch-paths"]
     start_logging(swc_blueprint_spec)
     logging.debug(f"Config file read from {config_path}")
     logging.debug(f"Config file content: {config}")
