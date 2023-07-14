@@ -63,7 +63,7 @@ def cli_entry_point_local():
 
 def cli_entry_point_batch():
     config, swc_blueprint_spec = read_config_and_logging(is_local=False)
-    allen_folder = config["paths"]["allen_dff"]
+    allen_folder = config["paths"]["allen-dff"]
     only_sf_tf_files = []
     for filename in os.listdir(allen_folder):
         if "sf_tf" in filename:
