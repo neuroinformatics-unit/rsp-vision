@@ -61,6 +61,14 @@ def cli_entry_point_local():
     analysis_pipeline(folder_name, config, swc_blueprint_spec)
 
 
+def cli_entry_point_array(file):
+    config, swc_blueprint_spec = read_config_and_logging(is_local=False)
+
+    dataset = file.split("_sf_tf")[0]
+    logging.info(f"Trying to analyse:{dataset}")
+    analysis_pipeline(dataset, config, swc_blueprint_spec)
+
+
 def cli_entry_point_batch():
     config, swc_blueprint_spec = read_config_and_logging(is_local=False)
     allen_folder = config["paths"]["allen-dff"]
