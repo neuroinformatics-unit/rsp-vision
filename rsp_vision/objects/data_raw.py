@@ -19,8 +19,8 @@ class DataRaw:
             self.day: dict = self._unpack_data(data["day"], data)
             logging.info("Unpacked day")
 
-            self.imaging = self._unpack_data(data["imaging"], data)
-            logging.info("Unpacked imaging")
+            # self.imaging = self._unpack_data(data["imaging"], data)
+            # logging.info("Unpacked imaging")
 
             self.frames: np.ndarray = self._unpack_data(data["f"], data)
             logging.info("Unpacked f")
@@ -28,8 +28,8 @@ class DataRaw:
             self.is_cell = self._unpack_data(data["is_cell"], data)
             logging.info("Unpacked is_cell")
 
-            self.neuropil_coeficient = self._unpack_data(data["r_neu"], data)
-            logging.info("Unpacked r_neu")
+            # self.neuropil_coeficient = self._unpack_data(data["r_neu"], data)
+            # logging.info("Unpacked r_neu")
 
             self.stim: np.ndarray = self._unpack_data(data["stim"], data)
             logging.info("Unpacked stim")
@@ -38,18 +38,18 @@ class DataRaw:
             logging.info("Unpacked trig")
         else:
             self.day = data["day"]
-            self.imaging = data["imaging"]
+            # self.imaging = data["imaging"]
             self.frames = data["f"]
             self.is_cell = data["is_cell"]
-            self.neuropil_coeficient = data["r_neu"]
+            # self.neuropil_coeficient = data["r_neu"]
             self.stim = data["stim"]
             self.trig = data["trig"]
 
-    def __repr__(self) -> str:
-        return f"DataRaw(day={self.day}, imaging={self.imaging}, \
-            f={self.frames}, is_cell={self.is_cell}, \
-            r_neu={self.neuropil_coeficient}, stim={self.stim}, \
-            trig={self.trig})"
+    # def __repr__(self) -> str:
+    #     return f"DataRaw(day={self.day}, imaging={self.imaging}, \
+    #         f={self.frames}, is_cell={self.is_cell}, \
+    #         r_neu={self.neuropil_coeficient}, stim={self.stim}, \
+    #         trig={self.trig})"
 
     @classmethod
     def _unpack_data(
