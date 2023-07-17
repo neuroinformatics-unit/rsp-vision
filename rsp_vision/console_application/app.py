@@ -71,6 +71,10 @@ def cli_entry_point_batch():
             only_sf_tf_files.append(filename)
 
     for filename in only_sf_tf_files:
+        logging.info(
+            "=============================================================="
+        )
+        logging.info(f"Trying to analyse:{filename}")
         analysis_pipeline(filename, config, swc_blueprint_spec)
 
 
