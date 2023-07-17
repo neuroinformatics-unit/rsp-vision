@@ -1,6 +1,7 @@
 include LICENSE
 include README.md
 include *.py
+include *.sbatch
 
 recursive-include docs *.md
 recursive-include docs *.png
