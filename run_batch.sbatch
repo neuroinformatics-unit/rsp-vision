@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Starting the job"
- 
+
 #SBATCH -p cpu # partition (queue)
 #SBATCH -N 1   # number of nodes
 #SBATCH --mem 64G # memory pool for all cores
