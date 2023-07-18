@@ -90,3 +90,4 @@ venv/
 *.hdf5
 *.pickle
 *.obsidian
+*.out

@@ -1,8 +1,10 @@
+import datetime
 import logging
 import os
 import sys
 from pathlib import Path
 
+import pandas as pd
 import rich
 from decouple import config
 from fancylog import fancylog
@@ -61,11 +63,44 @@ def cli_entry_point_local():
     analysis_pipeline(folder_name, config, swc_blueprint_spec)
 
 
-def cli_entry_point_array(file):
+def cli_entry_point_array(job_id):
     config, swc_blueprint_spec = read_config_and_logging(is_local=False)
 
-    dataset = file.split("_sf_tf")[0]
-    logging.info(f"Trying to analyse:{dataset}")
+    allen_folder = config["paths"]["allen-dff"]
+    only_sf_tf_files = []
+    for filename in os.listdir(allen_folder):
+        if "sf_tf" in filename:
+            filename = filename.split("_sf_tf")[0]
+            only_sf_tf_files.append(filename)
+
+    dataset = only_sf_tf_files[job_id]
+
+    reanalysis = False
+    try:
+        with open("./local_logs.csv", "r") as f:
+            local_logs = pd.read_csv(f, index_col=0, header=0)
+
+            if dataset in local_logs.dataset_name:
+                reanalysis = True
+    except Exception:
+        local_logs = pd.DataFrame(
+            columns=["dataset_name", "date", "latest_job_id"]
+        )
+
+    ll = {
+        "dataset_name": dataset,
+        "date": str(datetime.datetime.now()),
+        "latest_job_id": job_id,
+    }
+
+    if not reanalysis:
+        local_logs = pd.concat([local_logs, pd.DataFrame(ll, index=[0])])
+    else:
+        local_logs.loc[local_logs["dataset_name"] == dataset] == ll
+
+    local_logs.to_csv("./local_logs.csv")
+
+    logging.info(f"Trying to analyse:{dataset}, job id: {job_id}")
     analysis_pipeline(dataset, config, swc_blueprint_spec)
 
 
