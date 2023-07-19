@@ -1,10 +1,11 @@
 # RSP vision
 Tools for analyzing responses of visual neurons to drifting gratings, based on the original work of Lee Cossell.
 
-## TL;DR
+## Get Started Quickly
 In your environment...
 Install: `pip install .`
 Make config file: `python3 setup_for_demo.py`
+Edit config file and insert your path: `nano rsp_vision/config/config.yml`
 Run analysis: `python3 demo_cli.py`
 Run dashboard: `python3 demo_dash.py`
 
