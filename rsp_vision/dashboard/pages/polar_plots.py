@@ -1,8 +1,7 @@
-import dash
 import dash_mantine_components as dmc
-from dash import html
+from dash import html, register_page
 
-dash.register_page(__name__, path="/polar_plots")
+register_page(__name__, path="/polar_plots")
 
 layout = html.Div(
     [

@@ -1,10 +1,9 @@
 from pathlib import Path
 
-import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import pandas as pd
-from dash import Input, Output, callback, dash_table, html
+from dash import Input, Output, callback, dash_table, html, register_page
 from decouple import config
 
 from rsp_vision.load.load_data import read_config_file
@@ -35,10 +34,10 @@ with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
     data = dataframe.to_dict(orient="records")
 
 
-dash.register_page(__name__, path="/")
+register_page(__name__, path="/")
 
 
-layout = dash.html.Div(
+layout = html.Div(
     [
         dmc.Title(
             "Select dataset to be loaded 👇",

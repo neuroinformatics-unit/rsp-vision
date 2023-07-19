@@ -1,7 +1,6 @@
 # This file is used to create the Dash app and the scaffold layout.
-import dash
 import dash_mantine_components as dmc
-from dash import Dash, dcc, html
+from dash import Dash, dcc, html, page_container
 
 # I am using Open Sans font from Google Fonts for the whole app.
 # The design of the app is controlled by the CSS file in
@@ -44,6 +43,6 @@ app.layout = html.Div(
     [
         dcc.Store(id="store", data={}),
         header,
-        dash.page_container,
+        page_container,
     ]
 )
