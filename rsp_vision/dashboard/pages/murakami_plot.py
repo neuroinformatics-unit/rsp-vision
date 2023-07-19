@@ -75,12 +75,12 @@ layout = html.Div(
                     span=2,
                 ),
                 dmc.Col(
-                    [
+                    dmc.Center(
                         html.Div(
                             id="murakami-plot",
                             className="murakami-plot",
                         ),
-                    ],
+                    ),
                     span="auto",
                     offset=1,
                 ),
