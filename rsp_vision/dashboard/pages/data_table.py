@@ -26,11 +26,11 @@ swc_blueprint_spec = SWC_Blueprint_Spec(
     derivatives=True,
     local_path=Path(config["paths"]["output"]),
 )
-with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
-    c = f.readline().split(",")
-    c[0] = "index"
-    columns = [{"name": i, "id": i} for i in c]
-    dataframe = pd.read_csv(f, names=c, index_col=0)
+with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as file:
+    col = file.readline().split(",")
+    col[0] = "index"
+    columns = [{"name": idx, "id": idx} for idx in col]
+    dataframe = pd.read_csv(file, names=col, index_col=0)
     data = dataframe.to_dict(orient="records")
 
 
