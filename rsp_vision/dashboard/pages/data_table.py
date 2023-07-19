@@ -51,7 +51,7 @@ layout = dash.html.Div(
                     id="selected_data_str",
                 ),
                 dbc.Button(
-                    "Load ✨",
+                    "Load selected dataset ✨",
                     id="button",
                     className="load-data-button",
                     href="/murakami_plot",
