@@ -31,6 +31,9 @@ dependencies = [
     "numba",
     "tqdm",
     "GitPython",
+    "dash",
+    "dash_mantine_components",
+    "dash_bootstrap_components",
 ]
 
 [project.urls]
@@ -52,6 +55,8 @@ dev = [
   "ruff",
   "setuptools_scm",
   "check-manifest",
+  "pytest-mock",
+  "GitPython",
 ]
 
 [build-system]
