@@ -1,10 +1,9 @@
 from pathlib import Path
 
-import dash
 import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import pandas as pd
-from dash import Input, Output, callback, dash_table, html
+from dash import Input, Output, callback, dash_table, html, register_page
 from decouple import config
 
 from rsp_vision.load.load_data import read_config_file
@@ -27,18 +26,18 @@ swc_blueprint_spec = SWC_Blueprint_Spec(
     derivatives=True,
     local_path=Path(config["paths"]["output"]),
 )
-with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as f:
-    c = f.readline().split(",")
-    c[0] = "index"
-    columns = [{"name": i, "id": i} for i in c]
-    dataframe = pd.read_csv(f, names=c, index_col=0)
+with open(swc_blueprint_spec.path / "analysis_log.csv", "r") as file:
+    col = file.readline().split(",")
+    col[0] = "index"
+    columns = [{"name": idx, "id": idx} for idx in col]
+    dataframe = pd.read_csv(file, names=col, index_col=0)
     data = dataframe.to_dict(orient="records")
 
 
-dash.register_page(__name__, path="/")
+register_page(__name__, path="/")
 
 
-layout = dash.html.Div(
+layout = html.Div(
     [
         dmc.Title(
             "Select dataset to be loaded 👇",
@@ -51,7 +50,7 @@ layout = dash.html.Div(
                     id="selected_data_str",
                 ),
                 dbc.Button(
-                    "Load ✨",
+                    "Load selected dataset ✨",
                     id="button",
                     className="load-data-button",
                     href="/murakami_plot",

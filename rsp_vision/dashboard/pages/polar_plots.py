@@ -1,8 +1,7 @@
-import dash
 import dash_mantine_components as dmc
-from dash import html
+from dash import html, register_page
 
-dash.register_page(__name__, path="/polar_plots")
+register_page(__name__, path="/polar_plots")
 
 layout = html.Div(
     [
@@ -18,11 +17,6 @@ layout = html.Div(
                             id="selected_data_str_polar",
                         ),
                         html.Br(),
-                        # dmc.Switch(
-                        #     id="show-only-responsive",
-                        #     label="Show only responsive ROIs",
-                        #     checked=True,
-                        # ),
                         html.Br(),
                         html.Br(),
                         dmc.NavLink(
