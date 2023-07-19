@@ -31,7 +31,7 @@ Please edit the `allen_dff` path to point to the folder where you stored the pre
 Finally, run `python3 demo_cli.py` to run the analysis. The script will create a file containing the analysis output which will then be used by the dashboard.
 
 ### Run the analysis
-There is a script called `demo_cli.py` that runs the analysis and stores the output. You can run it with:
+The script `demo_cli.py` runs the analysis and stores the output. You can start it with:
 ```bash
 python3 demo_cli.py
 ```
