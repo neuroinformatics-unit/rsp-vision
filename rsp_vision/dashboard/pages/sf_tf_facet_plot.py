@@ -17,11 +17,6 @@ layout = html.Div(
                             id="selected_data_str_sf_tf",
                         ),
                         html.Br(),
-                        # dmc.Switch(
-                        #     id="show-only-responsive",
-                        #     label="Show only responsive ROIs",
-                        #     checked=True,
-                        # ),
                         html.Br(),
                         html.Br(),
                         dmc.NavLink(
