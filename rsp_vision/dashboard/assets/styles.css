@@ -76,3 +76,7 @@ a:-webkit-any-link {
 .responsive-switch-text{
     margin: 5%;
 }
+
+.show-hide {
+    display: none;
+}
