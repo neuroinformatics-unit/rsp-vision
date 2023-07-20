@@ -34,6 +34,12 @@ layout = html.Div(
                         dmc.Text(
                             id="selected_data_str_sf_tf",
                         ),
+                        dmc.Text(
+                            id="selected_ROI",
+                        ),
+                        dmc.Text(
+                            id="selected_direction",
+                        ),
                         dcc.Store(id="store_choosen_roi", data={}),
                         html.Br(),
                         html.Br(),
@@ -60,12 +66,8 @@ layout = html.Div(
                         ),
                         dmc.Text(
                             "Choose your ROI, the responsive ones are in red",
-                        ),
-                        dmc.Text(
-                            id="selected_ROI",
-                        ),
-                        dmc.Text(
-                            id="selected_direction",
+                            size="xs",
+                            color="grey",
                         ),
                         html.Div(
                             id="roi-selection-bubble-plot",
@@ -79,7 +81,9 @@ layout = html.Div(
                             checked=False,
                         ),
                         dmc.Text(
-                            "Showing all traces will make the plot very slow",
+                            "Showing all traces could slow down plot creation",
+                            size="xs",
+                            color="grey",
                         ),
                     ],
                     span=2,
@@ -345,6 +349,9 @@ def sf_tf_grid(
         signal = signal[signal.direction == direction]
         dataframe = calculate_mean_and_median(signal, direction)
 
+    #  remove tf and sf when they are nan
+    dataframe = dataframe.dropna(subset=["tf", "sf"])
+
     fig = px.line(
         dataframe,
         x="stimulus_frames",
@@ -354,7 +361,7 @@ def sf_tf_grid(
         facet_col_spacing=0.005,
         facet_row_spacing=0.005,
         # width=2000,
-        height=800,
+        height=1000,
         color="stimulus_repetition",
         category_orders={
             "sf": spatial_frequencies[::-1],
@@ -367,7 +374,12 @@ def sf_tf_grid(
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
         showlegend=False,
+        # hide y axis labels
+        yaxis=dict(
+            showticklabels=False,
+        ),
     )
+
     for trace in fig.data:
         if "mean" in trace.name:
             trace.visible = True
@@ -398,16 +410,16 @@ def sf_tf_grid(
             col="all",
             annotation_text=text,
             annotation_position="top left",
-            annotation_font_size=15,
+            annotation_font_size=8,
             fillcolor=color,
-            opacity=0.1,
+            opacity=0.05,
             line_width=0,
         )
 
     # Fake legend
     fig.add_annotation(
-        x=0.9,
-        y=0.97,
+        x=0.01,
+        y=-0.1,
         xref="paper",
         yref="paper",
         text="mean",
@@ -415,8 +427,8 @@ def sf_tf_grid(
         font=dict(size=15, color="black"),
     )
     fig.add_annotation(
-        x=0.95,
-        y=0.97,
+        x=0.1,
+        y=-0.1,
         xref="paper",
         yref="paper",
         text="median",
