@@ -73,6 +73,14 @@ layout = html.Div(
                         html.Div(
                             id="direction-selection-bubble-plot",
                         ),
+                        dmc.Switch(
+                            id="toggle-traces",
+                            label="Show all traces",
+                            checked=False,
+                        ),
+                        dmc.Text(
+                            "Showing all traces will make the plot very slow",
+                        ),
                     ],
                     span=2,
                 ),
@@ -242,7 +250,7 @@ def direction_selection_plot(store):
 )
 def update_selected_ROI(clickData):
     if clickData is None:
-        default_roi_id = 0
+        default_roi_id = 9
         return "ROI 1 selected", {"roi_id": default_roi_id}
     else:
         roi_id = int(clickData["points"][0]["curveNumber"])
@@ -293,13 +301,13 @@ def load_data_of_signal_dataframe(store, roi_id):
     Input("store", "data"),
     Input("store_choosen_roi", "data"),
     Input("direction-selection-bubble-plot", "clickData"),
-    #     # Input("toggle-traces", "value"),
-    # ],
+    Input("toggle-traces", "checked"),
 )
 def sf_tf_grid(
     store,
     store_choosen_roi,
     direction_input,
+    toggle_value,
 ) -> dcc.Graph:
     if store == {}:
         return "No data to plot"
@@ -314,8 +322,6 @@ def sf_tf_grid(
     else:
         direction = direction_input["points"][0]["theta"]
 
-    store["config"]["n_frames_per_session"]
-
     #  from data I need: n_days, sf_tf_combinations
     sf_tf_combinations = itertools.product(
         spatial_frequencies, temporal_frequencies
@@ -326,13 +332,18 @@ def sf_tf_grid(
     Data(sf_tf_combinations, total_n_days)
 
     if direction == "pooled":
-        dataframe = get_dataframe_for_facet_plot_pooled_directions(signal)
-        dataframe["stimulus_repetition"] = (
-            dataframe["stimulus_repetition"] + dataframe["direction"]
+        dataframe = calculate_mean_and_median(signal)
+        where_stim_is_not_na = dataframe["stimulus_repetition"].notna()
+
+        dataframe["stimulus_repetition"][where_stim_is_not_na] = (
+            dataframe["stimulus_repetition"][where_stim_is_not_na].astype(str)
+            + "_"
+            + dataframe["direction"][where_stim_is_not_na].astype(str)
         )
     else:
         assert isinstance(direction, int)
-        dataframe = get_dataframe_for_facet_plot(signal, direction)
+        signal = signal[signal.direction == direction]
+        dataframe = calculate_mean_and_median(signal, direction)
 
     fig = px.line(
         dataframe,
@@ -359,18 +370,21 @@ def sf_tf_grid(
     )
     for trace in fig.data:
         if "mean" in trace.name:
+            trace.visible = True
             trace.line.color = "black"
             trace.line.width = 2
             trace.line.dash = "solid"
         elif "median" in trace.name:
+            trace.visible = True
             trace.line.color = "red"
             trace.line.width = 2
             trace.line.dash = "solid"
         else:
-            # if "ALL" not in toggle_value:
-            #     trace.visible = False
-            # else:
-            trace.line.width = 0.3
+            if not toggle_value:
+                trace.visible = False
+            else:
+                trace.visible = True
+                trace.line.width = 0.3
 
     for x0, x1, text, color in [
         (0, 75, "gray", "green"),
@@ -418,33 +432,9 @@ def sf_tf_grid(
     )
 
 
-def get_dataframe_for_facet_plot_pooled_directions(
+def calculate_mean_and_median(
     signal: pd.DataFrame,
 ) -> pd.DataFrame:
-    mean_df = (
-        signal.groupby(["sf", "tf", "stimulus_frames"])
-        .agg({"signal": "mean"})
-        .reset_index()
-    )
-    mean_df["stimulus_repetition"] = "mean"
-    combined_df = pd.concat([signal, mean_df], ignore_index=True)
-
-    median_df = (
-        signal.groupby(["sf", "tf", "stimulus_frames"])
-        .agg({"signal": "median"})
-        .reset_index()
-    )
-    median_df["stimulus_repetition"] = "median"
-    combined_df = pd.concat([combined_df, median_df], ignore_index=True)
-
-    return combined_df
-
-
-def get_dataframe_for_facet_plot(
-    signal: pd.DataFrame,
-    direction: int,
-) -> pd.DataFrame:
-    signal = signal[signal.direction == direction]
     mean_df = (
         signal.groupby(["sf", "tf", "stimulus_frames"])
         .agg({"signal": "mean"})
