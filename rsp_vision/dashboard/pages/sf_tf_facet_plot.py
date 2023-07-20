@@ -34,12 +34,6 @@ layout = html.Div(
                         dmc.Text(
                             id="selected_data_str_sf_tf",
                         ),
-                        dmc.Text(
-                            id="selected_ROI",
-                        ),
-                        dmc.Text(
-                            id="selected_direction",
-                        ),
                         dcc.Store(id="store_choosen_roi", data={}),
                         html.Br(),
                         dmc.NavLink(
@@ -66,11 +60,18 @@ layout = html.Div(
                         html.Br(),
                         html.Br(),
                         dmc.Text(
-                            "Choose ROI and direction. \
-                            Responsive ROIs are in red.",
+                            "Choose a ROI 👇 \
+                            Responsive ROIs are in yellow.",
+                        ),
+                        dmc.Text(
+                            id="selected_ROI",
                         ),
                         html.Div(
                             id="roi-selection-bubble-plot",
+                        ),
+                        dmc.Text("Choose a direction 👇"),
+                        dmc.Text(
+                            id="selected_direction",
                         ),
                         html.Div(
                             id="direction-selection-bubble-plot",
@@ -294,8 +295,8 @@ def direction_selection_plot(store):
 )
 def update_selected_ROI(clickData):
     if clickData is None:
-        default_roi_id = 9
-        return "ROI 1 selected", {"roi_id": default_roi_id}
+        default_roi_id = 0
+        return f"ROI {default_roi_id + 1} selected", {"roi_id": default_roi_id}
     else:
         roi_id = int(clickData["points"][0]["curveNumber"])
         return f"ROI {roi_id + 1} selected", {"roi_id": roi_id}
@@ -307,10 +308,10 @@ def update_selected_ROI(clickData):
 )
 def update_selected_direction(clickData):
     if clickData is None:
-        return "Pooled directions"
+        return "All directions selected"
     else:
         if is_pooled_directions(clickData):
-            return "Pooled directions"
+            return "All directions selected"
         else:
             direction = clickData["points"][0]["theta"]
             return f"Direction {direction} selected"
@@ -412,12 +413,33 @@ def sf_tf_grid(
     )
 
     fig.update_layout(
-        title=f"SF TF traces for roi {roi_id + 1}",
+        title=f"Response of ROI {roi_id + 1} to SF-TF combinations",
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
         showlegend=False,
-        xaxis=dict(title="Time (frames) from gray stimulus onset"),
-        yaxis=dict(title="ΔF/F"),
+        title_x=0.5,
+        title_font=dict(size=20),
+    )
+    fig.for_each_yaxis(lambda y: y.update(title=""))
+    fig.for_each_xaxis(lambda x: x.update(title=""))
+    fig.add_annotation(
+        x=-0.05,
+        y=0.5,
+        text="ΔF/F",
+        showarrow=False,
+        textangle=-90,
+        xref="paper",
+        yref="paper",
+        font=dict(size=20),
+    )
+    fig.add_annotation(
+        x=0.5,
+        y=-0.07,
+        text="Time (frames) from gray stimulus onset",
+        showarrow=False,
+        xref="paper",
+        yref="paper",
+        font=dict(size=20),
     )
 
     for trace in fig.data:
