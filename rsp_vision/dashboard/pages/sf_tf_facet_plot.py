@@ -167,7 +167,7 @@ def roi_selection_plot(store):
                 mode="markers",
                 marker=dict(
                     size=20,
-                    color="red" if roi in responsive_rois else "gray",
+                    color="darkorange" if roi in responsive_rois else "gray",
                 ),
                 hovertemplate=f"ROI: {roi}",
             )
@@ -201,6 +201,7 @@ def roi_selection_plot(store):
     return dcc.Graph(
         id="roi-selection-bubble-plot",
         figure=fig,
+        config={"displayModeBar": False},
     )
 
 
@@ -230,7 +231,7 @@ def direction_selection_plot(store):
             mode="markers",
             marker=dict(
                 size=0,
-                color="blue",
+                color="royalblue",
             ),
         )
     )
@@ -279,6 +280,7 @@ def direction_selection_plot(store):
     return dcc.Graph(
         id="direction-selection-bubble-plot",
         figure=fig,
+        config={"displayModeBar": False},
     )
 
 
@@ -414,21 +416,19 @@ def sf_tf_grid(
         plot_bgcolor="rgba(0, 0, 0, 0)",
         paper_bgcolor="rgba(0, 0, 0, 0)",
         showlegend=False,
-        # hide y axis labels
-        yaxis=dict(
-            showticklabels=False,
-        ),
+        xaxis=dict(title="Time (frames) from gray stimulus onset"),
+        yaxis=dict(title="ΔF/F"),
     )
 
     for trace in fig.data:
         if "mean" in trace.name:
             trace.visible = True
-            trace.line.color = "black"
+            trace.line.color = "mediumblue"
             trace.line.width = 2
             trace.line.dash = "solid"
         elif "median" in trace.name:
             trace.visible = True
-            trace.line.color = "red"
+            trace.line.color = "orangered"
             trace.line.width = 2
             trace.line.dash = "solid"
         else:
@@ -436,7 +436,8 @@ def sf_tf_grid(
                 trace.visible = False
             else:
                 trace.visible = True
-                trace.line.width = 0.3
+                trace.line.width = 0.1
+                trace.line.color = "gray"
 
     for x0, x1, text, color in [
         (0, 75, "gray", "green"),
@@ -462,18 +463,18 @@ def sf_tf_grid(
         y=-0.1,
         xref="paper",
         yref="paper",
-        text="mean",
+        text="MEAN",
         showarrow=False,
-        font=dict(size=15, color="black"),
+        font=dict(size=20, color="mediumblue"),
     )
     fig.add_annotation(
-        x=0.1,
-        y=-0.7,
+        x=0.07,
+        y=-0.1,
         xref="paper",
         yref="paper",
-        text="median",
+        text="MEDIAN",
         showarrow=False,
-        font=dict(size=15, color="red"),
+        font=dict(size=20, color="orangered"),
     )
 
     return html.Div(
@@ -732,9 +733,12 @@ def gaussian_plot(
         margin=dict(t=50, b=50, l=50, r=50),
         showlegend=False,
         title_text=f"Fit Correlation: {fit_corr:.2f}, 𝜁: {fit_value:.2f}",
-        #  title in the ceter and bold
         title_x=0.5,
         title_font=dict(size=20),
+        title=dict(
+            y=1,
+            pad=dict(b=30),
+        ),
     )
 
     fig.update_xaxes(
