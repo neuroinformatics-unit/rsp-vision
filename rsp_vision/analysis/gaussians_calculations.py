@@ -321,7 +321,7 @@ def get_gaussian_matrix_to_be_plotted(
                 fit_output[(roi_id, direction)],
                 np.linspace(
                     sfs.min(),
-                    tfs.max(),
+                    sfs.max(),
                     num=matrix_definition,
                 ),
                 np.linspace(
