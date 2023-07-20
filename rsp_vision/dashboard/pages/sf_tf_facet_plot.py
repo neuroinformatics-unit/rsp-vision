@@ -64,6 +64,7 @@ layout = html.Div(
                             className="navlink",
                         ),
                         html.Br(),
+                        html.Br(),
                         dmc.Text(
                             "Choose ROI and direction. \
                             Responsive ROIs are in red.",
@@ -187,7 +188,7 @@ def roi_selection_plot(store):
 
     fig.update_layout(
         width=300,
-        height=300,
+        height=30 * row_n,
         margin=dict(l=0, r=0, t=0, b=0),
         showlegend=False,
         plot_bgcolor="rgba(0,0,0,0)",
@@ -726,11 +727,14 @@ def gaussian_plot(
     # Update layout to maintain the aspect ratio
     fig.update_layout(
         autosize=False,
-        width=400,
+        width=300,
         height=1000,
         margin=dict(t=50, b=50, l=50, r=50),
         showlegend=False,
         title_text=f"Fit Correlation: {fit_corr:.2f}, 𝜁: {fit_value:.2f}",
+        #  title in the ceter and bold
+        title_x=0.5,
+        title_font=dict(size=20),
     )
 
     fig.update_xaxes(
