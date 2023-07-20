@@ -39,7 +39,7 @@ layout = html.Div(
                             disabled=True,
                         ),
                         dmc.NavLink(
-                            label="SF-TF facet plot and gaussians",
+                            label="Single-ROI visualization",
                             href="/sf_tf_facet_plot",
                             className="navlink",
                         ),

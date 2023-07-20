@@ -24,7 +24,7 @@ dash.register_page(__name__, path="/sf_tf_facet_plot")
 layout = html.Div(
     [
         dmc.Title(
-            "SF-TF facet plot and gaussians",
+            "Single-ROI visualization",
             className="page-title",
         ),
         dmc.Grid(
@@ -42,7 +42,6 @@ layout = html.Div(
                         ),
                         dcc.Store(id="store_choosen_roi", data={}),
                         html.Br(),
-                        html.Br(),
                         dmc.NavLink(
                             label="Back to Data Table",
                             href="/",
@@ -54,7 +53,7 @@ layout = html.Div(
                             className="navlink",
                         ),
                         dmc.NavLink(
-                            label="SF-TF facet plot and gaussians",
+                            label="Single-ROI visualization",
                             href="/sf_tf_facet_plot",
                             className="navlink",
                             disabled=True,
@@ -64,10 +63,10 @@ layout = html.Div(
                             href="/polar_plots",
                             className="navlink",
                         ),
+                        html.Br(),
                         dmc.Text(
-                            "Choose your ROI, the responsive ones are in red",
-                            size="xs",
-                            color="grey",
+                            "Choose ROI and direction. \
+                            Responsive ROIs are in red.",
                         ),
                         html.Div(
                             id="roi-selection-bubble-plot",
@@ -106,7 +105,7 @@ layout = html.Div(
                             className="gaussian-plot",
                         ),
                     ],
-                    span=3,
+                    span=2,
                 ),
             ],
             className="sf-tf-container",
@@ -222,6 +221,18 @@ def direction_selection_plot(store):
         start_angle=0,
         direction="counterclockwise",
     )
+    #  plot also a circle in the center
+    fig.add_trace(
+        go.Scatterpolar(
+            r=[0],
+            theta=[0],
+            mode="markers",
+            marker=dict(
+                size=0,
+                color="blue",
+            ),
+        )
+    )
 
     fig.update_layout(
         width=200,
@@ -236,7 +247,33 @@ def direction_selection_plot(store):
         paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
     )
-    fig.update_traces(marker=dict(size=30))
+    fig.update_traces(
+        marker=dict(size=30),
+    )
+
+    #  write angle on top of the circle
+    for i, direction in enumerate(directions):
+        fig.add_annotation(
+            x=0.3 * np.cos(np.deg2rad(direction)) + 0.5,
+            y=0.3 * np.sin(np.deg2rad(direction)) + 0.5,
+            text=str(direction),
+            showarrow=False,
+            font=dict(
+                size=10,
+                color="white",
+            ),
+        )
+
+    fig.add_annotation(
+        x=0.5,
+        y=0.5,
+        text="all",
+        showarrow=False,
+        font=dict(
+            size=10,
+            color="white",
+        ),
+    )
 
     return dcc.Graph(
         id="direction-selection-bubble-plot",
@@ -267,11 +304,13 @@ def update_selected_ROI(clickData):
 )
 def update_selected_direction(clickData):
     if clickData is None:
-        default_direction = 0
-        return f"Direction {default_direction} selected"
+        return "Pooled directions"
     else:
-        direction = clickData["points"][0]["theta"]
-        return f"Direction {direction} selected"
+        if is_pooled_directions(clickData):
+            return "Pooled directions"
+        else:
+            direction = clickData["points"][0]["theta"]
+            return f"Direction {direction} selected"
 
 
 def load_data(store):
@@ -321,7 +360,7 @@ def sf_tf_grid(
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
 
-    if direction_input is None:
+    if is_pooled_directions(direction_input):
         direction = "pooled"
     else:
         direction = direction_input["points"][0]["theta"]
@@ -347,7 +386,7 @@ def sf_tf_grid(
     else:
         assert isinstance(direction, int)
         signal = signal[signal.direction == direction]
-        dataframe = calculate_mean_and_median(signal, direction)
+        dataframe = calculate_mean_and_median(signal)
 
     #  remove tf and sf when they are nan
     dataframe = dataframe.dropna(subset=["tf", "sf"])
@@ -428,7 +467,7 @@ def sf_tf_grid(
     )
     fig.add_annotation(
         x=0.1,
-        y=-0.1,
+        y=-0.7,
         xref="paper",
         yref="paper",
         text="median",
@@ -466,6 +505,12 @@ def calculate_mean_and_median(
     return combined_df
 
 
+def is_pooled_directions(direction_input):
+    return (direction_input is None) or (
+        direction_input["points"][0]["r"] == 0
+    )
+
+
 @callback(
     Output("gaussian-graph-andermann", "children"),
     [
@@ -495,7 +540,7 @@ def gaussian_plot(
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
 
-    if direction_input is None:
+    if is_pooled_directions(direction_input):
         direction = "pooled"
     else:
         direction = direction_input["points"][0]["theta"]
