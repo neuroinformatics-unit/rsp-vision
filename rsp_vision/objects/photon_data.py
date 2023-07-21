@@ -582,6 +582,11 @@ class PhotonData:
     def add_stimulus_frames_count_to_signal_df(
         self,
     ):
+        """
+        Add a column to the signal dataframe that counts the frames
+        within each stimulus presentation in order to make plotting
+        easier.
+        """
         self.signal["stimulus_frames"] = np.nan
         n_frames_per_stim = int(
             self.n_frames_per_trigger * self.n_triggers_per_stimulus
