@@ -67,19 +67,29 @@ layout = html.Div(
                         dmc.Text(
                             id="selected_ROI",
                         ),
-                        html.Div(
-                            id="roi-selection-bubble-plot",
+                        dmc.Center(
+                            html.Div(
+                                id="roi-selection-bubble-plot",
+                            ),
                         ),
                         dmc.Text("Choose a direction 👇"),
                         dmc.Text(
                             id="selected_direction",
                         ),
-                        html.Div(
-                            id="direction-selection-bubble-plot",
+                        dmc.Center(
+                            html.Div(
+                                id="direction-selection-bubble-plot",
+                            ),
                         ),
                         dmc.Switch(
+                            id="scale-heatmap",
+                            label="Same max for all heatmaps (120 ΔF/F)",
+                            checked=True,
+                        ),
+                        html.Br(),
+                        dmc.Switch(
                             id="toggle-traces",
-                            label="Show all traces",
+                            label="Show all traces in facet plot",
                             checked=False,
                         ),
                         dmc.Text(
@@ -91,7 +101,24 @@ layout = html.Div(
                     span=2,
                 ),
                 dmc.Col(
+                    dmc.Center(
+                        html.Div(
+                            id="gaussian-graph-andermann",
+                            className="gaussian-plot",
+                        ),
+                    ),
+                    span=3,
+                ),
+                dmc.Col(
                     [
+                        dmc.Center(
+                            dmc.Button(
+                                "Run facet plot",
+                                id="run-facet-plot",
+                                variant="gradient",
+                            ),
+                        ),
+                        html.Br(),
                         dls.GridFade(
                             html.Div(
                                 id="sf-tf-plot",
@@ -100,15 +127,6 @@ layout = html.Div(
                         ),
                     ],
                     span="auto",
-                ),
-                dmc.Col(
-                    [
-                        html.Div(
-                            id="gaussian-graph-andermann",
-                            className="gaussian-plot",
-                        ),
-                    ],
-                    span=3,
                 ),
             ],
             className="sf-tf-container",
@@ -378,12 +396,14 @@ def update_selected_direction(clickData: dict) -> str:
     Input("store_choosen_roi", "data"),
     Input("direction-selection-bubble-plot", "clickData"),
     Input("toggle-traces", "checked"),
+    Input("run-facet-plot", "n_clicks"),
 )
 def sf_tf_grid(
     store: dict,
     store_choosen_roi: dict,
     direction_input: dict,
     toggle_value: bool,
+    run_facet_plot: int,
 ) -> dcc.Graph:
     """This callback creates the plot that shows the response of the ROI to
     the different SF-TF combinations.
@@ -408,148 +428,162 @@ def sf_tf_grid(
     if store == {}:
         return "No data to plot"
 
-    # Get the data
-    roi_id = store_choosen_roi["roi_id"]
-    signal = load_data_of_signal_dataframe(store, roi_id)
-    spatial_frequencies = store["config"]["spatial_frequencies"]
-    temporal_frequencies = store["config"]["temporal_frequencies"]
-
-    if is_pooled_directions(direction_input):
-        direction = "pooled"
+    #  These if/else statements are needed to avoid the callback to be called
+    #  every time the ROI changes or the direction changes
+    if (run_facet_plot is None) or (run_facet_plot == 0):
+        sf_tf_grid.latest_n_clicks = 0
+        return "Press 'Run facet plot' to see the data"
+    elif sf_tf_grid.latest_n_clicks == run_facet_plot:
+        return "Press 'Run facet plot' to see the data"
     else:
-        direction = direction_input["points"][0]["theta"]
+        print(sf_tf_grid.latest_n_clicks)
+        print(run_facet_plot)
+        sf_tf_grid.latest_n_clicks += 1
 
-    # If pooled, calculate mean and median over all directions
-    if direction == "pooled":
-        dataframe = calculate_mean_and_median(signal)
-        where_stim_is_not_na = dataframe["stimulus_repetition"].notna()
+        # Get the data
+        roi_id = store_choosen_roi["roi_id"]
+        signal = load_data_of_signal_dataframe(store, roi_id)
+        spatial_frequencies = store["config"]["spatial_frequencies"]
+        temporal_frequencies = store["config"]["temporal_frequencies"]
 
-        dataframe["stimulus_repetition"][where_stim_is_not_na] = (
-            dataframe["stimulus_repetition"][where_stim_is_not_na].astype(str)
-            + "_"
-            + dataframe["direction"][where_stim_is_not_na].astype(str)
-        )
-    # Else, calculate mean and median over the selected direction
-    else:
-        assert isinstance(direction, int)
-        signal = signal[signal.direction == direction]
-        dataframe = calculate_mean_and_median(signal)
-
-    dataframe = dataframe.dropna(subset=["tf", "sf"])
-
-    fig = px.line(
-        dataframe,
-        x="stimulus_frames",
-        y="signal",
-        facet_col="tf",
-        facet_row="sf",
-        facet_col_spacing=0.005,
-        facet_row_spacing=0.005,
-        # width=2000,
-        height=1000,
-        color="stimulus_repetition",
-        category_orders={
-            "sf": spatial_frequencies[::-1],
-            "tf": temporal_frequencies,
-        },
-    )
-
-    fig.update_layout(
-        title=f"Response of ROI {roi_id + 1} to SF-TF combinations",
-        plot_bgcolor="rgba(0, 0, 0, 0)",
-        paper_bgcolor="rgba(0, 0, 0, 0)",
-        showlegend=False,
-        title_x=0.5,
-        title_font=dict(size=20),
-    )
-    fig.for_each_yaxis(lambda y: y.update(title=""))
-    fig.for_each_xaxis(lambda x: x.update(title=""))
-    fig.add_annotation(
-        x=-0.05,
-        y=0.5,
-        text="ΔF/F",
-        showarrow=False,
-        textangle=-90,
-        xref="paper",
-        yref="paper",
-        font=dict(size=20),
-    )
-    fig.add_annotation(
-        x=0.5,
-        y=-0.07,
-        text="Time (frames) from gray stimulus onset",
-        showarrow=False,
-        xref="paper",
-        yref="paper",
-        font=dict(size=20),
-    )
-
-    # Color the mean and median traces differently
-    # If toggle_value is False, show only mean and median
-    for trace in fig.data:
-        if "mean" in trace.name:
-            trace.visible = True
-            trace.line.color = "mediumblue"
-            trace.line.width = 2
-            trace.line.dash = "solid"
-        elif "median" in trace.name:
-            trace.visible = True
-            trace.line.color = "orangered"
-            trace.line.width = 2
-            trace.line.dash = "solid"
+        if is_pooled_directions(direction_input):
+            direction = "pooled"
         else:
-            if not toggle_value:
-                trace.visible = False
-            else:
+            direction = direction_input["points"][0]["theta"]
+
+        # If pooled, calculate mean and median over all directions
+        if direction == "pooled":
+            dataframe = calculate_mean_and_median(signal)
+            where_stim_is_not_na = dataframe["stimulus_repetition"].notna()
+
+            dataframe["stimulus_repetition"][where_stim_is_not_na] = (
+                dataframe["stimulus_repetition"][where_stim_is_not_na].astype(
+                    str
+                )
+                + "_"
+                + dataframe["direction"][where_stim_is_not_na].astype(str)
+            )
+        # Else, calculate mean and median over the selected direction
+        else:
+            assert isinstance(direction, int)
+            signal = signal[signal.direction == direction]
+            dataframe = calculate_mean_and_median(signal)
+
+        dataframe = dataframe.dropna(subset=["tf", "sf"])
+
+        fig = px.line(
+            dataframe,
+            x="stimulus_frames",
+            y="signal",
+            facet_col="tf",
+            facet_row="sf",
+            facet_col_spacing=0.005,
+            facet_row_spacing=0.005,
+            # width=2000,
+            height=1000,
+            color="stimulus_repetition",
+            category_orders={
+                "sf": spatial_frequencies[::-1],
+                "tf": temporal_frequencies,
+            },
+        )
+
+        fig.update_layout(
+            title=f"Response of ROI {roi_id + 1} to SF-TF combinations",
+            plot_bgcolor="rgba(0, 0, 0, 0)",
+            paper_bgcolor="rgba(0, 0, 0, 0)",
+            showlegend=False,
+            title_x=0.5,
+            title_font=dict(size=20),
+        )
+        fig.for_each_yaxis(lambda y: y.update(title=""))
+        fig.for_each_xaxis(lambda x: x.update(title=""))
+        fig.add_annotation(
+            x=-0.05,
+            y=0.5,
+            text="ΔF/F",
+            showarrow=False,
+            textangle=-90,
+            xref="paper",
+            yref="paper",
+            font=dict(size=20),
+        )
+        fig.add_annotation(
+            x=0.5,
+            y=-0.07,
+            text="Time (frames) from gray stimulus onset",
+            showarrow=False,
+            xref="paper",
+            yref="paper",
+            font=dict(size=20),
+        )
+
+        # Color the mean and median traces differently
+        # If toggle_value is False, show only mean and median
+        for trace in fig.data:
+            if "mean" in trace.name:
                 trace.visible = True
-                trace.line.width = 0.1
-                trace.line.color = "gray"
+                trace.line.color = "mediumblue"
+                trace.line.width = 2
+                trace.line.dash = "solid"
+            elif "median" in trace.name:
+                trace.visible = True
+                trace.line.color = "orangered"
+                trace.line.width = 2
+                trace.line.dash = "solid"
+            else:
+                if not toggle_value:
+                    trace.visible = False
+                else:
+                    trace.visible = True
+                    trace.line.width = 0.1
+                    trace.line.color = "gray"
 
-    # Add vertical rectangles to show the different stimulus phases
-    for x0, x1, text, color in [
-        (0, 75, "gray", "green"),
-        (75, 150, "static", "pink"),
-        (150, 225, "drift", "blue"),
-    ]:
-        fig.add_vrect(
-            x0=x0,
-            x1=x1,
-            row="all",
-            col="all",
-            annotation_text=text,
-            annotation_position="top left",
-            annotation_font_size=8,
-            fillcolor=color,
-            opacity=0.05,
-            line_width=0,
+        # Add vertical rectangles to show the different stimulus phases
+        for x0, x1, text, color in [
+            (0, 75, "gray", "green"),
+            (75, 150, "static", "pink"),
+            (150, 225, "drift", "blue"),
+        ]:
+            fig.add_vrect(
+                x0=x0,
+                x1=x1,
+                row="all",
+                col="all",
+                annotation_text=text,
+                annotation_position="top left",
+                annotation_font_size=8,
+                fillcolor=color,
+                opacity=0.05,
+                line_width=0,
+            )
+
+        # Write the mean and median labels
+        fig.add_annotation(
+            x=0.01,
+            y=-0.1,
+            xref="paper",
+            yref="paper",
+            text="MEAN",
+            showarrow=False,
+            font=dict(size=20, color="mediumblue"),
+        )
+        fig.add_annotation(
+            x=0.07,
+            y=-0.1,
+            xref="paper",
+            yref="paper",
+            text="MEDIAN",
+            showarrow=False,
+            font=dict(size=20, color="orangered"),
         )
 
-    # Write the mean and median labels
-    fig.add_annotation(
-        x=0.01,
-        y=-0.1,
-        xref="paper",
-        yref="paper",
-        text="MEAN",
-        showarrow=False,
-        font=dict(size=20, color="mediumblue"),
-    )
-    fig.add_annotation(
-        x=0.07,
-        y=-0.1,
-        xref="paper",
-        yref="paper",
-        text="MEDIAN",
-        showarrow=False,
-        font=dict(size=20, color="orangered"),
-    )
-
-    return html.Div(
-        dcc.Graph(
-            id="sf_tf_plot",
-            figure=fig,
+        return html.Div(
+            dcc.Graph(
+                id="sf_tf_plot",
+                figure=fig,
+            )
         )
-    )
 
 
 def calculate_mean_and_median(
@@ -616,12 +650,14 @@ def is_pooled_directions(direction_input: dict) -> bool:
         Input("store", "data"),
         Input("store_choosen_roi", "data"),
         Input("direction-selection-bubble-plot", "clickData"),
+        Input("scale-heatmap", "checked"),
     ],
 )
 def gaussian_plot(
     store: dict,
     store_choosen_roi: dict,
     direction_input: dict,
+    share_heatmap_scale: bool,
 ) -> html.Div:
     """This callback creates the heatmaps that show the Gaussian fits of the
     ROI to the different SF-TF combinations.
@@ -750,7 +786,15 @@ def gaussian_plot(
             x=uniform_oversampled_tfs,
             y=uniform_oversampled_sfs,
             colorscale="Viridis",
-            showscale=True,
+            showscale=True if share_heatmap_scale else False,
+            colorbar=dict(
+                x=0.5,
+                y=-0.1,
+                xanchor="center",
+                yanchor="top",
+                len=1,
+                orientation="h",
+            ),
         ),
         row=3,
         col=1,
@@ -785,10 +829,11 @@ def gaussian_plot(
         ),
     )
     #  set zmax and zmin to have the same color scale for all heatmaps
-    fig.update_traces(
-        zmax=100,
-        zmin=0,
-    )
+    if share_heatmap_scale:
+        fig.update_traces(
+            zmax=120,
+            zmin=0,
+        )
 
     fig.update_xaxes(
         tickvals=uniform_tfs, ticktext=temporal_frequencies, row=1, col=1
