@@ -4,8 +4,9 @@ import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, callback, dcc, html, register_page
 
-from rsp_vision.analysis.gaussians_calculations import (
-    get_gaussian_matrix_to_be_plotted,
+from rsp_vision.dashboard.pages.helpers.calculations_for_plotting import (
+    call_get_gaussian_matrix_to_be_plotted,
+    find_peak_coordinates,
 )
 from rsp_vision.dashboard.pages.helpers.data_loading import load_data
 
@@ -392,93 +393,3 @@ def add_data_in_figure(
         )
 
     return fig
-
-
-def find_peak_coordinates(
-    fitted_gaussian_matrix: np.ndarray,
-    spatial_frequencies: np.ndarray,
-    temporal_frequencies: np.ndarray,
-    matrix_definition: int,
-) -> tuple:
-    """This method finds the peak coordinates of the fitted gaussian matrix.
-
-    Parameters
-    ----------
-    fitted_gaussian_matrix : np.ndarray
-        The fitted gaussian matrix obtained from the precalculated fits.
-    spatial_frequencies : np.ndarray
-        The spatial frequencies that are used in the experiment.
-    temporal_frequencies : np.ndarray
-        The temporal frequencies that are used in the experiment.
-    matrix_definition : int
-        The matrix definition used to generate the fitted_gaussian_matrix.
-
-    Returns
-    -------
-    tuple
-        The peak coordinates of the fitted gaussian matrix.
-    """
-    peak_indices = np.unravel_index(
-        np.argmax(fitted_gaussian_matrix), fitted_gaussian_matrix.shape
-    )
-
-    spatial_freq_linspace = np.linspace(
-        spatial_frequencies.min(),
-        spatial_frequencies.max(),
-        matrix_definition,
-    )
-    temporal_freq_linspace = np.linspace(
-        temporal_frequencies.min(),
-        temporal_frequencies.max(),
-        matrix_definition,
-    )
-
-    sf = spatial_freq_linspace[peak_indices[0]]
-    tf = temporal_freq_linspace[peak_indices[1]]
-    return tf, sf
-
-
-def call_get_gaussian_matrix_to_be_plotted(
-    n_roi: int,
-    fit_outputs: dict,
-    spatial_frequencies: np.ndarray,
-    temporal_frequencies: np.ndarray,
-    matrix_definition: int,
-) -> dict:
-    """This method is a wrapper for the get_gaussian_matrix_to_be_plotted
-    method that iterates over all the ROIs.
-
-    Parameters
-    ----------
-    n_roi : int
-        The number of ROIs.
-    fit_outputs : dict
-        The fit outputs obtained from the precalculated fits.
-    spatial_frequencies : np.ndarray
-        The spatial frequencies that are used in the experiment.
-    temporal_frequencies : np.ndarray
-        The temporal frequencies that are used in the experiment.
-    matrix_definition : int
-        The matrix definition used to generate the fitted_gaussian_matrix.
-
-    Returns
-    -------
-    dict
-        The fitted gaussian matrix obtained from the precalculated fits.
-    """
-    fitted_gaussian_matrix = {}
-
-    for roi_id in range(n_roi):
-        fitted_gaussian_matrix[
-            (roi_id, "pooled")
-        ] = get_gaussian_matrix_to_be_plotted(
-            kind="custom",
-            roi_id=roi_id,
-            fit_output=fit_outputs,
-            sfs=np.asarray(spatial_frequencies),
-            tfs=np.asarray(temporal_frequencies),
-            matrix_definition=matrix_definition,
-            direction="pooled",
-        )
-
-    return fitted_gaussian_matrix

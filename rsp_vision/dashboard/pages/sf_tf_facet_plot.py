@@ -4,16 +4,17 @@ import dash
 import dash_loading_spinners as dls
 import dash_mantine_components as dmc
 import numpy as np
-import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.subplots as sp
 from dash import Input, Output, callback, dcc, html
-from scipy.stats import pearsonr
 
-# from rsp_vision.dashboard.pages.murakami_plot import load_data
 from rsp_vision.analysis.gaussians_calculations import (
     get_gaussian_matrix_to_be_plotted,
+)
+from rsp_vision.dashboard.pages.helpers.calculations_for_plotting import (
+    calculate_mean_and_median,
+    fit_correlation,
 )
 from rsp_vision.dashboard.pages.helpers.data_loading import (
     load_data,
@@ -586,46 +587,6 @@ def sf_tf_grid(
         )
 
 
-def calculate_mean_and_median(
-    signal: pd.DataFrame,
-) -> pd.DataFrame:
-    """This method calculates the mean and median of the signal dataframe
-    over the different stimulus repetitions.
-
-    Parameters
-    ----------
-    signal : pd.DataFrame
-        The signal dataframe containing the data of the ROI. If the direction
-        is pooled, the dataframe contains the data of all directions and the
-        mean and median are calculated over all directions. If the direction
-        is not pooled, the dataframe contains the data of the selected
-        direction and the mean and median are calculated over it.
-        These computations are done in the `sf_tf_grid` callback.
-    Returns
-    -------
-    pd.DataFrame
-        The signal dataframe containing the mean and median of the signal
-        appended to the original dataframe at the end.
-    """
-    mean_df = (
-        signal.groupby(["sf", "tf", "stimulus_frames"])
-        .agg({"signal": "mean"})
-        .reset_index()
-    )
-    mean_df["stimulus_repetition"] = "mean"
-    combined_df = pd.concat([signal, mean_df], ignore_index=True)
-
-    median_df = (
-        signal.groupby(["sf", "tf", "stimulus_frames"])
-        .agg({"signal": "median"})
-        .reset_index()
-    )
-    median_df["stimulus_repetition"] = "median"
-    combined_df = pd.concat([combined_df, median_df], ignore_index=True)
-
-    return combined_df
-
-
 def is_pooled_directions(direction_input: dict) -> bool:
     """This method checks whether the direction is pooled or not.
 
@@ -710,22 +671,24 @@ def gaussian_plot(
     # Get the Gaussian fits from the fit outputs
     # First get the Gaussian fits for the original SF-TF combinations
     # If the direction is pooled, it automatically takes the pooled direction
-    low_res_gaussian = get_6x6_gaussian(
-        roi_id,
-        fit_outputs,
-        spatial_frequencies,
-        temporal_frequencies,
-        direction,
+    low_res_gaussian = get_gaussian_matrix_to_be_plotted(
+        kind="6x6 matrix",
+        roi_id=roi_id,
+        fit_output=fit_outputs,
+        sfs=np.asarray(spatial_frequencies),
+        tfs=np.asarray(temporal_frequencies),
+        direction=direction,
     )
     # Then get the Gaussian fits for the oversampled SF-TF combinations
     # I am creating a 100x100 matrix
     matrix_definition = store["config"]["fitting"]["oversampling_factor"]
-    high_res_gaussian = get_custom_gaussian(
-        roi_id,
-        fit_outputs,
-        spatial_frequencies,
-        temporal_frequencies,
-        direction,
+    high_res_gaussian = get_gaussian_matrix_to_be_plotted(
+        kind="custom",
+        roi_id=roi_id,
+        fit_output=fit_outputs,
+        sfs=np.asarray(spatial_frequencies),
+        tfs=np.asarray(temporal_frequencies),
+        direction=direction,
         matrix_definition=matrix_definition,
     )
 
@@ -885,109 +848,3 @@ def gaussian_plot(
             figure=fig,
         )
     )
-
-
-def fit_correlation(
-    gaussian: np.ndarray, median_subtracted_response: np.ndarray
-) -> float:
-    """This method calculates the correlation between the median subtracted
-    response and the Gaussian fit (6x6 matrix).
-
-    Parameters
-    ----------
-    gaussian : np.ndarray
-        The Gaussian fit (6x6 matrix).
-    median_subtracted_response : np.ndarray
-        The median subtracted response.
-
-    Returns
-    -------
-    float
-        The correlation between the median subtracted response and the Gaussian
-        fit (6x6 matrix).
-    """
-    fit_corr, _ = pearsonr(
-        median_subtracted_response.flatten(), gaussian.flatten()
-    )
-    return fit_corr
-
-
-def get_6x6_gaussian(
-    roi_id: int,
-    fit_outputs: dict,
-    spatial_frequencies: list,
-    temporal_frequencies: list,
-    direction: str,
-) -> np.ndarray:
-    """This method gets the Gaussian fit (6x6 matrix) from the fit outputs.
-
-    Parameters
-    ----------
-    roi_id : int
-        The choosen ROI id.
-    fit_outputs : dict
-        The fit outputs previously calculated.
-    spatial_frequencies : list
-        The spatial frequencies as from the config file.
-    temporal_frequencies : list
-        The temporal frequencies as from the config file.
-    direction : str
-        The choosen direction. It can be "pooled" or an integer.
-
-    Returns
-    -------
-    np.ndarray
-        The Gaussian fit (6x6 matrix).
-    """
-    matrix = get_gaussian_matrix_to_be_plotted(
-        kind="6x6 matrix",
-        roi_id=roi_id,
-        fit_output=fit_outputs,
-        sfs=np.asarray(spatial_frequencies),
-        tfs=np.asarray(temporal_frequencies),
-        direction=direction,
-    )
-    return matrix
-
-
-def get_custom_gaussian(
-    roi_id: int,
-    fit_outputs: dict,
-    spatial_frequencies: list,
-    temporal_frequencies: list,
-    direction: str,
-    matrix_definition: int = 100,
-) -> np.ndarray:
-    """This method gets the Gaussian fit (NxN matrix) from the fit outputs.
-    N is the matrix definition, which is 100 by default.
-
-    Parameters
-    ----------
-    roi_id : int
-        The choosen ROI id.
-    fit_outputs : dict
-        The fit outputs previously calculated.
-    spatial_frequencies : list
-        The spatial frequencies as from the config file.
-    temporal_frequencies : list
-        The temporal frequencies as from the config file.
-    direction : str
-        The choosen direction. It can be "pooled" or an integer.
-    matrix_definition : int, optional
-        The matrix definition, by default 100.
-
-    Returns
-    -------
-    np.ndarray
-        The Gaussian fit (NxN matrix).
-    """
-    matrix = get_gaussian_matrix_to_be_plotted(
-        kind="custom",
-        roi_id=roi_id,
-        fit_output=fit_outputs,
-        sfs=np.asarray(spatial_frequencies),
-        tfs=np.asarray(temporal_frequencies),
-        direction=direction,
-        matrix_definition=matrix_definition,
-    )
-    return matrix
