@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Union
 
 import numpy as np
 from numba import njit
@@ -246,8 +247,7 @@ def get_gaussian_matrix_to_be_plotted(
     fit_output: dict,
     sfs: np.ndarray,
     tfs: np.ndarray,
-    pooled_directions: bool = False,
-    direction: float = sys.float_info.max,
+    direction: Union[float, str] = "pooled",
     matrix_definition: int = 100,
 ) -> np.ndarray:
     """Returns a squared Gaussian matrix to be visualized in the dashboard
@@ -294,7 +294,7 @@ def get_gaussian_matrix_to_be_plotted(
         If kind is not "6x6 matrix" or "custom".
     """
     if kind == "6x6 matrix":
-        if not pooled_directions:
+        if isinstance(direction, float):
             assert (
                 direction != sys.float_info.max
             ), "direction must be specified"
@@ -313,7 +313,7 @@ def get_gaussian_matrix_to_be_plotted(
         logging.info(
             "Creating custom matrix with definition %d", matrix_definition
         )
-        if not pooled_directions:
+        if isinstance(direction, float):
             assert (
                 direction != sys.float_info.max
             ), "direction must be specified"

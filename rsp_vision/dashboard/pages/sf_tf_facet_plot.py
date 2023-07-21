@@ -1,7 +1,4 @@
-import itertools
-import pickle
-from collections import namedtuple
-from pathlib import Path
+from typing import Tuple
 
 import dash
 import dash_loading_spinners as dls
@@ -17,6 +14,10 @@ from scipy.stats import pearsonr
 # from rsp_vision.dashboard.pages.murakami_plot import load_data
 from rsp_vision.analysis.gaussians_calculations import (
     get_gaussian_matrix_to_be_plotted,
+)
+from rsp_vision.dashboard.pages.helpers.data_loading import (
+    load_data,
+    load_data_of_signal_dataframe,
 )
 
 dash.register_page(__name__, path="/sf_tf_facet_plot")
@@ -107,7 +108,7 @@ layout = html.Div(
                             className="gaussian-plot",
                         ),
                     ],
-                    span=2,
+                    span=3,
                 ),
             ],
             className="sf-tf-container",
@@ -145,7 +146,21 @@ def update_selected_data_str(store: dict) -> str:
     Output("roi-selection-bubble-plot", "children"),
     Input("store", "data"),
 )
-def roi_selection_plot(store):
+def roi_selection_plot(store: dict) -> dcc.Graph:
+    """This callback creates the "bubble plot" that shows the ROIs and their
+    responsiveness. The ROIs are represented as circles, the responsive ROIs
+    are in yellow, the non-responsive ROIs are in gray.
+
+    Parameters
+    ----------
+    store : dict
+        The store contains the data that is loaded from the data table.
+
+    Returns
+    -------
+    dcc.Graph
+        The bubble plot to choose which ROI to plot.
+    """
     if store == {}:
         return "No data to plot"
     data = load_data(store)
@@ -170,7 +185,7 @@ def roi_selection_plot(store):
                     size=20,
                     color="darkorange" if roi in responsive_rois else "gray",
                 ),
-                hovertemplate=f"ROI: {roi}",
+                hoverinfo="none",
             )
         )
 
@@ -210,7 +225,21 @@ def roi_selection_plot(store):
     Output("direction-selection-bubble-plot", "children"),
     Input("store", "data"),
 )
-def direction_selection_plot(store):
+def direction_selection_plot(store: dict) -> dcc.Graph:
+    """This callback creates the plot that shows the directions that can be
+    selected. The directions are represented as circles, and in the center
+    there is a circle that represents all directions.
+
+    Parameters
+    ----------
+    store : dict
+        The store contains the data that is loaded from the data table.
+
+    Returns
+    -------
+    dcc.Graph
+        The bubble plot to choose which direction to plot.
+    """
     if store == {}:
         return "No data to plot"
     load_data(store)
@@ -246,7 +275,6 @@ def direction_selection_plot(store):
             angularaxis=dict(visible=False),
             bgcolor="rgba(0,0,0,0)",
         ),
-        # remove background circle
         paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
     )
@@ -290,10 +318,24 @@ def direction_selection_plot(store):
         Output("selected_ROI", "children"),
         Output("store_choosen_roi", "data"),
     ],
-    #  callback on clicking on shape in heatmap - clickdata does not work
     Input("roi-selection-bubble-plot", "clickData"),
 )
-def update_selected_ROI(clickData):
+def update_selected_ROI(clickData: dict) -> Tuple[str, dict]:
+    """This callback updates the text that shows the ROI that has been
+    selected and the `dcc.Store` that contains the ROI id. If no ROI is
+    selected, the default ROI is 0.
+
+    Parameters
+    ----------
+    clickData : dict
+        Which ROI has been selected in the bubble plot.
+
+    Returns
+    -------
+    tuple(str, dict)
+        The text that shows the ROI that has been selected and the `dcc.Store`
+        that contains the ROI id.
+    """
     if clickData is None:
         default_roi_id = 0
         return f"ROI {default_roi_id + 1} selected", {"roi_id": default_roi_id}
@@ -306,7 +348,20 @@ def update_selected_ROI(clickData):
     Output("selected_direction", "children"),
     Input("direction-selection-bubble-plot", "clickData"),
 )
-def update_selected_direction(clickData):
+def update_selected_direction(clickData: dict) -> str:
+    """This callback updates the text that shows the direction that has been
+    selected. If no direction is selected, the default direction is "all".
+
+    Parameters
+    ----------
+    clickData : dict
+        Which direction has been selected in the bubble plot.
+
+    Returns
+    -------
+    str
+        The text that shows the direction that has been selected.
+    """
     if clickData is None:
         return "All directions selected"
     else:
@@ -317,32 +372,6 @@ def update_selected_direction(clickData):
             return f"Direction {direction} selected"
 
 
-def load_data(store):
-    path = (
-        Path(store["path"])
-        / store["subject_folder_path"]
-        / store["session_folder_path"]
-        / "gaussians_fits_and_roi_info.pickle"
-    )
-    with open(path, "rb") as f:
-        data = pickle.load(f)
-
-    return data
-
-
-def load_data_of_signal_dataframe(store, roi_id):
-    path = (
-        Path(store["path"])
-        / store["subject_folder_path"]
-        / store["session_folder_path"]
-    )
-
-    with open(path / f"roi_{roi_id}_signal_dataframe.pickle", "rb") as f:
-        signal = pickle.load(f)
-
-    return signal
-
-
 @callback(
     Output("sf-tf-plot", "children"),
     Input("store", "data"),
@@ -351,14 +380,35 @@ def load_data_of_signal_dataframe(store, roi_id):
     Input("toggle-traces", "checked"),
 )
 def sf_tf_grid(
-    store,
-    store_choosen_roi,
-    direction_input,
-    toggle_value,
+    store: dict,
+    store_choosen_roi: dict,
+    direction_input: dict,
+    toggle_value: bool,
 ) -> dcc.Graph:
+    """This callback creates the plot that shows the response of the ROI to
+    the different SF-TF combinations.
+
+    Parameters
+    ----------
+    store : dict
+        The `dcc.Store` that contains the config information.
+    store_choosen_roi : dict
+        The `dcc.Store` that contains the choosen ROI id.
+    direction_input : dict
+        Which direction has been selected in the bubble plot.
+    toggle_value : bool
+        Whether to show all traces or just the mean and median.
+
+    Returns
+    -------
+    dcc.Graph
+        The plot that shows the response of the ROI to the different SF-TF
+        combinations.
+    """
     if store == {}:
         return "No data to plot"
 
+    # Get the data
     roi_id = store_choosen_roi["roi_id"]
     signal = load_data_of_signal_dataframe(store, roi_id)
     spatial_frequencies = store["config"]["spatial_frequencies"]
@@ -369,15 +419,7 @@ def sf_tf_grid(
     else:
         direction = direction_input["points"][0]["theta"]
 
-    #  from data I need: n_days, sf_tf_combinations
-    sf_tf_combinations = itertools.product(
-        spatial_frequencies, temporal_frequencies
-    )
-    total_n_days = signal.day.max()
-
-    Data = namedtuple("Data", ["sf_tf_combinations", "total_n_days"])
-    Data(sf_tf_combinations, total_n_days)
-
+    # If pooled, calculate mean and median over all directions
     if direction == "pooled":
         dataframe = calculate_mean_and_median(signal)
         where_stim_is_not_na = dataframe["stimulus_repetition"].notna()
@@ -387,12 +429,12 @@ def sf_tf_grid(
             + "_"
             + dataframe["direction"][where_stim_is_not_na].astype(str)
         )
+    # Else, calculate mean and median over the selected direction
     else:
         assert isinstance(direction, int)
         signal = signal[signal.direction == direction]
         dataframe = calculate_mean_and_median(signal)
 
-    #  remove tf and sf when they are nan
     dataframe = dataframe.dropna(subset=["tf", "sf"])
 
     fig = px.line(
@@ -442,6 +484,8 @@ def sf_tf_grid(
         font=dict(size=20),
     )
 
+    # Color the mean and median traces differently
+    # If toggle_value is False, show only mean and median
     for trace in fig.data:
         if "mean" in trace.name:
             trace.visible = True
@@ -461,6 +505,7 @@ def sf_tf_grid(
                 trace.line.width = 0.1
                 trace.line.color = "gray"
 
+    # Add vertical rectangles to show the different stimulus phases
     for x0, x1, text, color in [
         (0, 75, "gray", "green"),
         (75, 150, "static", "pink"),
@@ -479,7 +524,7 @@ def sf_tf_grid(
             line_width=0,
         )
 
-    # Fake legend
+    # Write the mean and median labels
     fig.add_annotation(
         x=0.01,
         y=-0.1,
@@ -510,6 +555,24 @@ def sf_tf_grid(
 def calculate_mean_and_median(
     signal: pd.DataFrame,
 ) -> pd.DataFrame:
+    """This method calculates the mean and median of the signal dataframe
+    over the different stimulus repetitions.
+
+    Parameters
+    ----------
+    signal : pd.DataFrame
+        The signal dataframe containing the data of the ROI. If the direction
+        is pooled, the dataframe contains the data of all directions and the
+        mean and median are calculated over all directions. If the direction
+        is not pooled, the dataframe contains the data of the selected
+        direction and the mean and median are calculated over it.
+        These computations are done in the `sf_tf_grid` callback.
+    Returns
+    -------
+    pd.DataFrame
+        The signal dataframe containing the mean and median of the signal
+        appended to the original dataframe at the end.
+    """
     mean_df = (
         signal.groupby(["sf", "tf", "stimulus_frames"])
         .agg({"signal": "mean"})
@@ -529,7 +592,19 @@ def calculate_mean_and_median(
     return combined_df
 
 
-def is_pooled_directions(direction_input):
+def is_pooled_directions(direction_input: dict) -> bool:
+    """This method checks whether the direction is pooled or not.
+
+    Parameters
+    ----------
+    direction_input : dict
+        Which direction has been selected in the bubble plot.
+
+    Returns
+    -------
+    bool
+        Whether the direction is pooled or not.
+    """
     return (direction_input is None) or (
         direction_input["points"][0]["r"] == 0
     )
@@ -548,9 +623,37 @@ def gaussian_plot(
     store_choosen_roi: dict,
     direction_input: dict,
 ) -> html.Div:
+    """This callback creates the heatmaps that show the Gaussian fits of the
+    ROI to the different SF-TF combinations.
+    The first heatmap shows the median subtracted response of the ROI to the
+    different SF-TF combinations. These values are the ones that are fitted
+    in the analysis pipeline. The fitting parameters are used to compute two
+    Gaussian fits: one with the original SF-TF combinations and one with
+    oversampled SF-TF combinations. These two Gaussian fits are shown in the
+    second and third heatmap, respectively.
+
+    Parameters
+    ----------
+    store : dict
+        The `dcc.Store` that contains the config information.
+    store_choosen_roi : dict
+        The `dcc.Store` that contains the choosen ROI id.
+    direction_input : dict
+        Which direction has been selected in the bubble plot.
+
+    Returns
+    -------
+    html.Div
+        The heatmaps that show the Gaussian fits of the ROI to the different
+        SF-TF combinations.
+        The title also shows the correlation between the median subtracted
+        response and the Gaussian fit and the 𝜁 value of the fit, which is a
+        measure of the "speed tuning" of the ROI.
+    """
     if store == {}:
         return "No data to plot"
 
+    # Get the data
     data = load_data(store)
 
     median_subtracted_responses = data["median_subtracted_responses"]
@@ -560,7 +663,6 @@ def gaussian_plot(
         return "No data to plot"
 
     roi_id = store_choosen_roi["roi_id"]
-    signal = load_data_of_signal_dataframe(store, roi_id)
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
 
@@ -569,15 +671,9 @@ def gaussian_plot(
     else:
         direction = direction_input["points"][0]["theta"]
 
-    #  from data I need: n_days, sf_tf_combinations
-    sf_tf_combinations = itertools.product(
-        spatial_frequencies, temporal_frequencies
-    )
-    total_n_days = signal.day.max()
-
-    Data = namedtuple("Data", ["sf_tf_combinations", "total_n_days"])
-    data = Data(sf_tf_combinations, total_n_days)
-
+    # Get the Gaussian fits from the fit outputs
+    # First get the Gaussian fits for the original SF-TF combinations
+    # If the direction is pooled, it automatically takes the pooled direction
     low_res_gaussian = get_6x6_gaussian(
         roi_id,
         fit_outputs,
@@ -585,12 +681,16 @@ def gaussian_plot(
         temporal_frequencies,
         direction,
     )
+    # Then get the Gaussian fits for the oversampled SF-TF combinations
+    # I am creating a 100x100 matrix
+    matrix_definition = store["config"]["fitting"]["oversampling_factor"]
     high_res_gaussian = get_custom_gaussian(
         roi_id,
         fit_outputs,
         spatial_frequencies,
         temporal_frequencies,
         direction,
+        matrix_definition=matrix_definition,
     )
 
     # Create subplots for the two Gaussian plots
@@ -603,154 +703,76 @@ def gaussian_plot(
             "Oversampled Gaussian",
         ),
     )
+
+    # A linear array to set the axis of the first two heatmaps
     uniform_sfs = uniform_tfs = np.arange(0, len(spatial_frequencies), 1)
 
-    if isinstance(direction, int) and direction != "pooled":
-        #  Add the heatmap for the median subtracted response
-        fig.add_trace(
-            go.Heatmap(
-                z=median_subtracted_responses[(roi_id, direction)],
-                x=uniform_tfs,
-                y=uniform_sfs,
-                colorscale="Viridis",
-                showscale=False,
-            ),
-            row=1,
-            col=1,
-        )
+    #  Add the heatmap for the median subtracted response
+    fig.add_trace(
+        go.Heatmap(
+            z=median_subtracted_responses[(roi_id, direction)]
+            if not is_pooled_directions(direction_input)
+            else median_subtracted_responses[(roi_id, "pooled")],
+            x=uniform_tfs,
+            y=uniform_sfs,
+            colorscale="Viridis",
+            showscale=False,
+        ),
+        row=1,
+        col=1,
+    )
 
-        # Add the heatmap for the original Gaussian
-        fig.add_trace(
-            go.Heatmap(
-                # z=downsampled_gaussians[(roi_id, direction)],
-                z=low_res_gaussian,
-                x=uniform_tfs,
-                y=uniform_sfs,
-                colorscale="Viridis",
-                showscale=False,
-            ),
-            row=2,
-            col=1,
-        )
+    # Add the heatmap for the original Gaussian
+    fig.add_trace(
+        go.Heatmap(
+            z=low_res_gaussian,
+            x=uniform_tfs,
+            y=uniform_sfs,
+            colorscale="Viridis",
+            showscale=False,
+        ),
+        row=2,
+        col=1,
+    )
 
-        # Add the heatmap for the oversampled Gaussian
-        # I tried with the log plot, it does not look good
-        oversampling_factor = 100
-        uniform_oversampled_sfs = np.linspace(
-            0, oversampling_factor - 1, oversampling_factor
-        )
-        uniform_oversampled_tfs = np.linspace(
-            0, oversampling_factor - 1, oversampling_factor
-        )
+    # Linear arrays to set the axis of the third heatmap
+    uniform_oversampled_sfs = np.linspace(
+        0, matrix_definition - 1, matrix_definition
+    )
+    uniform_oversampled_tfs = np.linspace(
+        0, matrix_definition - 1, matrix_definition
+    )
 
-        fig.add_trace(
-            go.Heatmap(
-                # z=oversampled_gaussians[(roi_id, direction)],
-                z=high_res_gaussian,
-                x=uniform_oversampled_tfs,
-                y=uniform_oversampled_sfs,
-                colorscale="Viridis",
-                showscale=False,
-            ),
-            row=3,
-            col=1,
-        )
+    # Add the heatmap for the oversampled Gaussian
+    fig.add_trace(
+        go.Heatmap(
+            z=high_res_gaussian,
+            x=uniform_oversampled_tfs,
+            y=uniform_oversampled_sfs,
+            colorscale="Viridis",
+            showscale=True,
+        ),
+        row=3,
+        col=1,
+    )
 
-        log_sfs = np.linspace(
-            min(spatial_frequencies),
-            max(spatial_frequencies),
-            num=oversampling_factor,
-        )
-
-        log_tfs = np.linspace(
-            min(temporal_frequencies),
-            max(temporal_frequencies),
-            num=oversampling_factor,
-        )
-
-        fit_corr = fit_correlation(
-            # downsampled_gaussians[(roi_id, direction)],
-            low_res_gaussian,
-            median_subtracted_responses[(roi_id, direction)],
-        )
-    else:
-        #  Add the heatmap for the median subtracted response
-        fig.add_trace(
-            go.Heatmap(
-                z=median_subtracted_responses[(roi_id, "pooled")],
-                x=uniform_tfs,
-                y=uniform_sfs,
-                colorscale="Viridis",
-                showscale=False,
-            ),
-            row=1,
-            col=1,
-        )
-
-        # Add the heatmap for the original Gaussian
-        fig.add_trace(
-            go.Heatmap(
-                # z=downsampled_gaussians[(roi_id, "pooled")],
-                z=low_res_gaussian,
-                x=uniform_tfs,
-                y=uniform_sfs,
-                colorscale="Viridis",
-                showscale=False,
-            ),
-            row=2,
-            col=1,
-        )
-
-        # Add the heatmap for the oversampled Gaussian
-        oversampling_factor = 100
-        uniform_oversampled_sfs = np.linspace(
-            0, oversampling_factor - 1, oversampling_factor
-        )
-        uniform_oversampled_tfs = np.linspace(
-            0, oversampling_factor - 1, oversampling_factor
-        )
-
-        fig.add_trace(
-            go.Heatmap(
-                # z=oversampled_gaussians[(roi_id, "pooled")],
-                z=high_res_gaussian,
-                x=uniform_oversampled_tfs,
-                y=uniform_oversampled_sfs,
-                colorscale="Viridis",
-                showscale=False,
-            ),
-            row=3,
-            col=1,
-        )
-
-        log_sfs = np.linspace(
-            min(spatial_frequencies),
-            max(spatial_frequencies),
-            num=oversampling_factor,
-        )
-
-        log_tfs = np.linspace(
-            min(temporal_frequencies),
-            max(temporal_frequencies),
-            num=oversampling_factor,
-        )
-
-        fit_corr = fit_correlation(
-            # downsampled_gaussians[(roi_id, "pooled")],
-            low_res_gaussian,
-            median_subtracted_responses[(roi_id, "pooled")],
-        )
-
+    #  Calculate the correlation between the median subtracted response and 𝜻
+    fit_corr = fit_correlation(
+        low_res_gaussian,
+        median_subtracted_responses[(roi_id, "pooled")]
+        if is_pooled_directions(direction_input)
+        else median_subtracted_responses[(roi_id, direction)],
+    )
     fit_value = (
         fit_outputs[(roi_id, direction)][-1]
-        if isinstance(direction, int) and direction != "all"
+        if not is_pooled_directions(direction_input)
         else fit_outputs[(roi_id, "pooled")][-1]
     )
 
     # Update layout to maintain the aspect ratio
     fig.update_layout(
         autosize=False,
-        width=300,
+        width=400,
         height=1000,
         margin=dict(t=50, b=50, l=50, r=50),
         showlegend=False,
@@ -761,6 +783,11 @@ def gaussian_plot(
             y=1,
             pad=dict(b=30),
         ),
+    )
+    #  set zmax and zmin to have the same color scale for all heatmaps
+    fig.update_traces(
+        zmax=100,
+        zmin=0,
     )
 
     fig.update_xaxes(
@@ -775,15 +802,27 @@ def gaussian_plot(
     fig.update_yaxes(
         tickvals=uniform_sfs, ticktext=spatial_frequencies, row=2, col=1
     )
+
+    longer_array_sfs = np.linspace(
+        min(spatial_frequencies),
+        max(spatial_frequencies),
+        num=matrix_definition,
+    )
+
+    longer_array_tfs = np.linspace(
+        min(temporal_frequencies),
+        max(temporal_frequencies),
+        num=matrix_definition,
+    )
     fig.update_yaxes(
         tickvals=uniform_oversampled_sfs[::10],
-        ticktext=np.round(log_sfs[::10], 2),
+        ticktext=np.round(longer_array_sfs[::10], 2),
         row=3,
         col=1,
     )
     fig.update_xaxes(
         tickvals=uniform_oversampled_tfs[::10],
-        ticktext=np.round(log_tfs[::10], 2),
+        ticktext=np.round(longer_array_tfs[::10], 2),
         row=3,
         col=1,
     )
@@ -806,6 +845,22 @@ def gaussian_plot(
 def fit_correlation(
     gaussian: np.ndarray, median_subtracted_response: np.ndarray
 ) -> float:
+    """This method calculates the correlation between the median subtracted
+    response and the Gaussian fit (6x6 matrix).
+
+    Parameters
+    ----------
+    gaussian : np.ndarray
+        The Gaussian fit (6x6 matrix).
+    median_subtracted_response : np.ndarray
+        The median subtracted response.
+
+    Returns
+    -------
+    float
+        The correlation between the median subtracted response and the Gaussian
+        fit (6x6 matrix).
+    """
     fit_corr, _ = pearsonr(
         median_subtracted_response.flatten(), gaussian.flatten()
     )
@@ -813,31 +868,81 @@ def fit_correlation(
 
 
 def get_6x6_gaussian(
-    roi_id, fit_outputs, spatial_frequencies, temporal_frequencies, direction
-):
+    roi_id: int,
+    fit_outputs: dict,
+    spatial_frequencies: list,
+    temporal_frequencies: list,
+    direction: str,
+) -> np.ndarray:
+    """This method gets the Gaussian fit (6x6 matrix) from the fit outputs.
+
+    Parameters
+    ----------
+    roi_id : int
+        The choosen ROI id.
+    fit_outputs : dict
+        The fit outputs previously calculated.
+    spatial_frequencies : list
+        The spatial frequencies as from the config file.
+    temporal_frequencies : list
+        The temporal frequencies as from the config file.
+    direction : str
+        The choosen direction. It can be "pooled" or an integer.
+
+    Returns
+    -------
+    np.ndarray
+        The Gaussian fit (6x6 matrix).
+    """
     matrix = get_gaussian_matrix_to_be_plotted(
         kind="6x6 matrix",
         roi_id=roi_id,
         fit_output=fit_outputs,
         sfs=np.asarray(spatial_frequencies),
         tfs=np.asarray(temporal_frequencies),
-        pooled_directions=False,
         direction=direction,
     )
     return matrix
 
 
 def get_custom_gaussian(
-    roi_id, fit_outputs, spatial_frequencies, temporal_frequencies, direction
-):
+    roi_id: int,
+    fit_outputs: dict,
+    spatial_frequencies: list,
+    temporal_frequencies: list,
+    direction: str,
+    matrix_definition: int = 100,
+) -> np.ndarray:
+    """This method gets the Gaussian fit (NxN matrix) from the fit outputs.
+    N is the matrix definition, which is 100 by default.
+
+    Parameters
+    ----------
+    roi_id : int
+        The choosen ROI id.
+    fit_outputs : dict
+        The fit outputs previously calculated.
+    spatial_frequencies : list
+        The spatial frequencies as from the config file.
+    temporal_frequencies : list
+        The temporal frequencies as from the config file.
+    direction : str
+        The choosen direction. It can be "pooled" or an integer.
+    matrix_definition : int, optional
+        The matrix definition, by default 100.
+
+    Returns
+    -------
+    np.ndarray
+        The Gaussian fit (NxN matrix).
+    """
     matrix = get_gaussian_matrix_to_be_plotted(
         kind="custom",
         roi_id=roi_id,
         fit_output=fit_outputs,
         sfs=np.asarray(spatial_frequencies),
         tfs=np.asarray(temporal_frequencies),
-        pooled_directions=False,
         direction=direction,
-        matrix_definition=100,
+        matrix_definition=matrix_definition,
     )
     return matrix

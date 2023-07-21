@@ -1,6 +1,3 @@
-import pickle
-from pathlib import Path
-
 import dash_mantine_components as dmc
 import numpy as np
 import pandas as pd
@@ -10,6 +7,7 @@ from dash import Input, Output, callback, dcc, html, register_page
 from rsp_vision.analysis.gaussians_calculations import (
     get_gaussian_matrix_to_be_plotted,
 )
+from rsp_vision.dashboard.pages.helpers.data_loading import load_data
 
 register_page(__name__, path="/murakami_plot")
 
@@ -396,31 +394,6 @@ def add_data_in_figure(
     return fig
 
 
-def load_data(store: dict) -> dict:
-    """This method loads the data from the pickle file.
-
-    Parameters
-    ----------
-    store : dict
-        The store object.
-
-    Returns
-    -------
-    dict
-        The data from the pickle file.
-    """
-    path = (
-        Path(store["path"])
-        / store["subject_folder_path"]
-        / store["session_folder_path"]
-        / "gaussians_fits_and_roi_info.pickle"
-    )
-    with open(path, "rb") as f:
-        data = pickle.load(f)
-
-    return data
-
-
 def find_peak_coordinates(
     fitted_gaussian_matrix: np.ndarray,
     spatial_frequencies: np.ndarray,
@@ -504,8 +477,8 @@ def call_get_gaussian_matrix_to_be_plotted(
             fit_output=fit_outputs,
             sfs=np.asarray(spatial_frequencies),
             tfs=np.asarray(temporal_frequencies),
-            pooled_directions=True,
             matrix_definition=matrix_definition,
+            direction="pooled",
         )
 
     return fitted_gaussian_matrix
