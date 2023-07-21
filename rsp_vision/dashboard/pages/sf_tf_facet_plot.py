@@ -690,6 +690,7 @@ def gaussian_plot(
         tfs=np.asarray(temporal_frequencies),
         direction=direction,
         matrix_definition=matrix_definition,
+        is_log=True,
     )
 
     # Create subplots for the two Gaussian plots
@@ -811,17 +812,19 @@ def gaussian_plot(
         tickvals=uniform_sfs, ticktext=spatial_frequencies, row=2, col=1
     )
 
-    longer_array_sfs = np.linspace(
-        min(spatial_frequencies),
-        max(spatial_frequencies),
+    longer_array_sfs = np.logspace(
+        np.log2(min(spatial_frequencies)),
+        np.log2(max(spatial_frequencies)),
         num=matrix_definition,
+        base=2,
+    )
+    longer_array_tfs = np.logspace(
+        np.log2(min(temporal_frequencies)),
+        np.log2(max(temporal_frequencies)),
+        num=matrix_definition,
+        base=2,
     )
 
-    longer_array_tfs = np.linspace(
-        min(temporal_frequencies),
-        max(temporal_frequencies),
-        num=matrix_definition,
-    )
     fig.update_yaxes(
         tickvals=uniform_oversampled_sfs[::10],
         ticktext=np.round(longer_array_sfs[::10], 2),
