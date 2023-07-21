@@ -298,7 +298,7 @@ def get_gaussian_matrix_to_be_plotted(
         If kind is not "6x6 matrix" or "custom".
     """
     if kind == "6x6 matrix":
-        if isinstance(direction, float):
+        if isinstance(direction, float) or isinstance(direction, int):
             assert (
                 direction != sys.float_info.max
             ), "direction must be specified"
