@@ -72,7 +72,8 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ["rsp_vision*"]
-exclude = ["tests*"]
+exclude = ["tests", "docs*"]
+
 
 [tool.pytest.ini_options]
 addopts = "--cov=rsp_vision"
@@ -112,7 +113,9 @@ ignore = [
   "tests/*",
   "tests/test_unit/*",
   "tests/test_integration/*",
-  ".flake8"
+  ".flake8",
+  "docs/",
+  "docs/source/",
 ]
 
 
