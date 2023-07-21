@@ -432,9 +432,9 @@ def sf_tf_grid(
     #  every time the ROI changes or the direction changes
     if (run_facet_plot is None) or (run_facet_plot == 0):
         sf_tf_grid.latest_n_clicks = 0
-        return "Press 'Run facet plot' to see the data"
+        return "Press 'Show facet plot' to see the data"
     elif sf_tf_grid.latest_n_clicks == run_facet_plot:
-        return "Press 'Run facet plot' to see the data"
+        return "Press 'Show facet plot' to see the data"
     else:
         print(sf_tf_grid.latest_n_clicks)
         print(run_facet_plot)
