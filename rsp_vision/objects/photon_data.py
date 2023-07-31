@@ -178,6 +178,8 @@ class PhotonData:
                 for i in data_raw.stim[0]["stimulus"]["grey_or_static"]
             ]
         )
+        logging.info(f"Stimulus protocol: {grey_or_static}")
+
         if grey_or_static in [
             "grey_static_drift",
             "grey_static_drift_switch",
@@ -187,6 +189,10 @@ class PhotonData:
         else:
             self.is_gray = False
             self.n_triggers_per_stimulus = 2
+            raise NotImplementedError(
+                "The code is not implemented for non-gray stimuli"
+                + f"Frames per session: {self.n_frames_per_session}"
+            )
 
         self.n_all_triggers: int = data_raw.stim[0]["n_triggers"]
         self.n_session_boundary_baseline_triggers = int(

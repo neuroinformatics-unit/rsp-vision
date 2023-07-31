@@ -57,6 +57,7 @@ def cli_entry_point_local():
         Example (1 day, BIG): AS_1112809_hL_V1_monitor_front-right_low\n \
         Example (2 days, big file): CX_1112654_hL_RSPd_monitor_front\n \
         Example (2 days, big file): CX_1112837_hL_RSPd_monitor_front\n \
+        Error: CX_122_2_hR_RSPd_monitor_right\n \
         📄"
     )
     config, swc_blueprint_spec = read_config_and_logging()
@@ -140,7 +141,7 @@ def read_config_and_logging(is_local=True, job_id=0):
     )
     if not is_local:
         config["paths"] = config["batch-paths"]
-    start_logging(swc_blueprint_spec, job_id)
+    start_logging(swc_blueprint_spec, job_id=job_id)
     logging.debug(f"Config file read from {config_path}")
     logging.debug(f"Config file content: {config}")
 
