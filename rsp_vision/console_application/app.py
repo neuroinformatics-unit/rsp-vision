@@ -78,9 +78,12 @@ def cli_entry_point_array(job_id):
 
     dataset = only_sf_tf_files[job_id]
 
+    all_datasets_logging_file_path = (
+        swc_blueprint_spec.local_path / "analysis_success.log"
+    )
     reanalysis = False
     try:
-        with open("./local_logs.csv", "r") as f:
+        with open(all_datasets_logging_file_path, "r") as f:
             local_logs = pd.read_csv(f, index_col=0, header=0)
             if dataset in local_logs["dataset_name"]:
                 reanalysis = True
@@ -109,7 +112,7 @@ def cli_entry_point_array(job_id):
     else:
         local_logs.loc[local_logs["dataset_name"] == dataset] == ll
 
-    local_logs.to_csv("./local_logs.csv")
+    local_logs.to_csv(all_datasets_logging_file_path)
 
 
 def cli_entry_point_batch():
