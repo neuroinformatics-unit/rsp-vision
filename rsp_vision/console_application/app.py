@@ -79,8 +79,7 @@ def cli_entry_point_array(job_id):
     try:
         with open("./local_logs.csv", "r") as f:
             local_logs = pd.read_csv(f, index_col=0, header=0)
-
-            if dataset in local_logs.dataset_name:
+            if dataset in local_logs["dataset_name"]:
                 reanalysis = True
     except Exception:
         local_logs = pd.DataFrame(

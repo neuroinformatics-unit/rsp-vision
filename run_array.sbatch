@@ -1,15 +1,12 @@
 #!/bin/bash
 #
-#SBATCH --array=0-49
+#SBATCH --array=21-50
 #SBATCH -p cpu # partition (queue)
-#SBATCH -N 1   # number of nodes
-#SBATCH --mem 40G # memory pool for all cores
-#SBATCH -n 12 # number of cores
-#SBATCH -t 00-06:00 # time (D-HH:MM)
-#SBATCH -o slurm.%N.%j.out # STDOUT
-#SBATCH -e slurm.%N.%j.err # STDERR
-#SBATCH --mail-type=ALL
-#SBATCH --mail-user=l.porta@ucl.ac.uk
+#SBATCH --mem-per-cpu=150G
+#SBATCH -t 00-02:00 # time (D-HH:MM)
+#SBATCH -o /ceph/margrie/laura/rsp_vision/slurm/slurm.%N.%j.out # STDOUT
+#SBATCH -e /ceph/margrie/laura/rsp_vision/slurm/slurm.%N.%j.err # STDERR
+
 
 echo "Inizialization completed."
 echo "Activating the environment..."

@@ -481,11 +481,13 @@ class PhotonData:
                 pivot_table.values
                 != self.n_triggers_per_stimulus * self.total_n_days
             ):
-                logging.error(f"Pivot table: {pivot_table}")
-                raise RuntimeError(
-                    "Number of stimuli is not correct, some combinations are "
-                    + "missing or duplicated"
+                exception_idx = np.where(
+                    pivot_table.values
+                    != self.n_triggers_per_stimulus * self.total_n_days
                 )
+                logging.warning(f"Pivot table: {pivot_table}")
+                logging.warning("Expected number of stimuli not found")
+                logging.warning(f"Exception:{exception_idx}")
 
     def fill_up_with_stim_info(
         self, signal: pd.DataFrame, stimuli: pd.DataFrame
