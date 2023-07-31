@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-#SBATCH --array=21-50
+#SBATCH --array=0-50
 #SBATCH -p cpu # partition (queue)
-#SBATCH --mem-per-cpu=150G
-#SBATCH -t 00-02:00 # time (D-HH:MM)
-#SBATCH -o /ceph/margrie/laura/rsp_vision/slurm/slurm.%N.%j.out # STDOUT
-#SBATCH -e /ceph/margrie/laura/rsp_vision/slurm/slurm.%N.%j.err # STDERR
+#SBATCH --mem-per-cpu=250G
+#SBATCH -t 00-05:00 # time (D-HH:MM)
+#SBATCH -o /ceph/margrie/laura/rsp_vision/slurm/run-02/slurm.%N.%j.out.txt # STDOUT
+#SBATCH -e /ceph/margrie/laura/rsp_vision/slurm/run-02/slurm.%N.%j.err.txt # STDERR
 
 
 echo "Inizialization completed."
