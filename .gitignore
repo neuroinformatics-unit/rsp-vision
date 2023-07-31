@@ -92,3 +92,4 @@ venv/
 *.obsidian
 *.out
 *.err
+.coverage
