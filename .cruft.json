@@ -1,6 +1,6 @@
 {
   "template": "https://github.com/neuroinformatics-unit/python-cookiecutter",
-  "commit": "6fe2e3986fb26ca0e288cee6f182db63973f5607",
+  "commit": "9daec12bffbc32da6a252605c5e67c90028fefc0",
   "checkout": null,
   "context": {
     "cookiecutter": {
@@ -12,6 +12,7 @@
       "module_name": "rsp_vision",
       "short_description": "Analysis tools and data exploration for RSP neurons - photon microscopy",
       "license": "BSD-3",
+      "create_docs": "yes",
       "_copy_without_render": [
         ".github/*"
       ],

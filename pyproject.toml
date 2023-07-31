@@ -31,6 +31,9 @@ dependencies = [
     "numba",
     "tqdm",
     "GitPython",
+    "dash",
+    "dash_mantine_components",
+    "dash_bootstrap_components",
 ]
 
 [project.urls]
@@ -52,6 +55,8 @@ dev = [
   "ruff",
   "setuptools_scm",
   "check-manifest",
+  "pytest-mock",
+  "GitPython",
 ]
 
 [build-system]
@@ -67,7 +72,8 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ["rsp_vision*"]
-exclude = ["tests*"]
+exclude = ["tests", "docs*"]
+
 
 [tool.pytest.ini_options]
 addopts = "--cov=rsp_vision"
@@ -107,7 +113,9 @@ ignore = [
   "tests/*",
   "tests/test_unit/*",
   "tests/test_integration/*",
-  ".flake8"
+  ".flake8",
+  "docs/",
+  "docs/source/",
 ]
 
 

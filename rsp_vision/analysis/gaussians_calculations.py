@@ -1,5 +1,6 @@
 import logging
 import sys
+from typing import Union
 
 import numpy as np
 from numba import njit
@@ -246,9 +247,9 @@ def get_gaussian_matrix_to_be_plotted(
     fit_output: dict,
     sfs: np.ndarray,
     tfs: np.ndarray,
-    pooled_directions: bool = False,
-    direction: float = sys.float_info.max,
+    direction: Union[float, str] = "pooled",
     matrix_definition: int = 100,
+    is_log: bool = False,
 ) -> np.ndarray:
     """Returns a squared Gaussian matrix to be visualized in the dashboard
     based on the fitting parameters precalculated.
@@ -282,6 +283,9 @@ def get_gaussian_matrix_to_be_plotted(
     matrix_definition : int, optional
         The dimension of the squared matrix, by default 100. Used if
         `kind="custom"`.
+    is_log : bool, optional
+        Whether to use logspace or linspace to calculate the spatial and
+        temporal frequencies, by default False. Used if `kind="custom"`.
 
     Returns
     -------
@@ -294,7 +298,7 @@ def get_gaussian_matrix_to_be_plotted(
         If kind is not "6x6 matrix" or "custom".
     """
     if kind == "6x6 matrix":
-        if not pooled_directions:
+        if isinstance(direction, float) or isinstance(direction, int):
             assert (
                 direction != sys.float_info.max
             ), "direction must be specified"
@@ -313,36 +317,44 @@ def get_gaussian_matrix_to_be_plotted(
         logging.info(
             "Creating custom matrix with definition %d", matrix_definition
         )
-        if not pooled_directions:
+        if is_log:
+            space_sfs = np.logspace(
+                np.log2(sfs.min()),
+                np.log2(sfs.max()),
+                num=matrix_definition,
+                base=2,
+            )
+            space_tfs = np.logspace(
+                np.log2(tfs.min()),
+                np.log2(tfs.max()),
+                num=matrix_definition,
+                base=2,
+            )
+        else:
+            space_sfs = np.linspace(
+                sfs.min(),
+                sfs.max(),
+                num=matrix_definition,
+            )
+            space_tfs = np.linspace(
+                tfs.min(),
+                tfs.max(),
+                num=matrix_definition,
+            )
+        if isinstance(direction, float):
             assert (
                 direction != sys.float_info.max
             ), "direction must be specified"
             matrix = create_gaussian_matrix(
                 fit_output[(roi_id, direction)],
-                np.linspace(
-                    sfs.min(),
-                    tfs.max(),
-                    num=matrix_definition,
-                ),
-                np.linspace(
-                    tfs.min(),
-                    tfs.max(),
-                    num=matrix_definition,
-                ),
+                space_sfs,
+                space_tfs,
             )
         else:
             matrix = create_gaussian_matrix(
                 fit_output[(roi_id, "pooled")],
-                np.linspace(
-                    sfs.min(),
-                    tfs.max(),
-                    num=matrix_definition,
-                ),
-                np.linspace(
-                    tfs.min(),
-                    tfs.max(),
-                    num=matrix_definition,
-                ),
+                space_sfs,
+                space_tfs,
             )
     else:
         raise ValueError("kind must be '6x6 matrix' or 'custom'")

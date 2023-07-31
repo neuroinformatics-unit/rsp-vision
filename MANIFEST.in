@@ -6,14 +6,17 @@ include *.sbatch
 recursive-include docs *.md
 recursive-include docs *.png
 recursive-include docs *.svg
+recursive-include rsp_vision *.css
 
 exclude *.yml
 exclude *.cruft.json
 exclude *.yaml
 exclude tox.ini
 exclude .flake8
+exclude .coverage
 
 recursive-exclude tests *
+recursive-exclude docs *
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 recursive-exclude * *.yml

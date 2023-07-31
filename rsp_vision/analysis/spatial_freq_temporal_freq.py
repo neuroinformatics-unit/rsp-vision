@@ -634,7 +634,7 @@ class FrequencyResponsiveness:
 
         if best_result is None:
             logging.warning(
-                f"ROI {roi_id} and direction {dir} failed to fit."
+                f"ROI {roi_id} and direction {direction} failed to fit."
                 + "Skipping..."
             )
             best_result = OptimizeResult()
