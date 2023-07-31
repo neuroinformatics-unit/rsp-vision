@@ -64,7 +64,9 @@ def cli_entry_point_local():
 
 
 def cli_entry_point_array(job_id):
-    config, swc_blueprint_spec = read_config_and_logging(is_local=False)
+    config, swc_blueprint_spec = read_config_and_logging(
+        is_local=False, job_id=job_id
+    )
 
     allen_folder = config["paths"]["allen-dff"]
     only_sf_tf_files = []
@@ -86,10 +88,19 @@ def cli_entry_point_array(job_id):
             columns=["dataset_name", "date", "latest_job_id"]
         )
 
+    error = ""
+    logging.info(f"Trying to analyse:{dataset}, job id: {job_id}")
+    try:
+        analysis_pipeline(dataset, config, swc_blueprint_spec)
+    except Exception as e:
+        error = str(e)
+        logging.exception(e)
+
     ll = {
         "dataset_name": dataset,
         "date": str(datetime.datetime.now()),
         "latest_job_id": job_id,
+        "error": error,
     }
 
     if not reanalysis:
@@ -98,9 +109,6 @@ def cli_entry_point_array(job_id):
         local_logs.loc[local_logs["dataset_name"] == dataset] == ll
 
     local_logs.to_csv("./local_logs.csv")
-
-    logging.info(f"Trying to analyse:{dataset}, job id: {job_id}")
-    analysis_pipeline(dataset, config, swc_blueprint_spec)
 
 
 def cli_entry_point_batch():
@@ -120,7 +128,7 @@ def cli_entry_point_batch():
         analysis_pipeline(filename, config, swc_blueprint_spec)
 
 
-def read_config_and_logging(is_local=True):
+def read_config_and_logging(is_local=True, job_id=0):
     config = read_config_file(config_path)
     swc_blueprint_spec = SWC_Blueprint_Spec(
         project_name="rsp_vision",
@@ -132,14 +140,14 @@ def read_config_and_logging(is_local=True):
     )
     if not is_local:
         config["paths"] = config["batch-paths"]
-    start_logging(swc_blueprint_spec)
+    start_logging(swc_blueprint_spec, job_id)
     logging.debug(f"Config file read from {config_path}")
     logging.debug(f"Config file content: {config}")
 
     return config, swc_blueprint_spec
 
 
-@exception_handler
+# @exception_handler
 def analysis_pipeline(folder_name, config, swc_blueprint_spec) -> None:
     # load data
     data, folder_naming = load_data(folder_name, config)
@@ -160,7 +168,9 @@ def analysis_pipeline(folder_name, config, swc_blueprint_spec) -> None:
     save_data(swc_blueprint_spec, folder_naming, photon_data, config)
 
 
-def start_logging(swc_blueprint_spec: SWC_Blueprint_Spec, module=None):
+def start_logging(
+    swc_blueprint_spec: SWC_Blueprint_Spec, module=None, job_id=0
+):
     """Start logging to file and console.
 
     The log level to file is set to DEBUG, to console to INFO. The log file is
@@ -175,7 +185,7 @@ def start_logging(swc_blueprint_spec: SWC_Blueprint_Spec, module=None):
     fancylog.start_logging(
         output_dir=str(swc_blueprint_spec.logs_path),
         package=module,
-        filename="rsp_vision",
+        filename=f"rsp_vision_{job_id}",
         verbose=False,
     )
 
