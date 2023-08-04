@@ -317,30 +317,16 @@ def get_gaussian_matrix_to_be_plotted(
         logging.info(
             "Creating custom matrix with definition %d", matrix_definition
         )
-        if is_log:
-            space_sfs = np.logspace(
-                np.log2(sfs.min()),
-                np.log2(sfs.max()),
-                num=matrix_definition,
-                base=2,
-            )
-            space_tfs = np.logspace(
-                np.log2(tfs.min()),
-                np.log2(tfs.max()),
-                num=matrix_definition,
-                base=2,
-            )
-        else:
-            space_sfs = np.linspace(
-                sfs.min(),
-                sfs.max(),
-                num=matrix_definition,
-            )
-            space_tfs = np.linspace(
-                tfs.min(),
-                tfs.max(),
-                num=matrix_definition,
-            )
+        space_sfs = make_space(
+            sfs,
+            matrix_definition,
+            is_log=is_log,
+        )
+        space_tfs = make_space(
+            tfs,
+            matrix_definition,
+            is_log=is_log,
+        )
         matrix = create_gaussian_matrix(
             fit_output[(roi_id, direction)],
             space_sfs,
@@ -350,3 +336,20 @@ def get_gaussian_matrix_to_be_plotted(
     else:
         raise ValueError("kind must be '6x6 matrix' or 'custom'")
     return matrix
+
+
+def make_space(freq_array, matrix_definition, is_log=False):
+    if is_log:
+        result = np.logspace(
+            np.log2(np.min(freq_array)),
+            np.log2(np.max(freq_array)),
+            num=matrix_definition,
+            base=2,
+        )
+    else:
+        result = np.linspace(
+            np.min(freq_array),
+            np.max(freq_array),
+            num=matrix_definition,
+        )
+    return result

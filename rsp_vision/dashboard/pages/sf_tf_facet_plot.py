@@ -11,6 +11,7 @@ from dash import Input, Output, callback, dcc, html
 
 from rsp_vision.analysis.gaussians_calculations import (
     get_gaussian_matrix_to_be_plotted,
+    make_space,
 )
 from rsp_vision.dashboard.pages.helpers.calculations_for_plotting import (
     calculate_mean_and_median,
@@ -810,17 +811,15 @@ def gaussian_plot(
         tickvals=uniform_sfs, ticktext=spatial_frequencies, row=2, col=1
     )
 
-    longer_array_sfs = np.logspace(
-        np.log2(min(spatial_frequencies)),
-        np.log2(max(spatial_frequencies)),
-        num=matrix_definition,
-        base=2,
+    longer_array_sfs = make_space(
+        spatial_frequencies,
+        matrix_definition,
+        is_log=True,
     )
-    longer_array_tfs = np.logspace(
-        np.log2(min(temporal_frequencies)),
-        np.log2(max(temporal_frequencies)),
-        num=matrix_definition,
-        base=2,
+    longer_array_tfs = make_space(
+        temporal_frequencies,
+        matrix_definition,
+        is_log=True,
     )
 
     fig.update_yaxes(
