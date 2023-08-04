@@ -158,7 +158,6 @@ def test_gaussian_matrix_for_6x6_matrix_single_direction():
     fit_output = {(roi_id, direction): np.asarray([6, 5, 4, 3, 2, 1])}
     sfs = np.array([0.1, 0.2, 0.3])
     tfs = np.array([0.4, 0.5, 0.6])
-    pooled_directions = False
     expected_matrix = np.array(
         [
             [6.981e-67, 2.853e-68, 1.538e-69],
@@ -173,7 +172,6 @@ def test_gaussian_matrix_for_6x6_matrix_single_direction():
         fit_output,
         sfs,
         tfs,
-        pooled_directions,
         direction,
     )
 

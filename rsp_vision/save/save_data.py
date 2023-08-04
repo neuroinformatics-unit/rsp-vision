@@ -376,6 +376,6 @@ def save_info_in_main_log(
     else:
         analysis_log.loc[
             analysis_log["folder_name"] == folder_naming_specs.folder_name
-        ] = dict
+        ] = dict.values()
 
     analysis_log.to_csv(swc_blueprint_spec.path / "analysis_log.csv")

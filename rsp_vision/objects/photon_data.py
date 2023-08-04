@@ -1,7 +1,7 @@
 import itertools
 import logging
 from datetime import datetime, timedelta
-from typing import Set, Tuple
+from typing import Dict, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -108,6 +108,7 @@ class PhotonData:
         self.set_general_variables(data_raw)
 
         self.signal, self.stimuli = self.get_signal_and_stimuli_df(data_raw)
+        self.add_stimulus_frames_count_to_signal_df()
 
         self.set_post_data_extraction_variables()
         self.check_consistency_of_stimuli_df(self.stimuli)
@@ -505,6 +506,10 @@ class PhotonData:
             Final signal dataframe with stimulus information
         """
         # register only the stimulus onset
+
+        signal["stimulus_repetition"] = np.nan
+        stim_combo_occurrencies: Dict[tuple, int] = {}
+
         for stimulus_index, start_frame in tqdm(
             enumerate(self.stimulus_start_frames),
             desc="Adding stimulus information to signal dataframe",
@@ -516,6 +521,17 @@ class PhotonData:
             # starting frames and stimuli are alligned in source data
             stimulus = stimuli.iloc[stimulus_index]
 
+            # check if the stimulus combination has already been registered
+            stim_combo = (
+                stimulus["sf"],
+                stimulus["tf"],
+                stimulus["direction"],
+            )
+            if stim_combo in stim_combo_occurrencies:
+                stim_combo_occurrencies[stim_combo] += 1
+            else:
+                stim_combo_occurrencies[stim_combo] = 1
+
             if len(signal_idxs) != self.n_roi and self.using_real_data:
                 raise RuntimeError(
                     f"Number of instances for stimulus {stimulus} is wrong."
@@ -526,6 +542,9 @@ class PhotonData:
             signal.loc[mask, "tf"] = stimulus["tf"]
             signal.loc[mask, "direction"] = stimulus["direction"]
             signal.loc[mask, "stimulus_onset"] = True
+            signal.loc[mask, "stimulus_repetition"] = stim_combo_occurrencies[
+                stim_combo
+            ]
 
         logging.info("Stimulus information added to signal dataframe")
 
@@ -559,6 +578,34 @@ class PhotonData:
                     with stimulus information.\nPivot table:{pivot_table}, \
                     expercted:{expected}"
                 )
+
+    def add_stimulus_frames_count_to_signal_df(
+        self,
+    ):
+        """
+        Add a column to the signal dataframe that counts the frames
+        within each stimulus presentation in order to make plotting
+        easier.
+        """
+        self.signal["stimulus_frames"] = np.nan
+        n_frames_per_stim = int(
+            self.n_frames_per_trigger * self.n_triggers_per_stimulus
+        )
+        counts = np.arange(0, n_frames_per_stim)
+        start_frames_indexes = self.signal[self.signal["stimulus_onset"]].index
+
+        for idx in start_frames_indexes:
+            start = idx
+            end = idx + n_frames_per_stim - 1
+            self.signal.loc[start:end, "stimulus_frames"] = counts
+            self.signal.loc[start:end, "sf"] = self.signal.loc[idx, "sf"]
+            self.signal.loc[start:end, "tf"] = self.signal.loc[idx, "tf"]
+            self.signal.loc[start:end, "direction"] = self.signal.loc[
+                idx, "direction"
+            ]
+            self.signal.loc[
+                start:end, "stimulus_repetition"
+            ] = self.signal.loc[idx, "stimulus_repetition"]
 
     def set_post_data_extraction_variables(self) -> None:
         """Sets instance variables for signal and stimuli data extraction.
