@@ -338,7 +338,27 @@ def get_gaussian_matrix_to_be_plotted(
     return matrix
 
 
-def make_space(freq_array, matrix_definition, is_log=False):
+def make_space(
+    freq_array: np.ndarray, matrix_definition: int, is_log: bool = False
+) -> np.ndarray:
+    """Create a space of frequencies to calculate the Gaussian matrix for.
+    The space can be either linear or logarithmic.
+
+    Parameters
+    ----------
+    freq_array : np.ndarray
+        An array of frequencies of which to find max and min.
+    matrix_definition : int
+        The dimension of the squared matrix.
+    is_log : bool, optional
+        Weather to use logspace or linspace to calculate the spatial and
+        temporal frequencies, by default False
+
+    Returns
+    -------
+    np.ndarray
+        A space of frequencies to calculate the Gaussian matrix for.
+    """
     if is_log:
         result = np.logspace(
             np.log2(np.min(freq_array)),
