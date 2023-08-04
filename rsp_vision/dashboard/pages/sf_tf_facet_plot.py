@@ -455,7 +455,7 @@ def sf_tf_grid(
             dataframe = calculate_mean_and_median(signal)
             where_stim_is_not_na = dataframe["stimulus_repetition"].notna()
 
-            dataframe["stimulus_repetition"][where_stim_is_not_na] = (
+            dataframe.loc[where_stim_is_not_na, "stimulus_repetition"] = (
                 dataframe["stimulus_repetition"][where_stim_is_not_na].astype(
                     str
                 )
