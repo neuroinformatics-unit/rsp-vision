@@ -72,7 +72,7 @@ layout = html.Div(
                     selected_rows=[],
                     page_action="native",
                     page_current=0,
-                    page_size=20,
+                    page_size=50,
                     hidden_columns=[
                         "index",
                         "sub",
