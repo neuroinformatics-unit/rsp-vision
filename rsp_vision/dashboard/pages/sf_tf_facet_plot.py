@@ -680,7 +680,7 @@ def gaussian_plot(
     )
     # Then get the Gaussian fits for the oversampled SF-TF combinations
     # I am creating a 100x100 matrix
-    matrix_definition = store["config"]["fitting"]["oversampling_factor"]
+    matrix_dimension = store["config"]["fitting"]["oversampling_factor"]
     high_res_gaussian = get_gaussian_matrix_to_be_plotted(
         kind="custom",
         roi_id=roi_id,
@@ -688,7 +688,7 @@ def gaussian_plot(
         sfs=np.asarray(spatial_frequencies),
         tfs=np.asarray(temporal_frequencies),
         direction=direction,
-        matrix_definition=matrix_definition,
+        matrix_dimension=matrix_dimension,
         is_log=True,
     )
 
@@ -736,10 +736,10 @@ def gaussian_plot(
 
     # Linear arrays to set the axis of the third heatmap
     uniform_oversampled_sfs = np.linspace(
-        0, matrix_definition - 1, matrix_definition
+        0, matrix_dimension - 1, matrix_dimension
     )
     uniform_oversampled_tfs = np.linspace(
-        0, matrix_definition - 1, matrix_definition
+        0, matrix_dimension - 1, matrix_dimension
     )
 
     # Add the heatmap for the oversampled Gaussian
@@ -813,12 +813,12 @@ def gaussian_plot(
 
     longer_array_sfs = make_space(
         spatial_frequencies,
-        matrix_definition,
+        matrix_dimension,
         is_log=True,
     )
     longer_array_tfs = make_space(
         temporal_frequencies,
-        matrix_definition,
+        matrix_dimension,
         is_log=True,
     )
 

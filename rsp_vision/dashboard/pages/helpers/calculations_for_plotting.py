@@ -76,7 +76,7 @@ def find_peak_coordinates(
     fitted_gaussian_matrix: np.ndarray,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    matrix_definition: int,
+    matrix_dimension: int,
 ) -> tuple:
     """This method finds the peak coordinates of the fitted gaussian matrix.
 
@@ -88,7 +88,7 @@ def find_peak_coordinates(
         The spatial frequencies that are used in the experiment.
     temporal_frequencies : np.ndarray
         The temporal frequencies that are used in the experiment.
-    matrix_definition : int
+    matrix_dimension : int
         The matrix definition used to generate the fitted_gaussian_matrix.
 
     Returns
@@ -103,12 +103,12 @@ def find_peak_coordinates(
     spatial_freq_linspace = np.linspace(
         spatial_frequencies.min(),
         spatial_frequencies.max(),
-        matrix_definition,
+        matrix_dimension,
     )
     temporal_freq_linspace = np.linspace(
         temporal_frequencies.min(),
         temporal_frequencies.max(),
-        matrix_definition,
+        matrix_dimension,
     )
 
     sf = spatial_freq_linspace[peak_indices[0]]
@@ -121,7 +121,7 @@ def call_get_gaussian_matrix_to_be_plotted(
     fit_outputs: dict,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    matrix_definition: int,
+    matrix_dimension: int,
 ) -> dict:
     """This method is a wrapper for the get_gaussian_matrix_to_be_plotted
     method that iterates over all the ROIs.
@@ -136,7 +136,7 @@ def call_get_gaussian_matrix_to_be_plotted(
         The spatial frequencies that are used in the experiment.
     temporal_frequencies : np.ndarray
         The temporal frequencies that are used in the experiment.
-    matrix_definition : int
+    matrix_dimension : int
         The matrix definition used to generate the fitted_gaussian_matrix.
 
     Returns
@@ -155,7 +155,7 @@ def call_get_gaussian_matrix_to_be_plotted(
             fit_output=fit_outputs,
             sfs=np.asarray(spatial_frequencies),
             tfs=np.asarray(temporal_frequencies),
-            matrix_definition=matrix_definition,
+            matrix_dimension=matrix_dimension,
             direction="pooled",
         )
 

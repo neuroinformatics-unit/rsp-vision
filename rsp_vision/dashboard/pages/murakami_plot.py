@@ -179,7 +179,7 @@ def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
     # prepare data
     responsive_rois = data["responsive_rois"]
     n_roi = data["n_roi"]
-    matrix_definition = 100
+    matrix_dimension = 100
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
     fit_outputs = data["fit_outputs"]
@@ -188,7 +188,7 @@ def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
         fit_outputs,
         spatial_frequencies,
         temporal_frequencies,
-        matrix_definition,
+        matrix_dimension,
     )
 
     total_roi = responsive_rois if show_only_responsive else list(range(n_roi))
@@ -198,7 +198,7 @@ def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
     fig = add_data_in_figure(
         all_roi=total_roi,
         fig=fig,
-        matrix_definition=matrix_definition,
+        matrix_dimension=matrix_dimension,
         responsive_rois=responsive_rois,
         fitted_gaussian_matrix=fitted_gaussian_matrix,
         spatial_frequencies=spatial_frequencies,
@@ -307,7 +307,7 @@ def prettify_murakami_plot(
 def add_data_in_figure(
     all_roi: list,
     fig: go.Figure,
-    matrix_definition: int,
+    matrix_dimension: int,
     responsive_rois: list,
     fitted_gaussian_matrix: pd.DataFrame,
     spatial_frequencies: np.ndarray,
@@ -323,7 +323,7 @@ def add_data_in_figure(
         The list of all the ROIs.
     fig : go.Figure
         The figure to which the data is to be added.
-    matrix_definition : int
+    matrix_dimension : int
         The matrix definition used in the experiment. It specifies
         the precision of the sf/tf peaks that are to be found. Needs to match
         the matrix definition used to generate the fitted_gaussian_matrix.
@@ -346,7 +346,7 @@ def add_data_in_figure(
             fitted_gaussian_matrix=fitted_gaussian_matrix[(roi_id, "pooled")],
             spatial_frequencies=np.asarray(spatial_frequencies),
             temporal_frequencies=np.asarray(temporal_frequencies),
-            matrix_definition=matrix_definition,
+            matrix_dimension=matrix_dimension,
         )
         for roi_id in all_roi
     }
