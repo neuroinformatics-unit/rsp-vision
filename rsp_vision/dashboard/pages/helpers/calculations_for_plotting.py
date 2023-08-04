@@ -10,8 +10,8 @@ from rsp_vision.analysis.gaussians_calculations import (
 def fit_correlation(
     gaussian: np.ndarray, median_subtracted_response: np.ndarray
 ) -> float:
-    """This method calculates the correlation between the median subtracted
-    response and the Gaussian fit (6x6 matrix).
+    """This method calculates the Pearsons correlation between the median
+    subtracted response and the Gaussian fit (6x6 matrix).
 
     Parameters
     ----------
