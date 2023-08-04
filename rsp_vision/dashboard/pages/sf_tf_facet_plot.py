@@ -437,8 +437,6 @@ def sf_tf_grid(
     elif sf_tf_grid.latest_n_clicks == run_facet_plot:
         return ""
     else:
-        print(sf_tf_grid.latest_n_clicks)
-        print(run_facet_plot)
         sf_tf_grid.latest_n_clicks += 1
 
         # Get the data
