@@ -341,21 +341,12 @@ def get_gaussian_matrix_to_be_plotted(
                 tfs.max(),
                 num=matrix_definition,
             )
-        if isinstance(direction, float):
-            assert (
-                direction != sys.float_info.max
-            ), "direction must be specified"
-            matrix = create_gaussian_matrix(
-                fit_output[(roi_id, direction)],
-                space_sfs,
-                space_tfs,
-            )
-        else:
-            matrix = create_gaussian_matrix(
-                fit_output[(roi_id, "pooled")],
-                space_sfs,
-                space_tfs,
-            )
+        matrix = create_gaussian_matrix(
+            fit_output[(roi_id, direction)],
+            space_sfs,
+            space_tfs,
+        )
+
     else:
         raise ValueError("kind must be '6x6 matrix' or 'custom'")
     return matrix
