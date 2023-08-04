@@ -114,7 +114,7 @@ layout = html.Div(
                     [
                         dmc.Center(
                             dmc.Button(
-                                "Show facet plot",
+                                "Show traces plot",
                                 id="run-facet-plot",
                                 variant="gradient",
                             ),
@@ -433,9 +433,9 @@ def sf_tf_grid(
     #  every time the ROI changes or the direction changes
     if (run_facet_plot is None) or (run_facet_plot == 0):
         sf_tf_grid.latest_n_clicks = 0
-        return "Press 'Show facet plot' to see the data"
+        return ""
     elif sf_tf_grid.latest_n_clicks == run_facet_plot:
-        return "Press 'Show facet plot' to see the data"
+        return ""
     else:
         print(sf_tf_grid.latest_n_clicks)
         print(run_facet_plot)
