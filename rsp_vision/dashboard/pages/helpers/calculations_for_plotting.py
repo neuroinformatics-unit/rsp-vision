@@ -79,6 +79,12 @@ def find_peak_coordinates(
     matrix_dimension: int,
 ) -> tuple:
     """This method finds the peak coordinates of the fitted gaussian matrix.
+    The gausisan matrix is the result of the fitting process of the two
+    dimensional gaussian (described by Andermnn et al. 2011.) to the
+    sampled data (the median subtracted response matrix).
+    Here we are interested in finding the peak coordinates of the fitted
+    gaussian as it represents the theoretical preferred spatial and temporal
+    frequency of the neuron.
 
     Parameters
     ----------
