@@ -5,8 +5,8 @@ import plotly.graph_objects as go
 from dash import Input, Output, callback, dcc, html, register_page
 
 from rsp_vision.dashboard.pages.helpers.calculations_for_plotting import (
-    call_get_gaussian_matrix_to_be_plotted,
     find_peak_coordinates,
+    get_gaussian_matrix_to_be_plotted_for_all_rois,
 )
 from rsp_vision.dashboard.pages.helpers.data_loading import load_data
 
@@ -183,7 +183,7 @@ def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
     fit_outputs = data["fit_outputs"]
-    fitted_gaussian_matrix = call_get_gaussian_matrix_to_be_plotted(
+    fitted_gaussian_matrix = get_gaussian_matrix_to_be_plotted_for_all_rois(
         n_roi,
         fit_outputs,
         spatial_frequencies,

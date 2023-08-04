@@ -122,7 +122,7 @@ def find_peak_coordinates(
     return tf, sf
 
 
-def call_get_gaussian_matrix_to_be_plotted(
+def get_gaussian_matrix_to_be_plotted_for_all_rois(
     n_roi: int,
     fit_outputs: dict,
     spatial_frequencies: np.ndarray,
