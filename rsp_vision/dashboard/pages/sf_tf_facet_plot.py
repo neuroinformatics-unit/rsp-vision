@@ -115,7 +115,7 @@ layout = html.Div(
                     [
                         dmc.Center(
                             dmc.Button(
-                                "Show traces plot",
+                                "Show facet plot",
                                 id="run-facet-plot",
                                 variant="gradient",
                             ),
