@@ -87,6 +87,7 @@ layout = html.Div(
                         "analysed",
                         "commit_hash",
                         "microscope",
+                        "\n",
                     ],
                 ),
             ],

@@ -1,15 +1,14 @@
-import pickle
-from pathlib import Path
-
 import dash_mantine_components as dmc
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from dash import Input, Output, callback, dcc, html, register_page
 
-from rsp_vision.analysis.gaussians_calculations import (
-    get_gaussian_matrix_to_be_plotted,
+from rsp_vision.dashboard.pages.helpers.calculations_for_plotting import (
+    find_peak_coordinates,
+    get_gaussian_matrix_to_be_plotted_for_all_rois,
 )
+from rsp_vision.dashboard.pages.helpers.data_loading import load_data
 
 register_page(__name__, path="/murakami_plot")
 
@@ -39,7 +38,7 @@ layout = html.Div(
                             disabled=True,
                         ),
                         dmc.NavLink(
-                            label="SF-TF facet plot and gaussians",
+                            label="Single-ROI visualization",
                             href="/sf_tf_facet_plot",
                             className="navlink",
                         ),
@@ -180,16 +179,16 @@ def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
     # prepare data
     responsive_rois = data["responsive_rois"]
     n_roi = data["n_roi"]
-    matrix_definition = 100
+    matrix_dimension = 100
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
     fit_outputs = data["fit_outputs"]
-    fitted_gaussian_matrix = call_get_gaussian_matrix_to_be_plotted(
+    fitted_gaussian_matrix = get_gaussian_matrix_to_be_plotted_for_all_rois(
         n_roi,
         fit_outputs,
         spatial_frequencies,
         temporal_frequencies,
-        matrix_definition,
+        matrix_dimension,
     )
 
     total_roi = responsive_rois if show_only_responsive else list(range(n_roi))
@@ -199,7 +198,7 @@ def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
     fig = add_data_in_figure(
         all_roi=total_roi,
         fig=fig,
-        matrix_definition=matrix_definition,
+        matrix_dimension=matrix_dimension,
         responsive_rois=responsive_rois,
         fitted_gaussian_matrix=fitted_gaussian_matrix,
         spatial_frequencies=spatial_frequencies,
@@ -308,7 +307,7 @@ def prettify_murakami_plot(
 def add_data_in_figure(
     all_roi: list,
     fig: go.Figure,
-    matrix_definition: int,
+    matrix_dimension: int,
     responsive_rois: list,
     fitted_gaussian_matrix: pd.DataFrame,
     spatial_frequencies: np.ndarray,
@@ -324,7 +323,7 @@ def add_data_in_figure(
         The list of all the ROIs.
     fig : go.Figure
         The figure to which the data is to be added.
-    matrix_definition : int
+    matrix_dimension : int
         The matrix definition used in the experiment. It specifies
         the precision of the sf/tf peaks that are to be found. Needs to match
         the matrix definition used to generate the fitted_gaussian_matrix.
@@ -347,7 +346,7 @@ def add_data_in_figure(
             fitted_gaussian_matrix=fitted_gaussian_matrix[(roi_id, "pooled")],
             spatial_frequencies=np.asarray(spatial_frequencies),
             temporal_frequencies=np.asarray(temporal_frequencies),
-            matrix_definition=matrix_definition,
+            matrix_dimension=matrix_dimension,
         )
         for roi_id in all_roi
     }
@@ -394,118 +393,3 @@ def add_data_in_figure(
         )
 
     return fig
-
-
-def load_data(store: dict) -> dict:
-    """This method loads the data from the pickle file.
-
-    Parameters
-    ----------
-    store : dict
-        The store object.
-
-    Returns
-    -------
-    dict
-        The data from the pickle file.
-    """
-    path = (
-        Path(store["path"])
-        / store["subject_folder_path"]
-        / store["session_folder_path"]
-        / "gaussians_fits_and_roi_info.pickle"
-    )
-    with open(path, "rb") as f:
-        data = pickle.load(f)
-
-    return data
-
-
-def find_peak_coordinates(
-    fitted_gaussian_matrix: np.ndarray,
-    spatial_frequencies: np.ndarray,
-    temporal_frequencies: np.ndarray,
-    matrix_definition: int,
-) -> tuple:
-    """This method finds the peak coordinates of the fitted gaussian matrix.
-
-    Parameters
-    ----------
-    fitted_gaussian_matrix : np.ndarray
-        The fitted gaussian matrix obtained from the precalculated fits.
-    spatial_frequencies : np.ndarray
-        The spatial frequencies that are used in the experiment.
-    temporal_frequencies : np.ndarray
-        The temporal frequencies that are used in the experiment.
-    matrix_definition : int
-        The matrix definition used to generate the fitted_gaussian_matrix.
-
-    Returns
-    -------
-    tuple
-        The peak coordinates of the fitted gaussian matrix.
-    """
-    peak_indices = np.unravel_index(
-        np.argmax(fitted_gaussian_matrix), fitted_gaussian_matrix.shape
-    )
-
-    spatial_freq_linspace = np.linspace(
-        spatial_frequencies.min(),
-        spatial_frequencies.max(),
-        matrix_definition,
-    )
-    temporal_freq_linspace = np.linspace(
-        temporal_frequencies.min(),
-        temporal_frequencies.max(),
-        matrix_definition,
-    )
-
-    sf = spatial_freq_linspace[peak_indices[0]]
-    tf = temporal_freq_linspace[peak_indices[1]]
-    return tf, sf
-
-
-def call_get_gaussian_matrix_to_be_plotted(
-    n_roi: int,
-    fit_outputs: dict,
-    spatial_frequencies: np.ndarray,
-    temporal_frequencies: np.ndarray,
-    matrix_definition: int,
-) -> dict:
-    """This method is a wrapper for the get_gaussian_matrix_to_be_plotted
-    method that iterates over all the ROIs.
-
-    Parameters
-    ----------
-    n_roi : int
-        The number of ROIs.
-    fit_outputs : dict
-        The fit outputs obtained from the precalculated fits.
-    spatial_frequencies : np.ndarray
-        The spatial frequencies that are used in the experiment.
-    temporal_frequencies : np.ndarray
-        The temporal frequencies that are used in the experiment.
-    matrix_definition : int
-        The matrix definition used to generate the fitted_gaussian_matrix.
-
-    Returns
-    -------
-    dict
-        The fitted gaussian matrix obtained from the precalculated fits.
-    """
-    fitted_gaussian_matrix = {}
-
-    for roi_id in range(n_roi):
-        fitted_gaussian_matrix[
-            (roi_id, "pooled")
-        ] = get_gaussian_matrix_to_be_plotted(
-            kind="custom",
-            roi_id=roi_id,
-            fit_output=fit_outputs,
-            sfs=np.asarray(spatial_frequencies),
-            tfs=np.asarray(temporal_frequencies),
-            pooled_directions=True,
-            matrix_definition=matrix_definition,
-        )
-
-    return fitted_gaussian_matrix
