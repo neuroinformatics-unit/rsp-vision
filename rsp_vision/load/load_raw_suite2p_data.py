@@ -1,10 +1,11 @@
-
-
-from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
 import numpy as np
 
+from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
 
-def read_numpy_output_of_suite2p(folder_naming_specs: FolderNamingSpecs, n_days: int):
+
+def read_numpy_output_of_suite2p(
+    folder_naming_specs: FolderNamingSpecs, n_days: int
+):
     data = {}
     for day in range(1, n_days + 1):
         path_to_plane0 = get_plane0_folder_path(folder_naming_specs, day)
@@ -22,14 +23,23 @@ def read_numpy_output_of_suite2p(folder_naming_specs: FolderNamingSpecs, n_days:
             "F": F,
             "Fneu": Fneu,
             "iscell": iscell,
-            "spks": spks
+            "spks": spks,
         }
-    
+
     return data
 
 
-def get_suite2p_folder_path(folder_naming_specs: FolderNamingSpecs, day_number: int):
-    return folder_naming_specs.path_to_experiment_folder / f"day_{day_number}" / f"suite2p"
+def get_suite2p_folder_path(
+    folder_naming_specs: FolderNamingSpecs, day_number: int
+):
+    return (
+        folder_naming_specs.path_to_experiment_folder
+        / f"day_{day_number}"
+        / "suite2p"
+    )
 
-def get_plane0_folder_path(folder_naming_specs: FolderNamingSpecs, day_number: int):
+
+def get_plane0_folder_path(
+    folder_naming_specs: FolderNamingSpecs, day_number: int
+):
     return get_suite2p_folder_path(folder_naming_specs, day_number) / "plane0"
