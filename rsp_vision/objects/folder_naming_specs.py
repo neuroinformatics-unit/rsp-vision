@@ -69,10 +69,13 @@ class FolderNamingSpecs:
         except KeyError:
             self.cre = None
 
+        self.path_to_experiment_folder = (
+            self._parser.get_path_to_experimental_folder()
+        )
+        self.path_to_stimulus_analog_input_schedule_files = (
+            self._parser.get_path_to_stimulus_analog_input_schedule_files()
+        )
 
-        self.path_to_experiment_folder = self._parser.get_path_to_experimental_folder()
-        self.path_to_stimulus_analog_input_schedule_files = self._parser.get_path_to_stimulus_analog_input_schedule_files()
-        
         self.allen_dff_file_path = self._parser.get_path_to_allen_dff_file()
 
     def parse_name(self) -> None:
@@ -136,7 +139,10 @@ class FolderNamingSpecs:
         else:
             logging.info("Not using allen dff file")
 
-            for path in self.paths:
+            for path in [
+                self.path_to_experiment_folder,
+                self.path_to_stimulus_analog_input_schedule_files,
+            ]:
                 if path.exists():
                     self.search_file_paths(path)
                 else:
