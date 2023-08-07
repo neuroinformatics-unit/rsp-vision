@@ -164,7 +164,6 @@ class PhotonData:
         data_raw : DataRaw
             The raw data object from which the data will be extracted
         """
-        self.screen_size: float = data_raw.stim[0]["screen_size"]
         self.n_sessions: int = data_raw.frames.shape[0]
         self.n_roi: int = data_raw.frames[0].shape[0]
         self.n_frames_per_session: int = data_raw.frames[0].shape[1]
