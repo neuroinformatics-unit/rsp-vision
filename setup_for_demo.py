@@ -23,7 +23,7 @@ if __name__ == "__main__":
                 "stimulus-ai-schedule": "/path/to/stimulus_AI_schedule_files",
                 "output": "/path/to/output",
             },
-            "use-allen-dff": "true",
+            "use-summary-data": True,
             "analysis-type": "sf_tf",
             "padding": [25, 50],
             "drift_order": 2,

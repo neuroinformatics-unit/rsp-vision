@@ -42,7 +42,7 @@ def load_data(
 def load_data_from_filename(
     folder_naming: FolderNamingSpecs, config: dict
 ) -> DataRaw:
-    if config["use-allen-dff"]:
+    if config["use-summary-data"]:
         if config["analysis-type"] == "sf_tf":
             allen_data_files = [
                 file

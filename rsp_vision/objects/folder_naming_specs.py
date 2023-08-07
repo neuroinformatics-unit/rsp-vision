@@ -119,7 +119,7 @@ class FolderNamingSpecs:
 
         self.all_files = []
 
-        if self.original_config["use-allen-dff"]:
+        if self.original_config["use-summary-data"]:
             logging.info("Using allen dff file")
 
             if self.allen_dff_file_path.exists():
