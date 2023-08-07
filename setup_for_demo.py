@@ -29,6 +29,8 @@ if __name__ == "__main__":
             "drift_order": 2,
             "fps_two_photon": 30,
             "fps_tree_photon": 6.74,
+            "len-session": 11400,
+            "n-sessions": 18,
             "spatial_frequencies": [0.01, 0.02, 0.04, 0.08, 0.16, 0.32],
             "temporal_frequencies": [0.5, 1, 2, 4, 8, 16],
             "directions": [0, 45, 90, 135, 180, 225, 270, 315],

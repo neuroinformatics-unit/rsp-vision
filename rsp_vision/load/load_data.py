@@ -5,10 +5,8 @@ from typing import Tuple
 import h5py
 import yaml
 
-from rsp_vision.load.load_raw_suite2p_data import read_numpy_output_of_suite2p
-from rsp_vision.load.load_stimulus_info import (
-    check_how_many_sessions_in_dataset,
-    how_many_days_in_dataset,
+from rsp_vision.analysis.preprocess_data import (
+    pipeline_for_processing_raw_suite2p_data,
 )
 
 from ..objects.data_raw import DataRaw
@@ -65,10 +63,12 @@ def load_data_from_filename(
                 "Only sf_tf analysis is implemented for summary data"
             )
     else:
-        n_days = how_many_days_in_dataset(folder_naming)
-        check_how_many_sessions_in_dataset(folder_naming, n_days)
-        data = read_numpy_output_of_suite2p(folder_naming, n_days)
-        return DataRaw(data)
+        logging.info("Loading raw data from suite2p output")
+        data_dict = pipeline_for_processing_raw_suite2p_data(
+            folder_naming, config
+        )
+
+        return DataRaw(data_dict, is_summary_data=False)
 
 
 def read_config_file(config_path: Path) -> dict:
