@@ -46,7 +46,7 @@ def load_data_from_filename(
             ]
             if len(allen_data_files) == 1:
                 with h5py.File(allen_data_files[0].path, "r") as h5py_file:
-                    data_raw = DataRaw(h5py_file, is_allen=True)
+                    data_raw = DataRaw(h5py_file, is_summary_data=True)
 
                 logging.info("Summary data loaded")
                 return data_raw

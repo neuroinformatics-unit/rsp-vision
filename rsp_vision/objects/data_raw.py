@@ -12,8 +12,8 @@ class DataRaw:
     implemented so far.
     """
 
-    def __init__(self, data: dict, is_allen: bool = True):
-        if is_allen:
+    def __init__(self, data: dict, is_summary_data: bool = True):
+        if is_summary_data:
             logging.info("Loading Allen data, starting to unpack...")
 
             self.day: dict = self._unpack_data(data["day"], data)

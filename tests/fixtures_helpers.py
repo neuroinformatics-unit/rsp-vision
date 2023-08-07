@@ -428,7 +428,7 @@ def get_data_raw_object_mock(seed_number=1, multiple_days=False):
         session2,
         params,
     )
-    data_raw = DataRaw(data, is_allen=False)
+    data_raw = DataRaw(data, is_summary_data=False)
 
     return data_raw
 
