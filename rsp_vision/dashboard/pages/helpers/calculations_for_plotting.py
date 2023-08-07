@@ -10,8 +10,8 @@ from rsp_vision.analysis.gaussians_calculations import (
 def fit_correlation(
     gaussian: np.ndarray, median_subtracted_response: np.ndarray
 ) -> float:
-    """This method calculates the correlation between the median subtracted
-    response and the Gaussian fit (6x6 matrix).
+    """This method calculates the Pearsons correlation between the median
+    subtracted response and the Gaussian fit (6x6 matrix).
 
     Parameters
     ----------
@@ -76,9 +76,15 @@ def find_peak_coordinates(
     fitted_gaussian_matrix: np.ndarray,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    matrix_definition: int,
+    matrix_dimension: int,
 ) -> tuple:
     """This method finds the peak coordinates of the fitted gaussian matrix.
+    The gausisan matrix is the result of the fitting process of the two
+    dimensional gaussian (described by Andermnn et al. 2011.) to the
+    sampled data (the median subtracted response matrix).
+    Here we are interested in finding the peak coordinates of the fitted
+    gaussian as it represents the theoretical preferred spatial and temporal
+    frequency of the neuron.
 
     Parameters
     ----------
@@ -88,7 +94,7 @@ def find_peak_coordinates(
         The spatial frequencies that are used in the experiment.
     temporal_frequencies : np.ndarray
         The temporal frequencies that are used in the experiment.
-    matrix_definition : int
+    matrix_dimension : int
         The matrix definition used to generate the fitted_gaussian_matrix.
 
     Returns
@@ -103,12 +109,12 @@ def find_peak_coordinates(
     spatial_freq_linspace = np.linspace(
         spatial_frequencies.min(),
         spatial_frequencies.max(),
-        matrix_definition,
+        matrix_dimension,
     )
     temporal_freq_linspace = np.linspace(
         temporal_frequencies.min(),
         temporal_frequencies.max(),
-        matrix_definition,
+        matrix_dimension,
     )
 
     sf = spatial_freq_linspace[peak_indices[0]]
@@ -116,12 +122,12 @@ def find_peak_coordinates(
     return tf, sf
 
 
-def call_get_gaussian_matrix_to_be_plotted(
+def get_gaussian_matrix_to_be_plotted_for_all_rois(
     n_roi: int,
     fit_outputs: dict,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    matrix_definition: int,
+    matrix_dimension: int,
 ) -> dict:
     """This method is a wrapper for the get_gaussian_matrix_to_be_plotted
     method that iterates over all the ROIs.
@@ -136,7 +142,7 @@ def call_get_gaussian_matrix_to_be_plotted(
         The spatial frequencies that are used in the experiment.
     temporal_frequencies : np.ndarray
         The temporal frequencies that are used in the experiment.
-    matrix_definition : int
+    matrix_dimension : int
         The matrix definition used to generate the fitted_gaussian_matrix.
 
     Returns
@@ -155,7 +161,7 @@ def call_get_gaussian_matrix_to_be_plotted(
             fit_output=fit_outputs,
             sfs=np.asarray(spatial_frequencies),
             tfs=np.asarray(temporal_frequencies),
-            matrix_definition=matrix_definition,
+            matrix_dimension=matrix_dimension,
             direction="pooled",
         )
 

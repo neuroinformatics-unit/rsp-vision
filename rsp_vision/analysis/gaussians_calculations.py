@@ -1,5 +1,4 @@
 import logging
-import sys
 from typing import Union
 
 import numpy as np
@@ -248,7 +247,7 @@ def get_gaussian_matrix_to_be_plotted(
     sfs: np.ndarray,
     tfs: np.ndarray,
     direction: Union[float, str] = "pooled",
-    matrix_definition: int = 100,
+    matrix_dimension: int = 100,
     is_log: bool = False,
 ) -> np.ndarray:
     """Returns a squared Gaussian matrix to be visualized in the dashboard
@@ -260,8 +259,8 @@ def get_gaussian_matrix_to_be_plotted(
     Gaussian matrix will be calculated for the expetimental values of spatial
     and temporal frequencies. If "custom", the Gaussian matrix will be
     calculated for the values of spatial and temporal frequencies calculated
-    with `np.linspace(0, 1, matrix_definition)`. You can specify the
-    dimension of the squared matrix with the `matrix_definition` parameter.
+    with `np.linspace(0, 1, matrix_dimension)`. You can specify the
+    dimension of the squared matrix with the `matrix_dimension` parameter.
 
     Parameters
     ----------
@@ -280,7 +279,7 @@ def get_gaussian_matrix_to_be_plotted(
     direction : float, optional
         If pooled_directions is False, the direction to calculate the Gaussian
         matrix for, by default sys.float_info.max
-    matrix_definition : int, optional
+    matrix_dimension : int, optional
         The dimension of the squared matrix, by default 100. Used if
         `kind="custom"`.
     is_log : bool, optional
@@ -298,64 +297,69 @@ def get_gaussian_matrix_to_be_plotted(
         If kind is not "6x6 matrix" or "custom".
     """
     if kind == "6x6 matrix":
-        if isinstance(direction, float) or isinstance(direction, int):
-            assert (
-                direction != sys.float_info.max
-            ), "direction must be specified"
-            matrix = create_gaussian_matrix(
-                fit_output[(roi_id, direction)],
-                sfs,
-                tfs,
-            )
-        else:
-            matrix = create_gaussian_matrix(
-                fit_output[(roi_id, "pooled")],
-                sfs,
-                tfs,
-            )
+        matrix = create_gaussian_matrix(
+            fit_output[(roi_id, direction)],
+            sfs,
+            tfs,
+        )
+
     elif kind == "custom":
         logging.info(
-            "Creating custom matrix with definition %d", matrix_definition
+            "Creating custom matrix with definition %d", matrix_dimension
         )
-        if is_log:
-            space_sfs = np.logspace(
-                np.log2(sfs.min()),
-                np.log2(sfs.max()),
-                num=matrix_definition,
-                base=2,
-            )
-            space_tfs = np.logspace(
-                np.log2(tfs.min()),
-                np.log2(tfs.max()),
-                num=matrix_definition,
-                base=2,
-            )
-        else:
-            space_sfs = np.linspace(
-                sfs.min(),
-                sfs.max(),
-                num=matrix_definition,
-            )
-            space_tfs = np.linspace(
-                tfs.min(),
-                tfs.max(),
-                num=matrix_definition,
-            )
-        if isinstance(direction, float):
-            assert (
-                direction != sys.float_info.max
-            ), "direction must be specified"
-            matrix = create_gaussian_matrix(
-                fit_output[(roi_id, direction)],
-                space_sfs,
-                space_tfs,
-            )
-        else:
-            matrix = create_gaussian_matrix(
-                fit_output[(roi_id, "pooled")],
-                space_sfs,
-                space_tfs,
-            )
+        space_sfs = make_space(
+            sfs,
+            matrix_dimension,
+            is_log=is_log,
+        )
+        space_tfs = make_space(
+            tfs,
+            matrix_dimension,
+            is_log=is_log,
+        )
+        matrix = create_gaussian_matrix(
+            fit_output[(roi_id, direction)],
+            space_sfs,
+            space_tfs,
+        )
+
     else:
         raise ValueError("kind must be '6x6 matrix' or 'custom'")
     return matrix
+
+
+def make_space(
+    freq_array: np.ndarray, matrix_dimension: int, is_log: bool = False
+) -> np.ndarray:
+    """Create a space of frequencies to calculate the Gaussian matrix for.
+    The space can be either linear or logarithmic.
+
+    Parameters
+    ----------
+    freq_array : np.ndarray
+        An array of frequencies of which to find max and min.
+    matrix_dimension : int
+        The dimension of the squared matrix.
+    is_log : bool, optional
+        Weather to use logspace or linspace to calculate the spatial and
+        temporal frequencies, by default False
+
+    Returns
+    -------
+    np.ndarray
+        A space of frequencies to calculate the Gaussian matrix for.
+    """
+    if is_log:
+        result = np.logspace(
+            np.log2(np.min(freq_array)),
+            np.log2(np.max(freq_array)),
+            num=matrix_dimension,
+            base=2,
+        )
+    else:
+        result = np.linspace(
+            np.min(freq_array),
+            np.max(freq_array),
+            num=matrix_dimension,
+        )
+    return result

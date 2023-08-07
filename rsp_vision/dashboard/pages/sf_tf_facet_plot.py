@@ -11,6 +11,7 @@ from dash import Input, Output, callback, dcc, html
 
 from rsp_vision.analysis.gaussians_calculations import (
     get_gaussian_matrix_to_be_plotted,
+    make_space,
 )
 from rsp_vision.dashboard.pages.helpers.calculations_for_plotting import (
     calculate_mean_and_median,
@@ -433,12 +434,10 @@ def sf_tf_grid(
     #  every time the ROI changes or the direction changes
     if (run_facet_plot is None) or (run_facet_plot == 0):
         sf_tf_grid.latest_n_clicks = 0
-        return "Press 'Show facet plot' to see the data"
+        return ""
     elif sf_tf_grid.latest_n_clicks == run_facet_plot:
-        return "Press 'Show facet plot' to see the data"
+        return ""
     else:
-        print(sf_tf_grid.latest_n_clicks)
-        print(run_facet_plot)
         sf_tf_grid.latest_n_clicks += 1
 
         # Get the data
@@ -457,7 +456,7 @@ def sf_tf_grid(
             dataframe = calculate_mean_and_median(signal)
             where_stim_is_not_na = dataframe["stimulus_repetition"].notna()
 
-            dataframe["stimulus_repetition"][where_stim_is_not_na] = (
+            dataframe.loc[where_stim_is_not_na, "stimulus_repetition"] = (
                 dataframe["stimulus_repetition"][where_stim_is_not_na].astype(
                     str
                 )
@@ -537,32 +536,32 @@ def sf_tf_grid(
                     trace.visible = False
                 else:
                     trace.visible = True
-                    trace.line.width = 0.1
+                    trace.line.width = 0.05
                     trace.line.color = "gray"
 
-        # Add vertical rectangles to show the different stimulus phases
-        for x0, x1, text, color in [
-            (0, 75, "gray", "green"),
-            (75, 150, "static", "pink"),
-            (150, 225, "drift", "blue"),
-        ]:
-            fig.add_vrect(
-                x0=x0,
-                x1=x1,
+        #  add vertical lines in each subplot to show the different stimulus
+        #  phases at time 0, 75 and 150
+        for x in [75, 150]:
+            fig.add_vline(
+                x=x,
                 row="all",
                 col="all",
-                annotation_text=text,
-                annotation_position="top left",
-                annotation_font_size=8,
-                fillcolor=color,
-                opacity=0.05,
-                line_width=0,
+                line_width=0.5,
+                line_color="gray",
             )
+        #  add horizontal line at 0
+        fig.add_hline(
+            y=0,
+            row="all",
+            col="all",
+            line_width=0.5,
+            line_color="gray",
+        )
 
         # Write the mean and median labels
         fig.add_annotation(
-            x=0.01,
-            y=-0.1,
+            x=0.45,
+            y=0.99,
             xref="paper",
             yref="paper",
             text="MEAN",
@@ -570,8 +569,8 @@ def sf_tf_grid(
             font=dict(size=20, color="mediumblue"),
         )
         fig.add_annotation(
-            x=0.07,
-            y=-0.1,
+            x=0.55,
+            y=0.99,
             xref="paper",
             yref="paper",
             text="MEDIAN",
@@ -681,7 +680,7 @@ def gaussian_plot(
     )
     # Then get the Gaussian fits for the oversampled SF-TF combinations
     # I am creating a 100x100 matrix
-    matrix_definition = store["config"]["fitting"]["oversampling_factor"]
+    matrix_dimension = store["config"]["fitting"]["oversampling_factor"]
     high_res_gaussian = get_gaussian_matrix_to_be_plotted(
         kind="custom",
         roi_id=roi_id,
@@ -689,7 +688,7 @@ def gaussian_plot(
         sfs=np.asarray(spatial_frequencies),
         tfs=np.asarray(temporal_frequencies),
         direction=direction,
-        matrix_definition=matrix_definition,
+        matrix_dimension=matrix_dimension,
         is_log=True,
     )
 
@@ -737,10 +736,10 @@ def gaussian_plot(
 
     # Linear arrays to set the axis of the third heatmap
     uniform_oversampled_sfs = np.linspace(
-        0, matrix_definition - 1, matrix_definition
+        0, matrix_dimension - 1, matrix_dimension
     )
     uniform_oversampled_tfs = np.linspace(
-        0, matrix_definition - 1, matrix_definition
+        0, matrix_dimension - 1, matrix_dimension
     )
 
     # Add the heatmap for the oversampled Gaussian
@@ -812,17 +811,15 @@ def gaussian_plot(
         tickvals=uniform_sfs, ticktext=spatial_frequencies, row=2, col=1
     )
 
-    longer_array_sfs = np.logspace(
-        np.log2(min(spatial_frequencies)),
-        np.log2(max(spatial_frequencies)),
-        num=matrix_definition,
-        base=2,
+    longer_array_sfs = make_space(
+        spatial_frequencies,
+        matrix_dimension,
+        is_log=True,
     )
-    longer_array_tfs = np.logspace(
-        np.log2(min(temporal_frequencies)),
-        np.log2(max(temporal_frequencies)),
-        num=matrix_definition,
-        base=2,
+    longer_array_tfs = make_space(
+        temporal_frequencies,
+        matrix_dimension,
+        is_log=True,
     )
 
     fig.update_yaxes(
