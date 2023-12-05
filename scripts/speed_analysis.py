@@ -4,7 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 from dash import Dash, dcc, html
 from dash.dependencies import Input, Output
-from scipy.ndimage import rotate
+from plotly.subplots import make_subplots
 
 from rsp_vision.analysis.gaussians_calculations import (
     create_gaussian_matrix,
@@ -13,7 +13,7 @@ from rsp_vision.analysis.gaussians_calculations import (
 
 spatial_frequencies = [0.01, 0.02, 0.04, 0.08, 0.16, 0.32]
 temporal_frequencies = [0.5, 1, 2, 4, 8, 16]
-matrix_dimension = 10
+matrix_dimension = 6
 
 
 uniform_oversampled_sfs = np.linspace(
@@ -117,13 +117,6 @@ app.layout = html.Div(
                     ],
                     style={"width": "48%", "display": "inline-block"},
                 ),
-                html.Div(
-                    [
-                        html.Label("Speed Tuning"),
-                        dcc.Graph(figure=go.Figure(), id="speed_tuning"),
-                    ],
-                    style={"width": "48%", "display": "inline-block"},
-                ),
             ]
         ),
     ]
@@ -157,7 +150,7 @@ def make_figure(
 
     gaussian_matrix = create_gaussian_matrix(params, space_sfs, space_tfs)
 
-    fig = go.Figure()
+    fig = make_subplots(rows=1, cols=2)
 
     fig.add_trace(
         go.Heatmap(
@@ -166,15 +159,9 @@ def make_figure(
             y=uniform_oversampled_sfs,
             colorscale="Viridis",
             showscale=False,
-            colorbar=dict(
-                x=0.5,
-                y=-0.1,
-                xanchor="center",
-                yanchor="top",
-                len=1,
-                orientation="h",
-            ),
         ),
+        row=1,
+        col=1,
     )
 
     longer_array_sfs = make_space(
@@ -190,113 +177,123 @@ def make_figure(
 
     fig.update_yaxes(
         tickvals=uniform_oversampled_sfs,
-        ticktext=np.round(longer_array_sfs[::10], 2),
+        ticktext=np.round(longer_array_sfs, 2),
+        row=1,
+        col=1,
     )
 
     fig.update_xaxes(
         tickvals=uniform_oversampled_tfs,
-        ticktext=np.round(longer_array_tfs[::10], 2),
+        ticktext=np.round(longer_array_tfs, 2),
+        row=1,
+        col=1,
     )
 
     # add x and y labels
-    fig.update_xaxes(title_text="Temporal Frequency")
-    fig.update_yaxes(title_text="Spatial Frequency")
+    fig.update_xaxes(title_text="Temporal Frequency", row=1, col=1)
+    fig.update_yaxes(title_text="Spatial Frequency", row=1, col=1)
 
-    #  remove legend
-    fig.update_layout(showlegend=False)
-
-    #  maintain heatmap aspect ratio
+    #  maintain heatmap aspect ratio row 1 col 1
     fig.update_layout(
         autosize=False,
-        width=500,
+        width=1000,
         height=500,
         margin=dict(l=50, r=50, b=100, t=100, pad=4),
-    )
-    return fig
-
-
-@app.callback(
-    Output("speed_tuning", "figure"),
-    Input("peak_response", "value"),
-    Input("sf_0", "value"),
-    Input("tf_0", "value"),
-    Input("sigma_sf", "value"),
-    Input("sigma_tf", "value"),
-    Input("𝜻_power_law_exp", "value"),
-)
-def speed_tuning_plot(
-    peak_response, sf_0, tf_0, sigma_sf, sigma_tf, 𝜻_power_law_exp
-):
-    params = (peak_response, sf_0, tf_0, sigma_sf, sigma_tf, 𝜻_power_law_exp)
-
-    space_sfs = make_space(
-        spatial_frequencies,
-        matrix_dimension,
-        is_log=True,
-    )
-    space_tfs = make_space(
-        temporal_frequencies,
-        matrix_dimension,
-        is_log=True,
+        paper_bgcolor="white",
     )
 
-    gaussian_matrix = create_gaussian_matrix(params, space_sfs, space_tfs)
+    velocity = np.zeros((matrix_dimension, matrix_dimension))
+    for i, sf in enumerate(space_sfs):
+        for j, tf in enumerate(space_tfs):
+            velocity[i, j] = sf / tf
 
-    #  rotate matrix of 45 degrees
+    #  write numbers on the heatmap in row 1 col 2
+    fig.update_layout(
+        annotations=[
+            go.layout.Annotation(
+                x=j,
+                y=i,
+                text=str(np.round(velocity[i, j], 4)),
+                showarrow=False,
+                font=dict(color="black", size=10),
+            )
+            for i, j in itertools.product(
+                range(matrix_dimension), range(matrix_dimension)
+            )
+        ]
+    )
 
-    rotated_gaussian_matrix = rotate(gaussian_matrix, -45, reshape=False)
+    flat_velocity = velocity.flatten()
+    flat_velocity = np.round(flat_velocity, 4)
+    unique_velocity = np.unique(flat_velocity)
 
-    fig = go.Figure()
+    flat_gaussian_matrix = gaussian_matrix.flatten()
 
+    #  scatter plot of velocity vs response
     fig.add_trace(
-        go.Heatmap(
-            z=rotated_gaussian_matrix,
-            x=uniform_oversampled_tfs,
-            y=uniform_oversampled_sfs,
-            colorscale="Viridis",
-            showscale=False,
-            colorbar=dict(
-                x=0.5,
-                y=-0.1,
-                xanchor="center",
-                yanchor="top",
-                len=1,
-                orientation="h",
+        go.Scatter(
+            x=flat_velocity,
+            y=flat_gaussian_matrix,
+            mode="markers",
+            marker=dict(
+                color="lightblue",
+                size=5,
             ),
+            name="Response",
         ),
+        row=1,
+        col=2,
     )
-    #  axis off
-    # fig.update_xaxes(showticklabels=False)
-    fig.update_yaxes(showticklabels=False)
 
-    sum_of_rows = np.sum(rotated_gaussian_matrix, axis=0)
-    #  divide by the number of not null values
-    sum_of_rows = sum_of_rows / np.count_nonzero(sum_of_rows)
+    #  x axis is in log scale
+    fig.update_xaxes(type="log", title_text="Speed deg/s", row=1, col=2)
+    fig.update_yaxes(title_text="Response ΔF/F", row=1, col=2)
+
+    fig.update_layout(
+        plot_bgcolor="white",
+    )
+
+    max_response_per_velocity = []
+    for vel in unique_velocity:
+        max_response_per_velocity.append(
+            np.max(flat_gaussian_matrix[flat_velocity == vel])
+        )
 
     fig.add_trace(
         go.Scatter(
-            x=uniform_oversampled_tfs,
-            y=sum_of_rows,
+            x=unique_velocity,
+            y=max_response_per_velocity,
             mode="lines",
-            name="Speed Tuning",
+            marker=dict(
+                color="red",
+                size=5,
+            ),
+            name="Max Response",
         ),
+        row=1,
+        col=2,
     )
 
-    speeds = np.asarray(
-        [sf / tf for sf, tf in itertools.product(space_sfs, space_tfs)]
-    ).reshape(matrix_dimension, matrix_dimension)
-    # print(np.round(speeds, 2))
-    rotated_speeds = rotate(speeds, -45, reshape=False)
-    print(np.round(rotated_speeds, 2))
-    speed_diagonal = speeds[3]
+    min_response_per_velocity = []
+    for vel in unique_velocity:
+        min_response_per_velocity.append(
+            np.min(flat_gaussian_matrix[flat_velocity == vel])
+        )
 
-    fig.update_xaxes(
-        tickvals=uniform_oversampled_tfs,
-        ticktext=np.round(speed_diagonal, 3),
+    fig.add_trace(
+        go.Scatter(
+            x=unique_velocity,
+            y=min_response_per_velocity,
+            mode="lines",
+            marker=dict(
+                color="orange",
+                size=5,
+            ),
+            name="Min Response",
+        ),
+        row=1,
+        col=2,
     )
-
-    #  x axis label
-    fig.update_xaxes(title_text="Speed deg/s")
 
     return fig
 
