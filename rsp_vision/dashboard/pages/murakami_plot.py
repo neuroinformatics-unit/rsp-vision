@@ -82,6 +82,13 @@ layout = html.Div(
                     span="auto",
                     offset=1,
                 ),
+                dmc.Col(
+                    html.Div(
+                        id="speed-tuning-plot",
+                        className="speed-tuning-plot",
+                    ),
+                    span="auto",
+                ),
             ],
             className="murakami-container",
         ),
@@ -393,3 +400,66 @@ def add_data_in_figure(
         )
 
     return fig
+
+
+@callback(
+    Output("speed-tuning-plot", "children"),
+    [
+        Input("store", "data"),
+        # Input("show-only-responsive", "checked"),
+    ],
+)
+def speed_tuning_plot(store):
+    if store == {}:
+        return "No data to plot"
+
+    data = load_data(store)
+    n_roi = data["n_roi"]
+    sfs = store["config"]["spatial_frequencies"]
+    tfs = store["config"]["temporal_frequencies"]
+    median_subtracted_response = data["median_subtracted_responses"]
+    responsive_roi = data["responsive_rois"]
+
+    velocity = np.zeros((6, 6))
+    for i, sf in enumerate(sfs):
+        for j, tf in enumerate(tfs):
+            velocity[i, j] = sf / tf
+
+    flat_velocity = velocity.flatten()
+    flat_velocity = np.round(flat_velocity, 4)
+
+    fig = go.Figure()
+
+    for roi in range(n_roi):
+        key = (roi, "pooled")
+        msr = median_subtracted_response[key]
+        flat_msr = msr.flatten()
+        unique_velocity = np.unique(flat_velocity)
+
+        max_response_per_velocity = []
+        for vel in unique_velocity:
+            max_response_per_velocity.append(
+                np.max(flat_msr[flat_velocity == vel])
+            )
+
+        fig.add_trace(
+            go.Scatter(
+                x=unique_velocity,
+                y=max_response_per_velocity,
+                mode="lines",
+                marker=dict(
+                    color="red" if roi in responsive_roi else "lightblue",
+                    size=1,
+                ),
+                name=f"ROI {roi + 1}",
+            )
+        )
+
+    fig.update_xaxes(type="log", title_text="Speed deg/s")
+    fig.update_yaxes(title_text="Response ΔF/F")
+
+    fig.update_layout(
+        plot_bgcolor="white",
+    )
+
+    return dcc.Graph(figure=fig)
