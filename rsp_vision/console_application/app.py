@@ -23,6 +23,10 @@ config_path = Path(__file__).parents[1] / CONFIG_PATH
 
 
 def cli_entry_point_local():
+    """
+    This is the entry point for the CLI application when running locally.
+    It suggests a series of datasets to analyse and then runs the analysis.
+    """
     folder_name = Prompt.ask(
         " \
         Please provide only the dataset name.\n \
@@ -39,22 +43,52 @@ def cli_entry_point_local():
     analysis_pipeline(folder_name, config, swc_blueprint_spec)
 
 
-def get_all_datasets(path):
+def get_all_sf_tf_datasets(path: str) -> list:
+    """Returns a list of all the datasets in the folder containing the string
+    "sf_tf" in their name.
+
+    Parameters
+    ----------
+    path : str
+        Path to the folder containing the datasets.
+
+    Returns
+    -------
+    list
+        List of all the datasets in the folder containing the string "sf_tf"
+        in their name.
+    """
+
     only_sf_tf_files = []
     for filename in os.listdir(path):
         if "sf_tf" in filename:
             filename = filename.split("_sf_tf")[0]
             only_sf_tf_files.append(filename)
+    only_sf_tf_files.sort()
     return only_sf_tf_files
 
 
 def cli_entry_point_array(job_id):
+    """This is the entry point for the CLI application when running on the
+    cluster. It takes a job id as input and runs the analysis on the dataset
+    corresponding to that job id. I.e. if the job id is 0, it will run the
+    analysis on the first dataset in the folder containing the string "sf_tf"
+    in its name.
+    It also updates the analysis_success.log file with the results of the
+    analysis. If there is an error, it will be logged in the error column of
+    the analysis_success.log file.
+
+    Parameters
+    ----------
+    job_id : _type_
+        Job id of the dataset to analyse.
+    """
     config, swc_blueprint_spec = read_config_and_logging(
         is_local=False, job_id=job_id
     )
 
     allen_folder = config["paths"]["allen-dff"]
-    only_sf_tf_files = get_all_datasets(allen_folder)
+    only_sf_tf_files = get_all_sf_tf_datasets(allen_folder)
     dataset = only_sf_tf_files[job_id]
 
     analysis_success_table = AnalysisSuccessTable(
@@ -68,7 +102,7 @@ def cli_entry_point_array(job_id):
             dataset_name=dataset,
             date=str(datetime.datetime.now()),
             latest_job_id=job_id,
-            error="",
+            error="Analysis successful 🥳",
         )
     except Exception as e:
         error = str(e)
@@ -77,11 +111,25 @@ def cli_entry_point_array(job_id):
             dataset_name=dataset,
             date=str(datetime.datetime.now()),
             latest_job_id=job_id,
-            error=error,
+            error="⚠️ error: " + error,
         )
 
 
-def read_config_and_logging(is_local=True, job_id=0):
+def read_config_and_logging(is_local=True, job_id=0) -> tuple:
+    """Reads the config file and starts logging.
+
+    Parameters
+    ----------
+    is_local : bool, optional
+        Whether the analysis is run locally or on the cluster, by default True
+    job_id : int, optional
+        Job id of the dataset to analyse, by default 0
+
+    Returns
+    -------
+    tuple
+        Tuple containing the config and the swc_blueprint_spec.
+    """
     config = read_config_file(config_path)
     swc_blueprint_spec = SWC_Blueprint_Spec(
         project_name="rsp_vision",
@@ -102,6 +150,18 @@ def read_config_and_logging(is_local=True, job_id=0):
 
 # @exception_handler
 def analysis_pipeline(folder_name, config, swc_blueprint_spec) -> None:
+    """Current analysis pipeline. Loads the data, preprocesses it, runs the
+    analysis and saves the results.
+
+    Parameters
+    ----------
+    folder_name : _type_
+        The name of the dataset to analyse.
+    config : _type_
+        The config file.
+    swc_blueprint_spec : _type_
+        The swc_blueprint_spec object.
+    """
     # load data
     data, folder_naming = load_data(folder_name, config)
 
