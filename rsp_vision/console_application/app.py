@@ -5,7 +5,6 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-import rich
 from decouple import config
 from fancylog import fancylog
 from rich.prompt import Prompt
@@ -21,30 +20,6 @@ from rsp_vision.save.save_data import save_data
 
 CONFIG_PATH = config("CONFIG_PATH")
 config_path = Path(__file__).parents[1] / CONFIG_PATH
-
-
-def exception_handler(func: object) -> object:
-    """Decorator to handle exceptions in the main function.
-
-    Parameters
-    ----------
-    func : object
-        function to decorate
-
-    Returns
-    -------
-    object
-        decorated function
-    """
-
-    def inner_function(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception as e:
-            rich.print("Something went wrong 😱")
-            logging.exception(e)
-
-    return inner_function
 
 
 def cli_entry_point_local():
