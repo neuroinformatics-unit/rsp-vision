@@ -115,23 +115,6 @@ def cli_entry_point_array(job_id):
     local_logs.to_csv(all_datasets_logging_file_path)
 
 
-def cli_entry_point_batch():
-    config, swc_blueprint_spec = read_config_and_logging(is_local=False)
-    allen_folder = config["paths"]["allen-dff"]
-    only_sf_tf_files = []
-    for filename in os.listdir(allen_folder):
-        if "sf_tf" in filename:
-            filename = filename.split("_sf_tf")[0]
-            only_sf_tf_files.append(filename)
-
-    for filename in only_sf_tf_files:
-        logging.info(
-            "=============================================================="
-        )
-        logging.info(f"Trying to analyse:{filename}")
-        analysis_pipeline(filename, config, swc_blueprint_spec)
-
-
 def read_config_and_logging(is_local=True, job_id=0):
     config = read_config_file(config_path)
     swc_blueprint_spec = SWC_Blueprint_Spec(
