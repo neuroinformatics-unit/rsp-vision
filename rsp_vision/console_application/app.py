@@ -4,7 +4,6 @@ import os
 import sys
 from pathlib import Path
 
-import pandas as pd
 from decouple import config
 from fancylog import fancylog
 from rich.prompt import Prompt
@@ -17,6 +16,7 @@ from rsp_vision.objects.enums import PhotonType
 from rsp_vision.objects.photon_data import PhotonData
 from rsp_vision.objects.SWC_Blueprint import SWC_Blueprint_Spec
 from rsp_vision.save.save_data import save_data
+from rsp_vision.save.tables_manager import AnalysisSuccessTable
 
 CONFIG_PATH = config("CONFIG_PATH")
 config_path = Path(__file__).parents[1] / CONFIG_PATH
@@ -39,55 +39,46 @@ def cli_entry_point_local():
     analysis_pipeline(folder_name, config, swc_blueprint_spec)
 
 
+def get_all_datasets(path):
+    only_sf_tf_files = []
+    for filename in os.listdir(path):
+        if "sf_tf" in filename:
+            filename = filename.split("_sf_tf")[0]
+            only_sf_tf_files.append(filename)
+    return only_sf_tf_files
+
+
 def cli_entry_point_array(job_id):
     config, swc_blueprint_spec = read_config_and_logging(
         is_local=False, job_id=job_id
     )
 
     allen_folder = config["paths"]["allen-dff"]
-    only_sf_tf_files = []
-    for filename in os.listdir(allen_folder):
-        if "sf_tf" in filename:
-            filename = filename.split("_sf_tf")[0]
-            only_sf_tf_files.append(filename)
-
+    only_sf_tf_files = get_all_datasets(allen_folder)
     dataset = only_sf_tf_files[job_id]
 
-    all_datasets_logging_file_path = (
-        swc_blueprint_spec.local_path / "analysis_success.log"
+    analysis_success_table = AnalysisSuccessTable(
+        swc_blueprint_spec.local_path
     )
-    reanalysis = False
-    try:
-        with open(all_datasets_logging_file_path, "r") as f:
-            local_logs = pd.read_csv(f, index_col=0, header=0)
-            if dataset in local_logs["dataset_name"]:
-                reanalysis = True
-    except Exception:
-        local_logs = pd.DataFrame(
-            columns=["dataset_name", "date", "latest_job_id"]
-        )
 
-    error = ""
     logging.info(f"Trying to analyse:{dataset}, job id: {job_id}")
     try:
         analysis_pipeline(dataset, config, swc_blueprint_spec)
+        analysis_success_table.update(
+            dataset_name=dataset,
+            date=str(datetime.datetime.now()),
+            latest_job_id=job_id,
+            error="",
+        )
     except Exception as e:
         error = str(e)
-        logging.exception(e)
-
-    ll = {
-        "dataset_name": dataset,
-        "date": str(datetime.datetime.now()),
-        "latest_job_id": job_id,
-        "error": error,
-    }
-
-    if not reanalysis:
-        local_logs = pd.concat([local_logs, pd.DataFrame(ll, index=[0])])
-    else:
-        local_logs.loc[local_logs["dataset_name"] == dataset] == ll
-
-    local_logs.to_csv(all_datasets_logging_file_path)
+        logging.error(f"Error: {error}")
+        analysis_success_table.update(
+            dataset_name=dataset,
+            date=str(datetime.datetime.now()),
+            latest_job_id=job_id,
+            error=error,
+        )
 
 
 def read_config_and_logging(is_local=True, job_id=0):
