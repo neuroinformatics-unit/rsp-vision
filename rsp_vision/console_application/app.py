@@ -91,9 +91,7 @@ def cli_entry_point_array(job_id):
     only_sf_tf_files = get_all_sf_tf_datasets(allen_folder)
     dataset = only_sf_tf_files[job_id]
 
-    analysis_success_table = AnalysisSuccessTable(
-        swc_blueprint_spec.local_path
-    )
+    analysis_success_table = AnalysisSuccessTable(swc_blueprint_spec.path)
 
     logging.info(f"Trying to analyse:{dataset}, job id: {job_id}")
     try:
