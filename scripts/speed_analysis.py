@@ -205,7 +205,7 @@ def make_figure(
     velocity = np.zeros((matrix_dimension, matrix_dimension))
     for i, sf in enumerate(space_sfs):
         for j, tf in enumerate(space_tfs):
-            velocity[i, j] = sf / tf
+            velocity[i, j] = tf / sf
 
     #  write numbers on the heatmap in row 1 col 2
     fig.update_layout(
@@ -246,7 +246,12 @@ def make_figure(
     )
 
     #  x axis is in log scale
-    fig.update_xaxes(type="log", title_text="Speed deg/s", row=1, col=2)
+    fig.update_xaxes(
+        # type="log",
+        title_text="Speed deg/s",
+        row=1,
+        col=2,
+    )
     fig.update_yaxes(title_text="Response ΔF/F", row=1, col=2)
 
     fig.update_layout(

@@ -423,7 +423,7 @@ def speed_tuning_plot(store):
     velocity = np.zeros((6, 6))
     for i, sf in enumerate(sfs):
         for j, tf in enumerate(tfs):
-            velocity[i, j] = sf / tf
+            velocity[i, j] = tf / sf
 
     flat_velocity = velocity.flatten()
     flat_velocity = np.round(flat_velocity, 4)
