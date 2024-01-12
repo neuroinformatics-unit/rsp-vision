@@ -15,6 +15,7 @@ exclude *.yaml
 exclude tox.ini
 exclude .flake8
 exclude .coverage
+exclude *.sbatch
 
 recursive-exclude tests *
 recursive-exclude docs *
