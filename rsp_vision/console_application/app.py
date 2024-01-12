@@ -99,14 +99,14 @@ def cli_entry_point_array(job_id):
             dataset_name=dataset,
             date=str(datetime.datetime.now()),
             latest_job_id=job_id,
-            error="Starting the analysis...",
+            state="Starting the analysis...",
         )
         analysis_pipeline(dataset, config, swc_blueprint_spec)
         analysis_success_table.update(
             dataset_name=dataset,
             date=str(datetime.datetime.now()),
             latest_job_id=job_id,
-            error="Analysis successful 🥳",
+            state="Analysis successful 🥳",
         )
     except Exception as e:
         error = str(e)
@@ -115,7 +115,7 @@ def cli_entry_point_array(job_id):
             dataset_name=dataset,
             date=str(datetime.datetime.now()),
             latest_job_id=job_id,
-            error="⚠️ error: " + error,
+            state="⚠️ error: " + error,
         )
 
 

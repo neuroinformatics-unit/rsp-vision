@@ -7,28 +7,30 @@ class AnalysisSuccessTable:
     def __init__(self, path: Path):
         self.path = path / "analysis_success.log"
 
+    def read(self):
         if not self.path.exists():
             self.df = pd.DataFrame(
-                columns=["dataset_name", "date", "latest_job_id", "error"]
+                columns=["dataset_name", "date", "latest_job_id", "state"]
             )
             self.df.to_csv(self.path)
         else:
             self.df = pd.read_csv(self.path, index_col=0, header=0)
 
     def update(
-        self, dataset_name: str, date: str, latest_job_id: int, error: str
+        self, dataset_name: str, date: str, latest_job_id: int, state: str
     ):
+        self.read()
         if not self.is_dataset_in_table(dataset_name):
-            self.add(dataset_name, date, latest_job_id, error)
+            self.add(dataset_name, date, latest_job_id, state)
         else:
             self.df.loc[
                 self.df["dataset_name"] == dataset_name,
-                ["date", "latest_job_id", "error"],
-            ] = (date, latest_job_id, error)
+                ["date", "latest_job_id", "state"],
+            ] = (date, latest_job_id, state)
             self.df.to_csv(self.path)
 
     def add(
-        self, dataset_name: str, date: str, latest_job_id: int, error: str
+        self, dataset_name: str, date: str, latest_job_id: int, state: str
     ):
         self.df = pd.concat(
             [
@@ -38,7 +40,7 @@ class AnalysisSuccessTable:
                         "dataset_name": dataset_name,
                         "date": date,
                         "latest_job_id": latest_job_id,
-                        "error": error,
+                        "state": state,
                     },
                     index=[0],
                 ),
