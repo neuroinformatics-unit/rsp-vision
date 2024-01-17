@@ -115,7 +115,7 @@ def cli_entry_point_array(job_id):
 
     except Exception as e:
         error = str(e)
-        logging.error(f"Error: {error}")
+        logging.exception(e)
         analysis_success_table.update(
             dataset_name=dataset,
             date=str(datetime.datetime.now()),
