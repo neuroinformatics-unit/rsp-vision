@@ -41,6 +41,7 @@ if __name__ == "__main__":
             "consider_only_positive": False,
             "only_positive_threshold": 0.05,
             "baseline": "static",
+            "repetitions_per_stim": 3,
             "fitting": {
                 "power_law_exp": 1,
                 "lower_bounds": [-200, 0, 0, 0.01, 0.01, -np.inf],

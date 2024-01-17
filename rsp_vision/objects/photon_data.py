@@ -189,12 +189,8 @@ class PhotonData:
         else:
             self.is_gray = False
             self.n_triggers_per_stimulus = 2
-            raise NotImplementedError(
-                "The code is not implemented for non-gray stimuli"
-                + f"Frames per session: {self.n_frames_per_session}"
-            )
 
-        self.n_all_triggers: int = data_raw.stim[0]["n_triggers"]
+        self.n_all_triggers: int = data_raw.stim[0]["n_triggers"].tolist()
         self.n_session_boundary_baseline_triggers = int(
             data_raw.stim[0]["stimulus"]["n_baseline_triggers"]
         )
@@ -206,6 +202,8 @@ class PhotonData:
             self.n_stimulus_triggers_across_all_sessions
             / self.n_triggers_per_stimulus
         )
+
+        self.repetitions_per_stim = int(self.config["repetitions_per_stim"])
 
         self.calculations_to_find_start_frames()
 
@@ -578,7 +576,7 @@ class PhotonData:
                 index=["sf", "tf", "direction"], aggfunc="size"
             )
             expected = (
-                self.n_triggers_per_stimulus * self.n_roi * self.total_n_days
+                self.repetitions_per_stim * self.n_roi * self.total_n_days
             )
             if not np.all(pivot_table == expected):
                 raise ValueError(

@@ -263,7 +263,7 @@ class FrequencyResponsiveness:
             samples = np.zeros(
                 (
                     len(self.data.directions)
-                    * self.data.n_triggers_per_stimulus
+                    * self.data.repetitions_per_stim
                     * self.data.total_n_days,
                     len(self.data.sf_tf_combinations),
                 )
