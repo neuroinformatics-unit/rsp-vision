@@ -16,6 +16,10 @@ class AnalysisSuccessTable:
         else:
             self.df = pd.read_csv(self.path, index_col=0, header=0)
 
+    def find_this_dataset(self, dataset_name: str):
+        self.read()
+        return self.df.loc[self.df["dataset_name"] == dataset_name]
+
     def update(
         self, dataset_name: str, date: str, latest_job_id: int, state: str
     ):

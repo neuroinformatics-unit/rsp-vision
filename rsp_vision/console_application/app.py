@@ -95,19 +95,24 @@ def cli_entry_point_array(job_id):
 
     logging.info(f"Trying to analyse:{dataset}, job id: {job_id}")
     try:
-        analysis_success_table.update(
-            dataset_name=dataset,
-            date=str(datetime.datetime.now()),
-            latest_job_id=job_id,
-            state="Starting the analysis...",
-        )
-        analysis_pipeline(dataset, config, swc_blueprint_spec)
-        analysis_success_table.update(
-            dataset_name=dataset,
-            date=str(datetime.datetime.now()),
-            latest_job_id=job_id,
-            state="Analysis successful 🥳",
-        )
+        row = analysis_success_table.find_this_dataset(dataset)
+        if row["state"].values[0] == "Analysis successful 🥳":
+            logging.info("Dataset already analysed")
+        else:
+            analysis_success_table.update(
+                dataset_name=dataset,
+                date=str(datetime.datetime.now()),
+                latest_job_id=job_id,
+                state="Starting the analysis...",
+            )
+            analysis_pipeline(dataset, config, swc_blueprint_spec)
+            analysis_success_table.update(
+                dataset_name=dataset,
+                date=str(datetime.datetime.now()),
+                latest_job_id=job_id,
+                state="Analysis successful 🥳",
+            )
+
     except Exception as e:
         error = str(e)
         logging.error(f"Error: {error}")
