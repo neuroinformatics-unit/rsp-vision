@@ -109,7 +109,7 @@ app.layout = html.Div(
                         html.Label("𝜻 Power Law Exp"),
                         dcc.Slider(
                             id="𝜻_power_law_exp",
-                            min=0,
+                            min=-2,
                             max=2,
                             step=0.2,
                             value=𝜻_power_law_exp,
