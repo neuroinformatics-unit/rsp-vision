@@ -525,3 +525,67 @@ w.figure.savefig(
     dpi=200,
     bbox_inches="tight",
 )
+
+# =============================================================================
+# Fig 21: all tuned but sigma tf vs sigma sf colored by exponential factor
+# penk and non penk in different subplots
+# any exponential factor bigger than 3 has the same color
+
+fig, ax = plt.subplots(1, 2, sharey=True)
+
+for i, penk in enumerate([0, 1]):
+    ax[i] = sns.scatterplot(
+        all_tuned[all_tuned["penk"] == penk],
+        x="sigma_tf",
+        y="sigma_sf",
+        hue="exponential_factor",
+        alpha=0.5,
+        ax=ax[i],
+        hue_norm=(0, 1),
+        legend=False,
+        palette="viridis",
+    )
+    plt.xlim(0, 5)
+    plt.ylim(0, 5)
+    #  title
+    if penk == 0:
+        ax[i].set_title("Non Penk")
+    else:
+        ax[i].set_title("Penk")
+
+fig.savefig(
+    path_figures / "Fig21_sigma_tf_vs_sigma_sf_distplot_all_tuned.png",
+    dpi=200,
+    bbox_inches="tight",
+)
+
+# =============================================================================
+# Fig 22: same as 21 but separating in rows these groups of exponential factors
+# 0 - 0.2 | 0.2 - 0.5 | 0.5 - 1 | 1 - 2 | 2 - 4 | 4 - max
+
+
+ranges = [0, 0.5, 2, 10]
+all_tuned["exp_group"] = pd.cut(
+    all_tuned["exponential_factor"], bins=ranges, labels=False
+)
+
+yy = sns.displot(
+    all_tuned,
+    x="sigma_tf",
+    y="sigma_sf",
+    hue="penk",
+    kind="kde",
+    bw_adjust=0.25,
+    fill=True,
+    aspect=1.5,
+    col="exp_group",
+    facet_kws=dict(sharex=False),
+    common_norm=False,
+    alpha=0.5,
+)
+
+yy.savefig(
+    path_figures / "Fig22_sigma_tf_vs_sigma_sf_distplot_all_tuned.png",
+    dpi=200,
+    bbox_inches="tight",
+)
