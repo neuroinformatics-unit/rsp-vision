@@ -1,5 +1,6 @@
 #  warnings off
 import warnings
+from pathlib import Path
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,10 +8,9 @@ import seaborn as sns
 
 warnings.filterwarnings("ignore")
 
-
-penk_non_penk = pd.read_csv(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/merged_dataset_penk.csv"
-)
+path_derivatives = Path("/Users/laura/data/rsp_vision/derivatives/")
+path_figures = path_derivatives / "figures"
+penk_non_penk = pd.read_csv(path_derivatives / "merged_dataset_penk.csv")
 
 only_responsive = penk_non_penk[penk_non_penk["is_responsive"] == 1]
 
@@ -71,9 +71,11 @@ g.set(xlabel="Penk", ylabel="Percentage of responsive ROIs")
 g.set_xticklabels(["Non Penk", "Penk"])
 #  make lengend smaller
 g.legend(loc="upper left", bbox_to_anchor=(1, 1), ncol=1)
+# change legend names, 0 = non penk, 1 = penk
+
 
 g.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_responsive_count.png",
+    path_figures / "Fig1_responsive_count.png",
     dpi=200,
     bbox_inches="tight",
 )
@@ -101,8 +103,8 @@ for ax in h.axes.flat:
         ax.set_title("Responsive ROIs")
 
 h.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_responsive_vs_fit.png",
-    dpi=100,
+    path_figures / "Fig2_responsive_vs_fit.png",
+    dpi=200,
     bbox_inches="tight",
 )
 plt.close()
@@ -128,8 +130,8 @@ i = sns.jointplot(
 # i.set(xlim=(0.01, 0.32), ylim=(0.5, 16))
 
 i.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_preferred_sf_tf.png",
-    dpi=100,
+    path_figures / "Fig3_preferred_sf_tf.png",
+    dpi=200,
     bbox_inches="tight",
 )
 plt.close()
@@ -157,8 +159,8 @@ plt.xlim(0.01, 0.32)
 plt.ylim(0.5, 16)
 
 j.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_preferred_sf_tf_distplot.png",
-    dpi=100,
+    path_figures / "Fig4_preferred_sf_tf_distplot.png",
+    dpi=200,
     bbox_inches="tight",
 )
 plt.close()
@@ -179,8 +181,8 @@ k = sns.displot(
 # k.set(xscale='log', yscale='log')
 
 k.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_preferred_sf_tf_distplot_dataset.png",
-    dpi=100,
+    path_figures / "Fig5_preferred_sf_tf_distplot_dataset.png",
+    dpi=200,
     bbox_inches="tight",
 )
 plt.close()
@@ -215,8 +217,8 @@ ll = sns.displot(
 )
 
 ll.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_tuning_distplot.png",
-    dpi=100,
+    path_figures / "Fig6_tuning_distplot.png",
+    dpi=200,
     bbox_inches="tight",
 )
 plt.close()
@@ -233,11 +235,12 @@ m = sns.jointplot(
     # facet_kws=dict(sharex=False),
     # levels=10,
     alpha=0.5,
+    marginal_kws={"common_norm": False},
 )
 
 m.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_sigma_tf_vs_sigma_sf_distplot.png",
-    dpi=300,
+    path_figures / "Fig7_sigma_tf_vs_sigma_sf_distplot.png",
+    dpi=200,
     bbox_inches="tight",
 )
 plt.close()
@@ -277,8 +280,8 @@ ax2 = sns.scatterplot(
 
 # save the figure
 fig.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_exp_sigma_tf_vs_sigma_sf_distplot.png",
-    dpi=100,
+    path_figures / "Fig8_exp_sigma_tf_vs_sigma_sf_distplot.png",
+    dpi=200,
     bbox_inches="tight",
 )
 
@@ -297,8 +300,8 @@ n = sns.jointplot(
 )
 
 n.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_peak_response_vs_exp_distplot.png",
-    dpi=100,
+    path_figures / "Fig9_peak_response_vs_exp_distplot.png",
+    dpi=200,
     bbox_inches="tight",
 )
 
@@ -318,8 +321,8 @@ o = sns.jointplot(
 )
 
 o.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_peak_response_vs_sigma_tf_distplot.png",
-    dpi=100,
+    path_figures / "Fig10_peak_response_vs_sigma_tf_distplot.png",
+    dpi=200,
     bbox_inches="tight",
 )
 
@@ -338,8 +341,8 @@ p = sns.jointplot(
 )
 
 p.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_peak_response_vs_sigma_sf_distplot.png",
-    dpi=100,
+    path_figures / "Fig11_peak_response_vs_sigma_sf_distplot.png",
+    dpi=200,
     bbox_inches="tight",
 )
 
@@ -364,8 +367,8 @@ q = sns.jointplot(
 )
 
 q.figure.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_sigma_tf_vs_sigma_sf_distplot_very_tuned.png",
-    dpi=100,
+    path_figures / "Fig12_sigma_tf_vs_sigma_sf_distplot_very_tuned.png",
+    dpi=200,
     bbox_inches="tight",
 )
 
@@ -396,7 +399,30 @@ for i, dataset in enumerate(only_tuned["dataset_name"].unique()):
 
 
 fig.savefig(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/penk_vs_non_penk_sigma_tf_vs_sigma_sf_distplot_across_datasets.png",
+    path_figures / "Fig13_sigma_tf_vs_sigma_sf_distplot_across_datasets.png",
+    dpi=200,
+    bbox_inches="tight",
+)
+
+
+# Fig 14: compare sigma tf and sigma sf kde but normalized by number of ROIs
+
+r = sns.displot(
+    only_tuned,
+    x="sigma_tf",
+    y="sigma_sf",
+    hue="penk",
+    kind="kde",
+    bw_adjust=0.25,
+    fill=True,
+    aspect=1.5,
+    facet_kws=dict(sharex=False),
+    common_norm=False,
+    alpha=0.5,
+)
+
+r.figure.savefig(
+    path_figures / "Fig14_sigma_tf_vs_sigma_sf_distplot_normalized.png",
     dpi=200,
     bbox_inches="tight",
 )

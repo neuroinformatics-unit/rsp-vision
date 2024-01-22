@@ -9,7 +9,7 @@ from rsp_vision.analysis.gaussians_calculations import (
     get_gaussian_matrix_to_be_plotted,
 )
 
-local_path = Path("/Users/lauraporta/local_data/rsp_vision/derivatives/")
+local_path = Path("/Users/laura/data/rsp_vision/derivatives/")
 
 merged_dataset = pd.DataFrame(
     columns=[
