@@ -6,6 +6,7 @@ from dash import Input, Output, callback, dcc, html, register_page
 
 from rsp_vision.dashboard.pages.helpers.calculations_for_plotting import (
     find_peak_coordinates,
+    fit_correlation,
     get_gaussian_matrix_to_be_plotted_for_all_rois,
 )
 from rsp_vision.dashboard.pages.helpers.data_loading import load_data
@@ -54,6 +55,12 @@ layout = html.Div(
                             checked=True,
                             className="responsive-switch",
                         ),
+                        dmc.Switch(
+                            id="include-bad-fit",
+                            label="Include bad fits",
+                            checked=False,
+                            className="responsive-switch",
+                        ),
                         html.Br(),
                         dmc.Text(
                             "Responsive ROIs are shown in red, "
@@ -81,6 +88,23 @@ layout = html.Div(
                     ),
                     span="auto",
                     offset=1,
+                ),
+                dmc.Col(
+                    dmc.Center(
+                        html.Div(
+                            id="murakami-plot2",
+                            className="murakami-plot",
+                        ),
+                    ),
+                    span="auto",
+                    offset=1,
+                ),
+                dmc.Col(
+                    html.Div(
+                        id="speed-tuning-plot",
+                        className="speed-tuning-plot",
+                    ),
+                    span="auto",
                 ),
             ],
             className="murakami-container",
@@ -308,10 +332,13 @@ def add_data_in_figure(
     all_roi: list,
     fig: go.Figure,
     matrix_dimension: int,
-    responsive_rois: list,
     fitted_gaussian_matrix: pd.DataFrame,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
+    connected_lines: bool = True,
+    responsive_rois: list = [],
+    marker_style: str = "responsiveness",
+    exponential_coeficient: list = [],
 ) -> go.Figure:
     """For each roi, this method adds a dot in the Murakami plot (representing
     the peak response of the roi) and the lines connecting the dots to the
@@ -361,35 +388,205 @@ def add_data_in_figure(
     )
 
     median_peaks = p.median()
+    if marker_style == "responsiveness":
+        for roi_id in all_roi:
+            row = p[(p.roi_id == roi_id)].iloc[0]
+            tf = row["temporal_frequency"]
+            sf = row["spatial_frequency"]
 
-    #  dots for ROIs
-    for roi_id in all_roi:
-        row = p[(p.roi_id == roi_id)].iloc[0]
-        tf = row["temporal_frequency"]
-        sf = row["spatial_frequency"]
-        fig.add_trace(
-            go.Scatter(
-                x=[tf, median_peaks["temporal_frequency"]],
-                y=[sf, median_peaks["spatial_frequency"]],
-                mode="markers",
-                marker=dict(
-                    color="red" if roi_id in responsive_rois else "black",
-                    size=10,
-                ),
-                name=f"ROI {roi_id + 1}",
-                showlegend=False,
+            marker = dict(
+                color="red" if roi_id in responsive_rois else "black",
+                size=10,
             )
-        )
-
-        # lines to connect to the median dot
+            fig.add_trace(
+                go.Scatter(
+                    x=[tf, median_peaks["temporal_frequency"]],
+                    y=[sf, median_peaks["spatial_frequency"]],
+                    mode="markers",
+                    marker=marker,
+                    name=f"ROI {roi_id + 1}",
+                    showlegend=False,
+                )
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=[tf, median_peaks["temporal_frequency"]],
+                    y=[sf, median_peaks["spatial_frequency"]],
+                    mode="lines",
+                    line=dict(color="Grey", width=1),
+                    showlegend=False,
+                )
+            )
+    elif marker_style == "gaussian_fit":
+        #  just do a scatter plot with the gaussian fit values
         fig.add_trace(
             go.Scatter(
-                x=[tf, median_peaks["temporal_frequency"]],
-                y=[sf, median_peaks["spatial_frequency"]],
-                mode="lines",
-                line=dict(color="Grey", width=1),
+                x=p["temporal_frequency"],
+                y=p["spatial_frequency"],
+                mode="markers",
+                # color depending on the exponential coeficient
+                marker=dict(
+                    color=exponential_coeficient,
+                    size=10,
+                    colorscale="Viridis",
+                    colorbar=dict(
+                        title="Exponential coeficient",
+                    ),
+                    showscale=True,
+                    #  scale has to be positive
+                    cmin=0.4,
+                ),
+                # name=p["roi_id"].values(),
                 showlegend=False,
             )
         )
 
     return fig
+
+
+@callback(
+    Output("speed-tuning-plot", "children"),
+    [
+        Input("store", "data"),
+        # Input("show-only-responsive", "checked"),
+    ],
+)
+def speed_tuning_plot(store):
+    if store == {}:
+        return "No data to plot"
+
+    data = load_data(store)
+    n_roi = data["n_roi"]
+    sfs = store["config"]["spatial_frequencies"]
+    tfs = store["config"]["temporal_frequencies"]
+    median_subtracted_response = data["median_subtracted_responses"]
+    responsive_roi = data["responsive_rois"]
+
+    velocity = np.zeros((6, 6))
+    for i, sf in enumerate(sfs):
+        for j, tf in enumerate(tfs):
+            velocity[i, j] = tf / sf
+
+    flat_velocity = velocity.flatten()
+    flat_velocity = np.round(flat_velocity, 4)
+
+    fig = go.Figure()
+
+    for roi in range(n_roi):
+        key = (roi, "pooled")
+        msr = median_subtracted_response[key]
+        flat_msr = msr.flatten()
+        unique_velocity = np.unique(flat_velocity)
+
+        max_response_per_velocity = []
+        for vel in unique_velocity:
+            max_response_per_velocity.append(
+                np.max(flat_msr[flat_velocity == vel])
+            )
+
+        fig.add_trace(
+            go.Scatter(
+                x=unique_velocity,
+                y=max_response_per_velocity,
+                mode="lines",
+                marker=dict(
+                    color="red" if roi in responsive_roi else "lightblue",
+                    size=1,
+                ),
+                name=f"ROI {roi + 1}",
+            )
+        )
+
+    fig.update_xaxes(type="log", title_text="Speed deg/s")
+    fig.update_yaxes(title_text="Response ΔF/F")
+
+    fig.update_layout(
+        plot_bgcolor="white",
+    )
+
+    return dcc.Graph(figure=fig)
+
+
+@callback(
+    Output("murakami-plot2", "children"),
+    [
+        Input("store", "data"),
+        Input("include-bad-fit", "checked"),
+    ],
+)
+def murakami_plot_2(store: dict, include_bad_fit: bool) -> dcc.Graph:
+    if store == {}:
+        return "No data to plot"
+
+    data = load_data(store)
+
+    # prepare data
+    n_roi = data["n_roi"]
+    matrix_dimension = 100
+    spatial_frequencies = store["config"]["spatial_frequencies"]
+    temporal_frequencies = store["config"]["temporal_frequencies"]
+    median_subtracted_responses = data["median_subtracted_responses"]
+    fit_outputs = data["fit_outputs"]
+    exponential_coef = [
+        fit_outputs[(roi_id, "pooled")][-1] for roi_id in range(n_roi)
+    ]
+
+    fitted_gaussian_matrix = get_gaussian_matrix_to_be_plotted_for_all_rois(
+        n_roi,
+        fit_outputs,
+        spatial_frequencies,
+        temporal_frequencies,
+        matrix_dimension,
+    )
+    fitted_gaussian_matrix_small = (
+        get_gaussian_matrix_to_be_plotted_for_all_rois(
+            n_roi,
+            fit_outputs,
+            spatial_frequencies,
+            temporal_frequencies,
+            6,
+        )
+    )
+    #  get fit correlations for all rois
+    fit_correlations = []
+    for roi_id in range(n_roi):
+        try:
+            corr = fit_correlation(
+                fitted_gaussian_matrix_small[(roi_id, "pooled")],
+                median_subtracted_responses[(roi_id, "pooled")],
+            )
+            fit_correlations.append(corr)
+        except Exception:
+            # array must not contain infs or NaNs
+            fit_correlations.append(0)
+
+    #  only rois where fit correlationn > 0.75 and fit_values > 0.4
+    total_roi = [
+        roi_id
+        for roi_id in range(n_roi)
+        if (exponential_coef[roi_id] > 0.2)
+        & (include_bad_fit or (fit_correlations[roi_id] > 0.60))
+    ]
+    for roi in total_roi:
+        print(roi, fit_correlations[roi], exponential_coef[roi])
+
+    if total_roi == []:
+        return "No data to plot"
+
+    fig = go.Figure()
+    fig = add_data_in_figure(
+        all_roi=total_roi,
+        fig=fig,
+        matrix_dimension=matrix_dimension,
+        fitted_gaussian_matrix=fitted_gaussian_matrix,
+        spatial_frequencies=spatial_frequencies,
+        temporal_frequencies=temporal_frequencies,
+        marker_style="gaussian_fit",
+        exponential_coeficient=exponential_coef,
+    )
+    fig = prettify_murakami_plot(
+        fig, spatial_frequencies, temporal_frequencies
+    )
+    print("completed")
+
+    return dcc.Graph(figure=fig)
