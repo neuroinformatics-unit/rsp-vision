@@ -8,15 +8,18 @@ import seaborn as sns
 
 warnings.filterwarnings("ignore")
 
-path_derivatives = Path("/Users/laura/data/rsp_vision/derivatives/")
+path_derivatives = Path("/Users/lauraporta/local_data/rsp_vision/derivatives/")
 path_figures = path_derivatives / "figures"
 penk_non_penk = pd.read_csv(path_derivatives / "merged_dataset_penk.csv")
 
-only_responsive = penk_non_penk[penk_non_penk["is_responsive"] == 1]
+min_corr = 0.65
+min_zeta = 0
 
 # =============================================================================
 #  Plot 1, number of responsve ROIs
 #  for each dataset how many responsive ROIs are there?
+only_responsive = penk_non_penk[penk_non_penk["is_responsive"] == 1]
+
 all_penk_responsive_count = pd.DataFrame(
     columns=["penk", "percentage", "dataset_name"],
 )
@@ -173,7 +176,7 @@ only_high_correlation = only_responsive[
 ]
 only_tuned = only_high_correlation[
     (only_high_correlation["exponential_factor"] > 0)
-    # & (only_high_correlation['exponential_factor'] < 2.5)
+    # & (only_high_correlation['exponential_factor']  < 2.5)
 ]
 
 #  remove those in which sigma = 4, looks like an artifact
@@ -289,7 +292,7 @@ o.figure.savefig(
 # =============================================================================
 # Fig 11: peak response vs sigma sf
 
-p = sns.jointplot(
+penk_nice_fit_perc = sns.jointplot(
     only_tuned,
     x="sigma_sf",
     y="peak_response",
@@ -298,7 +301,7 @@ p = sns.jointplot(
     marginal_kws={"common_norm": False},
 )
 
-p.figure.savefig(
+penk_nice_fit_perc.figure.savefig(
     path_figures / "Fig11_peak_response_vs_sigma_sf_distplot.png",
     dpi=200,
     bbox_inches="tight",
