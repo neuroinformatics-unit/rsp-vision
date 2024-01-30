@@ -2,8 +2,10 @@ import pickle
 from pathlib import Path
 from typing import Dict, List
 
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from oasis.functions import deconvolve
 
 from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
 from rsp_vision.objects.SWC_Blueprint import (
@@ -12,10 +14,8 @@ from rsp_vision.objects.SWC_Blueprint import (
     SWC_Blueprint_Spec,
 )
 
-remote_path = Path("/Volumes/margrie-1/laura/")
-local_plots_path = Path(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/"
-)
+remote_path = Path("/Volumes/margrie/laura/")
+local_plots_path = Path("/Users/laura/data/rsp_vision/derivatives/figures")
 
 
 all_non_penk = [
@@ -90,3 +90,24 @@ for datagroup, name in zip([all_penk, all_non_penk], ["penk", "non_penk"]):
                 df = pickle.load(f)
 
             print(df.shape)
+
+            # take deltaF/F traces
+            deltaF_overF = df.signal.values
+            first_nan = np.where(np.isnan(deltaF_overF))[0][0]
+            deltaF_overF = deltaF_overF[:first_nan]
+
+            # deconvolve them
+            # we are not providing the baseline, so it will be estimated
+            # c is the calcium concentration
+            # s is predicted spiking activity
+            c, s, b, g, lam = deconvolve(deltaF_overF, penalty=1)
+
+            plt.plot(deltaF_overF)
+            plt.plot(s)
+            plt.show()
+
+            # take all the non-zero values of s
+            s = s[s > 0]
+            # apply a threshold the predicted spikes
+
+            print("baseline: ", b)
