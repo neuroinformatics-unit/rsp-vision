@@ -164,6 +164,7 @@ class PhotonData:
         data_raw : DataRaw
             The raw data object from which the data will be extracted
         """
+        self.idx_of_neurons = np.where(data_raw.is_cell == 1)[0]
         self.screen_size: float = data_raw.stim[0]["screen_size"]
         self.n_sessions: int = data_raw.frames.shape[0]
         self.n_roi: int = data_raw.frames[0].shape[0]
@@ -302,7 +303,7 @@ class PhotonData:
         # reduces the complexity from O(n^2) to O(n)
         # n = number of frames
         for session in range(self.n_sessions):
-            for roi in range(self.n_roi):
+            for roi in self.idx_of_neurons:
                 if self.total_n_days in (2, 3):
                     day = (
                         session * self.total_n_days + self.n_sessions - 1
@@ -538,7 +539,10 @@ class PhotonData:
             else:
                 stim_combo_occurrencies[stim_combo] = 1
 
-            if len(signal_idxs) != self.n_roi and self.using_real_data:
+            if (
+                len(signal_idxs) != len(self.idx_of_neurons)
+                and self.using_real_data
+            ):
                 raise RuntimeError(
                     f"Number of instances for stimulus {stimulus} is wrong."
                 )
@@ -576,7 +580,9 @@ class PhotonData:
                 index=["sf", "tf", "direction"], aggfunc="size"
             )
             expected = (
-                self.repetitions_per_stim * self.n_roi * self.total_n_days
+                self.repetitions_per_stim
+                * self.idx_of_neurons
+                * self.total_n_days
             )
             if not np.all(pivot_table == expected):
                 raise ValueError(

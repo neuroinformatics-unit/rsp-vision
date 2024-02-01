@@ -253,7 +253,7 @@ class FrequencyResponsiveness:
             the p-values for each ROI.
         """
         p_values = {}
-        for roi in range(self.data.n_roi):
+        for roi in self.data.idx_of_neurons:
             roi_responses = pd.melt(
                 self.data.responses[self.data.responses.roi_id == roi],
                 id_vars=["sf", "tf"],
@@ -299,7 +299,7 @@ class FrequencyResponsiveness:
         """
         p_st = {}
         p_wsrt = {}
-        for roi in range(self.data.n_roi):
+        for roi in self.data.idx_of_neurons:
             roi_responses = self.data.responses[
                 self.data.responses.roi_id == roi
             ]
@@ -347,7 +347,7 @@ class FrequencyResponsiveness:
             ]
         )
 
-        for roi in range(self.data.n_roi):
+        for roi in self.data.idx_of_neurons:
             for i, sf_tf in enumerate(self.data.sf_tf_combinations):
                 sf_tf_idx = self.data.responses[
                     (self.data.responses.sf == sf_tf[0])
@@ -692,7 +692,7 @@ class FrequencyResponsiveness:
         with Pool() as p:
             # the roi order should be preserved
             roi_fit_data = p.map(
-                self.get_gaussian_fits_for_roi, range(self.data.n_roi)
+                self.get_gaussian_fits_for_roi, range(self.data.idx_of_neurons)
             )
 
             for roi_id, roi_data in enumerate(roi_fit_data):

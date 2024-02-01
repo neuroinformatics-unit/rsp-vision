@@ -214,7 +214,8 @@ def get_sub_and_ses(
                 "analysis_date",
                 "commit_hash",
                 "microscope",
-                "n_roi",
+                "n_neurons",
+                "idx_neurons",
                 "n_responsive_roi",
                 "days_of_the_experiment",
             ],
@@ -241,7 +242,8 @@ def save_roi_info_and_fit_outputs(
     """
     # dict with subset of the data
     subset = {
-        "n_roi": photon_data.n_roi,
+        "n_neurons": len(photon_data.idx_of_neurons),
+        "idx_neurons": photon_data.idx_of_neurons,
         "responsive_rois": photon_data.responsive_rois,
         "median_subtracted_responses": photon_data.median_subtracted_response,
         "fit_outputs": photon_data.fit_output,
@@ -270,7 +272,7 @@ def save_signal_data_for_each_roi(
         The SessionFolder object.
     """
     #  for each roi, save a subset of the signal dataframe in a pickle object
-    for roi in range(photon_data.n_roi):
+    for roi in photon_data.idx_of_neurons:
         with open(
             session_folder.ses_folder_path
             / f"roi_{roi}_signal_dataframe.pickle",
@@ -366,7 +368,8 @@ def save_info_in_main_log(
         "microscope": "two_photon"
         if photon_data.photon_type == PhotonType.TWO_PHOTON
         else "three_photon",
-        "n_roi": photon_data.n_roi,
+        "n_neurons": len(photon_data.idx_of_neurons),
+        "idx_neurons": photon_data.idx_of_neurons,
         "n_responsive_roi": len(photon_data.responsive_rois),
         "days_of_the_experiment": photon_data.total_n_days,
     }
