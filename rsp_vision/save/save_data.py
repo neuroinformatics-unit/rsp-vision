@@ -215,7 +215,6 @@ def get_sub_and_ses(
                 "commit_hash",
                 "microscope",
                 "n_neurons",
-                "idx_neurons",
                 "n_responsive_roi",
                 "days_of_the_experiment",
             ],
@@ -244,7 +243,7 @@ def save_roi_info_and_fit_outputs(
     subset = {
         "n_neurons": len(photon_data.idx_of_neurons),
         "idx_neurons": photon_data.idx_of_neurons,
-        "responsive_rois": photon_data.responsive_rois,
+        "responsive_neurons": photon_data.responsive_neurons,
         "median_subtracted_responses": photon_data.median_subtracted_response,
         "fit_outputs": photon_data.fit_output,
     }
@@ -349,7 +348,7 @@ def save_info_in_main_log(
     swc_blueprint_spec : SWC_Blueprint_Spec
         The SWC_Blueprint_Spec object.
     """
-    dict = {
+    mydict = {
         "folder_name": folder_naming_specs.folder_name,
         "sub": subject_folder.sub_num,
         "ses": session_folder.ses_num,
@@ -369,16 +368,17 @@ def save_info_in_main_log(
         if photon_data.photon_type == PhotonType.TWO_PHOTON
         else "three_photon",
         "n_neurons": len(photon_data.idx_of_neurons),
-        "idx_neurons": photon_data.idx_of_neurons,
-        "n_responsive_roi": len(photon_data.responsive_rois),
+        "n_responsive_roi": len(photon_data.responsive_neurons),
         "days_of_the_experiment": photon_data.total_n_days,
     }
 
     if not reanalysis:
-        analysis_log = pd.concat([analysis_log, pd.DataFrame(dict, index=[0])])
+        analysis_log = pd.concat(
+            [pd.DataFrame(mydict, index=[0]), analysis_log], ignore_index=True
+        )
     else:
         analysis_log.loc[
             analysis_log["folder_name"] == folder_naming_specs.folder_name
-        ] = dict.values()
+        ] = mydict.values()
 
     analysis_log.to_csv(swc_blueprint_spec.path / "analysis_log.csv")

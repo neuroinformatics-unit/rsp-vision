@@ -581,7 +581,7 @@ class PhotonData:
             )
             expected = (
                 self.repetitions_per_stim
-                * self.idx_of_neurons
+                * len(self.idx_of_neurons)
                 * self.total_n_days
             )
             if not np.all(pivot_table == expected):
@@ -680,7 +680,7 @@ class PhotonData:
         self.responses: pd.DataFrame
         self.p_values: dict
         self.magnitude_over_medians: pd.DataFrame
-        self.responsive_rois: Set[int]
+        self.responsive_neurons: Set[int]
         self.measured_preference: dict
         self.fit_output: dict
         self.median_subtracted_response: dict

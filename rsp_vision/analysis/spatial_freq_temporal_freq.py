@@ -81,10 +81,10 @@ class FrequencyResponsiveness:
             + f"{self.data.magnitude_over_medians.head()}"
         )
 
-        self.data.responsive_rois = self.find_significant_rois(
+        self.data.responsive_neurons = self.find_significant_rois(
             self.data.p_values, self.data.magnitude_over_medians
         )
-        logging.info(f"Responsive ROIs: {self.data.responsive_rois}")
+        logging.info(f"Responsive ROIs: {self.data.responsive_neurons}")
 
         # using multiprocessing, very slow step
         logging.info("Calculating Gaussian fits...")
@@ -547,7 +547,6 @@ class FrequencyResponsiveness:
             values obtained from the Gaussian fit, and the median-subtracted
             response matrix.
         """
-
         roi_data = {}
         for dir in self.data.directions:
             roi_data[dir] = self.manage_fitting(
@@ -646,6 +645,17 @@ class FrequencyResponsiveness:
             response_matrix,
         )
 
+    def generator_for_idx_of_neurons(self):
+        """Generator for the ROI indices.
+
+        Yields
+        -------
+        int
+            The index of the next ROI.
+        """
+        for roi_id in self.data.idx_of_neurons:
+            yield roi_id
+
     def get_all_fits(self) -> None:
         """Calculate the Gaussian fits for all ROIs using multiprocessing.
 
@@ -692,10 +702,13 @@ class FrequencyResponsiveness:
         with Pool() as p:
             # the roi order should be preserved
             roi_fit_data = p.map(
-                self.get_gaussian_fits_for_roi, range(self.data.idx_of_neurons)
+                self.get_gaussian_fits_for_roi,
+                self.generator_for_idx_of_neurons(),
             )
 
-            for roi_id, roi_data in enumerate(roi_fit_data):
+            for roi_id, roi_data in zip(
+                self.data.idx_of_neurons, roi_fit_data
+            ):
                 for key in roi_data.keys():
                     self.data.measured_preference[(roi_id, key)] = roi_data[
                         key
