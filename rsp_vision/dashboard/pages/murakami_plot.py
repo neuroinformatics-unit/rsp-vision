@@ -135,7 +135,7 @@ def responsive_rois_warnings(store: dict) -> bool:
         return True
     else:
         data = load_data(store)
-        responsive_rois = data["responsive_rois"]
+        responsive_rois = data["responsive_neurons"]
         if (responsive_rois == 0) | (responsive_rois == set()):
             return False
         else:
@@ -201,21 +201,24 @@ def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
     data = load_data(store)
 
     # prepare data
-    responsive_rois = data["responsive_rois"]
-    n_roi = data["n_roi"]
+    responsive_rois = data["responsive_neurons"]
+    data["n_neurons"]
+    neurons_idx = data["idx_neurons"]
     matrix_dimension = 100
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
     fit_outputs = data["fit_outputs"]
     fitted_gaussian_matrix = get_gaussian_matrix_to_be_plotted_for_all_rois(
-        n_roi,
+        neurons_idx,
         fit_outputs,
         spatial_frequencies,
         temporal_frequencies,
         matrix_dimension,
     )
 
-    total_roi = responsive_rois if show_only_responsive else list(range(n_roi))
+    total_roi = (
+        responsive_rois if show_only_responsive else data["idx_neurons"]
+    )
 
     # plot
     fig = go.Figure()
@@ -456,11 +459,11 @@ def speed_tuning_plot(store):
         return "No data to plot"
 
     data = load_data(store)
-    n_roi = data["n_roi"]
+    data["n_neurons"]
     sfs = store["config"]["spatial_frequencies"]
     tfs = store["config"]["temporal_frequencies"]
     median_subtracted_response = data["median_subtracted_responses"]
-    responsive_roi = data["responsive_rois"]
+    responsive_roi = data["responsive_neurons"]
 
     velocity = np.zeros((6, 6))
     for i, sf in enumerate(sfs):
@@ -472,7 +475,7 @@ def speed_tuning_plot(store):
 
     fig = go.Figure()
 
-    for roi in range(n_roi):
+    for roi in data["idx_neurons"]:
         key = (roi, "pooled")
         msr = median_subtracted_response[key]
         flat_msr = msr.flatten()
@@ -521,18 +524,21 @@ def murakami_plot_2(store: dict, include_bad_fit: bool) -> dcc.Graph:
     data = load_data(store)
 
     # prepare data
-    n_roi = data["n_roi"]
+    n_neurons = data["n_neurons"]
     matrix_dimension = 100
     spatial_frequencies = store["config"]["spatial_frequencies"]
     temporal_frequencies = store["config"]["temporal_frequencies"]
     median_subtracted_responses = data["median_subtracted_responses"]
     fit_outputs = data["fit_outputs"]
+
+    neurons = data["idx_neurons"]
+
     exponential_coef = [
-        fit_outputs[(roi_id, "pooled")][-1] for roi_id in range(n_roi)
+        fit_outputs[(roi_id, "pooled")][-1] for roi_id in data["idx_neurons"]
     ]
 
     fitted_gaussian_matrix = get_gaussian_matrix_to_be_plotted_for_all_rois(
-        n_roi,
+        neurons,
         fit_outputs,
         spatial_frequencies,
         temporal_frequencies,
@@ -540,7 +546,7 @@ def murakami_plot_2(store: dict, include_bad_fit: bool) -> dcc.Graph:
     )
     fitted_gaussian_matrix_small = (
         get_gaussian_matrix_to_be_plotted_for_all_rois(
-            n_roi,
+            neurons,
             fit_outputs,
             spatial_frequencies,
             temporal_frequencies,
@@ -549,7 +555,7 @@ def murakami_plot_2(store: dict, include_bad_fit: bool) -> dcc.Graph:
     )
     #  get fit correlations for all rois
     fit_correlations = []
-    for roi_id in range(n_roi):
+    for roi_id in data["idx_neurons"]:
         try:
             corr = fit_correlation(
                 fitted_gaussian_matrix_small[(roi_id, "pooled")],
@@ -563,19 +569,21 @@ def murakami_plot_2(store: dict, include_bad_fit: bool) -> dcc.Graph:
     #  only rois where fit correlationn > 0.75 and fit_values > 0.4
     total_roi = [
         roi_id
-        for roi_id in range(n_roi)
+        for roi_id in range(n_neurons)
         if (exponential_coef[roi_id] > 0.2)
         & (include_bad_fit or (fit_correlations[roi_id] > 0.60))
     ]
-    for roi in total_roi:
-        print(roi, fit_correlations[roi], exponential_coef[roi])
+    # for roi in total_roi:
+    #     print(roi, fit_correlations[roi], exponential_coef[roi])
 
     if total_roi == []:
         return "No data to plot"
 
+    neurons_idxs = data["idx_neurons"]
+
     fig = go.Figure()
     fig = add_data_in_figure(
-        all_roi=total_roi,
+        all_roi=neurons_idxs,
         fig=fig,
         matrix_dimension=matrix_dimension,
         fitted_gaussian_matrix=fitted_gaussian_matrix,
@@ -587,6 +595,5 @@ def murakami_plot_2(store: dict, include_bad_fit: bool) -> dcc.Graph:
     fig = prettify_murakami_plot(
         fig, spatial_frequencies, temporal_frequencies
     )
-    print("completed")
 
     return dcc.Graph(figure=fig)

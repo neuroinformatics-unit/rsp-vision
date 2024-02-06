@@ -184,10 +184,10 @@ def roi_selection_plot(store: dict) -> dcc.Graph:
     if store == {}:
         return "No data to plot"
     data = load_data(store)
-    n_roi = data["n_roi"]
-    responsive_rois = data["responsive_rois"]
+    n_roi = data["n_neurons"]
+    responsive_rois = data["responsive_neurons"]
 
-    rois = list(range(1, n_roi + 1))
+    rois = data["idx_neurons"]
     col_n = 10
     row_n = n_roi // col_n + 1
 

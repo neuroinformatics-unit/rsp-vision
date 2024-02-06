@@ -123,7 +123,7 @@ def find_peak_coordinates(
 
 
 def get_gaussian_matrix_to_be_plotted_for_all_rois(
-    n_roi: int,
+    neuron_idxs: list,
     fit_outputs: dict,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
@@ -152,7 +152,7 @@ def get_gaussian_matrix_to_be_plotted_for_all_rois(
     """
     fitted_gaussian_matrix = {}
 
-    for roi_id in range(n_roi):
+    for roi_id in neuron_idxs:
         fitted_gaussian_matrix[
             (roi_id, "pooled")
         ] = get_gaussian_matrix_to_be_plotted(
