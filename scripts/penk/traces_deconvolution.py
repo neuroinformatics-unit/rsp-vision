@@ -2,7 +2,6 @@ import pickle
 from pathlib import Path
 from typing import Dict, List
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from oasis.functions import deconvolve
@@ -13,9 +12,9 @@ from rsp_vision.objects.SWC_Blueprint import (
     SubjectFolder,
     SWC_Blueprint_Spec,
 )
+from tqdm import tqdm
 
-remote_path = Path("/Volumes/margrie/laura/")
-local_plots_path = Path("/Users/laura/data/rsp_vision/derivatives/figures")
+remote_path = Path("/ceph/margrie/laura/")
 
 
 all_non_penk = [
@@ -80,34 +79,41 @@ for datagroup, name in zip([all_penk, all_non_penk], ["penk", "non_penk"]):
         print(f"{dataset}: ", end=" ")
         with open(path / "gaussians_fits_and_roi_info.pickle", "rb") as f:
             info = pickle.load(f)
-        n_roi = info["n_roi"]
+        n_roi = info["n_neurons"]
 
-        baseline: List[np.ndarray] = []
-        response: List[np.ndarray] = []
-        for i in range(n_roi):
-            print("*", end="")
+        deconvolved_traces = {}
+        for i in tqdm(
+            info["idx_neurons"],
+            total=n_roi,
+            desc=f"Processing {dataset}",
+            ):
             with open(path / f"roi_{i}_signal_dataframe.pickle", "rb") as f:
                 df = pickle.load(f)
 
-            print(df.shape)
 
             # take deltaF/F traces
             deltaF_overF = df.signal.values
-            first_nan = np.where(np.isnan(deltaF_overF))[0][0]
-            deltaF_overF = deltaF_overF[:first_nan]
+            if len(np.where(np.isnan(deltaF_overF))[0]) > 0:
+                cutoff = np.where(np.isnan(deltaF_overF))[0][0]
+            else:
+                cutoff = len(deltaF_overF)
+            deltaF_overF = deltaF_overF[:cutoff]
 
             # deconvolve them
             # we are not providing the baseline, so it will be estimated
             # c is the calcium concentration
             # s is predicted spiking activity
-            c, s, b, g, lam = deconvolve(deltaF_overF, penalty=1)
+            try:
+                c, s, b, g, lam = deconvolve(deltaF_overF, penalty=1)
+            except np.linalg.LinAlgError as e:
+                print(f"Error in {dataset} {i}: {e}")
+                s = np.asarray([np.nan] * len(deltaF_overF))
 
-            plt.plot(deltaF_overF)
-            plt.plot(s)
-            plt.show()
+            deconvolved_traces[i] = s
+        
+        activity[name][dataset] = deconvolved_traces
 
-            # take all the non-zero values of s
-            s = s[s > 0]
-            # apply a threshold the predicted spikes
 
-            print("baseline: ", b)
+
+with open(swc_blueprint_spec.path / "deconvolved_traces.pickle", "wb") as g:
+    pickle.dump(activity, g)   
