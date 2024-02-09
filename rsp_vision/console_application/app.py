@@ -68,6 +68,37 @@ def get_all_sf_tf_datasets(path: str) -> list:
     return only_sf_tf_files
 
 
+def analyse_specific_dataset(dataset):
+    config, swc_blueprint_spec = read_config_and_logging(is_local=False)
+
+    config["paths"]["allen-dff"]
+    analysis_success_table = AnalysisSuccessTable(swc_blueprint_spec.path)
+    logging.info(f"Trying to analyse:{dataset}")
+    try:
+        analysis_success_table.update(
+            dataset_name=dataset,
+            date=str(datetime.datetime.now()),
+            latest_job_id=0,
+            state="Starting the analysis...",
+        )
+        analysis_pipeline(dataset, config, swc_blueprint_spec)
+        analysis_success_table.update(
+            dataset_name=dataset,
+            date=str(datetime.datetime.now()),
+            latest_job_id=0,
+            state="Analysis successful 🥳",
+        )
+    except Exception as e:
+        error = str(e)
+        logging.exception(e)
+        analysis_success_table.update(
+            dataset_name=dataset,
+            date=str(datetime.datetime.now()),
+            latest_job_id=0,
+            state="⚠️ error: " + error,
+        )
+
+
 def cli_entry_point_array(job_id):
     """This is the entry point for the CLI application when running on the
     cluster. It takes a job id as input and runs the analysis on the dataset
@@ -95,23 +126,23 @@ def cli_entry_point_array(job_id):
 
     logging.info(f"Trying to analyse:{dataset}, job id: {job_id}")
     try:
-        row = analysis_success_table.find_this_dataset(dataset)
-        if row["state"].values[0] == "Analysis successful 🥳":
-            logging.info("Dataset already analysed")
-        else:
-            analysis_success_table.update(
-                dataset_name=dataset,
-                date=str(datetime.datetime.now()),
-                latest_job_id=job_id,
-                state="Starting the analysis...",
-            )
-            analysis_pipeline(dataset, config, swc_blueprint_spec)
-            analysis_success_table.update(
-                dataset_name=dataset,
-                date=str(datetime.datetime.now()),
-                latest_job_id=job_id,
-                state="Analysis successful 🥳",
-            )
+        analysis_success_table.find_this_dataset(dataset)
+        # if row["state"].values[0] == "Analysis successful 🥳":
+        #     logging.info("Dataset already analysed")
+        # else:
+        analysis_success_table.update(
+            dataset_name=dataset,
+            date=str(datetime.datetime.now()),
+            latest_job_id=job_id,
+            state="Starting the analysis...",
+        )
+        analysis_pipeline(dataset, config, swc_blueprint_spec)
+        analysis_success_table.update(
+            dataset_name=dataset,
+            date=str(datetime.datetime.now()),
+            latest_job_id=job_id,
+            state="Analysis successful 🥳",
+        )
 
     except Exception as e:
         error = str(e)
