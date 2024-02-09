@@ -1,10 +1,11 @@
 import pickle
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 import numpy as np
 import pandas as pd
 from oasis.functions import deconvolve
+from tqdm import tqdm
 
 from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
 from rsp_vision.objects.SWC_Blueprint import (
@@ -12,7 +13,6 @@ from rsp_vision.objects.SWC_Blueprint import (
     SubjectFolder,
     SWC_Blueprint_Spec,
 )
-from tqdm import tqdm
 
 remote_path = Path("/ceph/margrie/laura/")
 
@@ -86,10 +86,9 @@ for datagroup, name in zip([all_penk, all_non_penk], ["penk", "non_penk"]):
             info["idx_neurons"],
             total=n_roi,
             desc=f"Processing {dataset}",
-            ):
+        ):
             with open(path / f"roi_{i}_signal_dataframe.pickle", "rb") as f:
                 df = pickle.load(f)
-
 
             # take deltaF/F traces
             deltaF_overF = df.signal.values
@@ -110,10 +109,9 @@ for datagroup, name in zip([all_penk, all_non_penk], ["penk", "non_penk"]):
                 s = np.asarray([np.nan] * len(deltaF_overF))
 
             deconvolved_traces[i] = s
-        
+
         activity[name][dataset] = deconvolved_traces
 
 
-
 with open(swc_blueprint_spec.path / "deconvolved_traces.pickle", "wb") as g:
-    pickle.dump(activity, g)   
+    pickle.dump(activity, g)
