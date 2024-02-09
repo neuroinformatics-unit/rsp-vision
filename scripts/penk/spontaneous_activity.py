@@ -2,10 +2,9 @@ import pickle
 from pathlib import Path
 from typing import Dict, List
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import seaborn as sns
+from tqdm import tqdm
 
 from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
 from rsp_vision.objects.SWC_Blueprint import (
@@ -14,14 +13,15 @@ from rsp_vision.objects.SWC_Blueprint import (
     SWC_Blueprint_Spec,
 )
 
-remote_path = Path("/Volumes/margrie-1/laura/")
-local_plots_path = Path(
-    "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/"
-)
+remote_path = Path("/ceph/margrie/laura/")
+# local_plots_path = Path(
+#     "/Users/lauraporta/local_data/rsp_vision/derivatives/figures/"
+# )
 
 
 all_non_penk = [
     "CX_1117646_hR_RSPd_cre-off_monitor_front",
+    "CX_1117646_hL_RSPd_cre-off_monitor_front",
     "SG_1118210_hR_RSPd_cre-off_monitor_front",
     "SG_1117788_hR_RSPd_cre-off_monitor_front",
     "CX_1117217_hR_RSPd_cre-off_monitor_front",
@@ -79,34 +79,27 @@ for datagroup, name in zip([all_penk, all_non_penk], ["penk", "non_penk"]):
 
     activity[name] = {}
     for path, dataset in zip(paths, datagroup):
-        print(f"{dataset}: ", end=" ")
         with open(path / "gaussians_fits_and_roi_info.pickle", "rb") as f:
             info = pickle.load(f)
-        n_roi = info["n_roi"]
+        n_roi = info["n_neurons"]
 
         baseline: List[np.ndarray] = []
         response: List[np.ndarray] = []
-        for i in range(n_roi):
-            print("*", end="")
+        for i in tqdm(
+            info["responsive_neurons"],
+            total=n_roi,
+            desc=f"Processing {dataset}",
+        ):
             with open(path / f"roi_{i}_signal_dataframe.pickle", "rb") as f:
                 df = pickle.load(f)
 
-            baseline.append(
-                df[df["stimulus_onset"] is True]["mean_baseline"].values
-            )
-            response.append(
-                df[df["stimulus_onset"] is True]["mean_response"].values
-            )
+            baseline.append(df[df["stimulus_onset"]]["mean_baseline"].values)
+            response.append(df[df["stimulus_onset"]]["mean_response"].values)
 
         activity[name][dataset] = {"baseline": baseline, "response": response}
         print("")
 
-        sns.heatmap(activity[name][dataset]["baseline"])
-        plt.savefig(local_plots_path / f"{dataset}_baseline_heatmap.png")
-        plt.close()
-        sns.heatmap(activity[name][dataset]["response"])
-        plt.savefig(local_plots_path / f"{dataset}_response_heatmap.png")
-        plt.close()
-
-with open(remote_path / "activity.pickle", "wb") as g:
+with open(
+    swc_blueprint_spec.path / "activity_only_responsive.pickle", "wb"
+) as g:
     pickle.dump(activity, g)
