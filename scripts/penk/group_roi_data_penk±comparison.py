@@ -9,7 +9,7 @@ from rsp_vision.analysis.gaussians_calculations import (
     get_gaussian_matrix_to_be_plotted,
 )
 
-local_path = Path("/Users/laura/data/rsp_vision/derivatives/")
+local_path = Path("/Users/lauraporta/local_data/rsp_vision/derivatives/")
 
 merged_dataset = pd.DataFrame(
     columns=[
@@ -26,14 +26,14 @@ merged_dataset = pd.DataFrame(
         "exponential_factor",
         "sigma_sf",
         "sigma_tf",
+        "peak_response_not_fitted",
     ]
 )
-
-# dataset = 'CX_102_2_hL_RSPd_FOV1_monitor_right'
 
 
 all_non_penk = [
     "CX_1117646_hR_RSPd_cre-off_monitor_front",
+    "CX_1117646_hL_RSPd_cre-off_monitor_front",
     "SG_1118210_hR_RSPd_cre-off_monitor_front",
     "SG_1117788_hR_RSPd_cre-off_monitor_front",
     "CX_1117217_hR_RSPd_cre-off_monitor_front",
@@ -57,10 +57,12 @@ for is_penk, group in enumerate([all_non_penk, all_penk]):
         with open(all_penk_one_dataset, "rb") as f:
             data = pickle.load(f)
 
-        n_rois = data["n_roi"]
+        n_rois = data["n_neurons"]
+        neurons_idx = data["idx_neurons"]
 
-        for roi_id in range(n_rois):
+        for roi_id in neurons_idx:
             msr = data["median_subtracted_responses"][(roi_id, "pooled")]
+            peak_not_fitted = np.max(msr)
             fit_params = data["fit_outputs"][(roi_id, "pooled")]
 
             if np.isnan(np.min(fit_params)):
@@ -92,7 +94,7 @@ for is_penk, group in enumerate([all_non_penk, all_penk]):
                     "total_rois_in_dataset": n_rois,
                     "penk": is_penk,
                     "is_responsive": 1
-                    if roi_id in data["responsive_rois"]
+                    if roi_id in data["responsive_neurons"]
                     else 0,
                     "fit_correlation": correlation,
                     "pval_fit_correlation": pval,
@@ -102,6 +104,7 @@ for is_penk, group in enumerate([all_non_penk, all_penk]):
                     "exponential_factor": 𝜻_power_law_exp,
                     "sigma_sf": sigma_sf,
                     "sigma_tf": sigma_tf,
+                    "peak_response_not_fitted": peak_not_fitted,
                 },
                 index=[0],
             )
