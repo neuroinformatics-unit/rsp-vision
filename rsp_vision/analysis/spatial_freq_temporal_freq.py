@@ -428,26 +428,26 @@ class FrequencyResponsiveness:
             set: A set of ROIs that are significantly responsive based on the
             specified criteria.
         """
-        sig_kw = set(
-            np.where(
-                p_values["Kruskal-Wallis test"]
-                < self.data.config["anova_threshold"]
-            )[0].tolist()
-        )
-        sig_magnitude = set(
-            np.where(
-                magnitude_over_medians.groupby("roi").magnitude.max()
-                > self.data.config["response_magnitude_threshold"]
-            )[0].tolist()
-        )
+        sig_kw_idx = np.where(
+            p_values["Kruskal-Wallis test"]
+            < self.data.config["anova_threshold"]
+        )[0].tolist()
+
+        sig_kw = set(self.data.idx_of_neurons[sig_kw_idx])
+
+        sig_magnitude_idx = np.where(
+            magnitude_over_medians.groupby("roi").magnitude.max()
+            > self.data.config["response_magnitude_threshold"]
+        )[0].tolist()
+
+        sig_magnitude = set(self.data.idx_of_neurons[sig_magnitude_idx])
 
         if self.data.config["consider_only_positive"]:
-            sig_positive = set(
-                np.where(
-                    p_values["Wilcoxon signed rank test"]
-                    < self.data.config["only_positive_threshold"]
-                )[0].tolist()
-            )
+            sig_positive_idx = np.where(
+                p_values["Wilcoxon signed rank test"]
+                < self.data.config["only_positive_threshold"]
+            )[0].tolist()
+            sig_positive = set(self.data.idx_of_neurons[sig_positive_idx])
             sig_kw = sig_kw & sig_positive
 
         return sig_kw & sig_magnitude
