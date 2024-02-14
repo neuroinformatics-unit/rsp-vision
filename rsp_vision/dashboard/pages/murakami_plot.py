@@ -87,7 +87,6 @@ layout = html.Div(
                         ),
                     ),
                     span="auto",
-                    offset=1,
                 ),
                 dmc.Col(
                     dmc.Center(
@@ -97,7 +96,6 @@ layout = html.Div(
                         ),
                     ),
                     span="auto",
-                    offset=1,
                 ),
                 dmc.Col(
                     html.Div(
@@ -437,9 +435,9 @@ def add_data_in_figure(
                     ),
                     showscale=True,
                     #  scale has to be positive
-                    cmin=0.4,
+                    cmin=0,
+                    cmax=4,
                 ),
-                # name=p["roi_id"].values(),
                 showlegend=False,
             )
         )
@@ -451,7 +449,6 @@ def add_data_in_figure(
     Output("speed-tuning-plot", "children"),
     [
         Input("store", "data"),
-        # Input("show-only-responsive", "checked"),
     ],
 )
 def speed_tuning_plot(store):
@@ -487,18 +484,19 @@ def speed_tuning_plot(store):
                 np.max(flat_msr[flat_velocity == vel])
             )
 
-        fig.add_trace(
-            go.Scatter(
-                x=unique_velocity,
-                y=max_response_per_velocity,
-                mode="lines",
-                marker=dict(
-                    color="red" if roi in responsive_roi else "lightblue",
-                    size=1,
-                ),
-                name=f"ROI {roi + 1}",
+        if np.any(np.asarray(max_response_per_velocity, dtype=int) > 15):
+            fig.add_trace(
+                go.Scatter(
+                    x=unique_velocity,
+                    y=max_response_per_velocity,
+                    mode="lines",
+                    marker=dict(
+                        color="red" if roi in responsive_roi else "lightblue",
+                        size=1,
+                    ),
+                    name=f"ROI {roi + 1}",
+                )
             )
-        )
 
     fig.update_xaxes(type="log", title_text="Speed deg/s")
     fig.update_yaxes(title_text="Response ΔF/F")
@@ -506,6 +504,26 @@ def speed_tuning_plot(store):
     fig.update_layout(
         plot_bgcolor="white",
     )
+
+    # fix fig size
+    fig.update_layout(
+        autosize=False,
+        width=600,
+        height=600,
+        margin=dict(t=50, b=50, l=50, r=50),
+    )
+
+    #  draw vertical lines at given velocity
+    for v in np.unique(flat_velocity):
+        fig.add_shape(
+            type="line",
+            x0=v,
+            y0=0,
+            x1=v,
+            y1=100,
+            line=dict(color="Grey", width=1),
+        )
+        print(v)
 
     return dcc.Graph(figure=fig)
 
@@ -570,11 +588,10 @@ def murakami_plot_2(store: dict, include_bad_fit: bool) -> dcc.Graph:
     total_roi = [
         roi_id
         for roi_id in range(n_neurons)
-        if (exponential_coef[roi_id] > 0.2)
-        & (include_bad_fit or (fit_correlations[roi_id] > 0.60))
+        if (exponential_coef[roi_id] > 0)
+        & (exponential_coef[roi_id] < 4)
+        & (fit_correlations[roi_id] > 0.60)
     ]
-    # for roi in total_roi:
-    #     print(roi, fit_correlations[roi], exponential_coef[roi])
 
     if total_roi == []:
         return "No data to plot"

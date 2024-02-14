@@ -339,8 +339,9 @@ def direction_selection_plot(store: dict) -> dcc.Graph:
         Output("store_choosen_roi", "data"),
     ],
     Input("roi-selection-bubble-plot", "clickData"),
+    Input("store", "data"),
 )
-def update_selected_ROI(clickData: dict) -> Tuple[str, dict]:
+def update_selected_ROI(clickData: dict, store: dict) -> Tuple[str, dict]:
     """This callback updates the text that shows the ROI that has been
     selected and the `dcc.Store` that contains the ROI id. If no ROI is
     selected, the default ROI is 0.
@@ -356,11 +357,20 @@ def update_selected_ROI(clickData: dict) -> Tuple[str, dict]:
         The text that shows the ROI that has been selected and the `dcc.Store`
         that contains the ROI id.
     """
+    if store == {}:
+        return "", {"roi_id": None}
+    data = load_data(store)
+
+    data["n_neurons"]
+    data["responsive_neurons"]
+
+    rois = data["idx_neurons"]
     if clickData is None:
-        default_roi_id = 0
+        default_roi_id = rois[0]
         return f"ROI {default_roi_id + 1} selected", {"roi_id": default_roi_id}
     else:
-        roi_id = int(clickData["points"][0]["curveNumber"])
+        id = int(clickData["points"][0]["curveNumber"])
+        roi_id = rois[id]
         return f"ROI {roi_id + 1} selected", {"roi_id": roi_id}
 
 
