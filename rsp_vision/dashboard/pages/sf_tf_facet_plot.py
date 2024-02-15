@@ -214,7 +214,7 @@ def roi_selection_plot(store: dict) -> dcc.Graph:
         fig.add_annotation(
             x=x[i % col_n],
             y=-y[i // col_n],
-            text=str(roi),
+            text=str(roi + 1),
             showarrow=False,
             font=dict(
                 size=10,

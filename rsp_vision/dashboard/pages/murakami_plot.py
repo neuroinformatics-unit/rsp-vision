@@ -425,6 +425,7 @@ def add_data_in_figure(
                 x=p["temporal_frequency"],
                 y=p["spatial_frequency"],
                 mode="markers",
+                text=p["roi_id"],
                 # color depending on the exponential coeficient
                 marker=dict(
                     color=exponential_coeficient,
