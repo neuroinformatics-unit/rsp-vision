@@ -153,16 +153,16 @@ def get_gaussian_matrix_to_be_plotted_for_all_rois(
     fitted_gaussian_matrix = {}
 
     for roi_id in range(n_roi):
-        fitted_gaussian_matrix[
-            (roi_id, "pooled")
-        ] = get_gaussian_matrix_to_be_plotted(
-            kind="custom",
-            roi_id=roi_id,
-            fit_output=fit_outputs,
-            sfs=np.asarray(spatial_frequencies),
-            tfs=np.asarray(temporal_frequencies),
-            matrix_dimension=matrix_dimension,
-            direction="pooled",
+        fitted_gaussian_matrix[(roi_id, "pooled")] = (
+            get_gaussian_matrix_to_be_plotted(
+                kind="custom",
+                roi_id=roi_id,
+                fit_output=fit_outputs,
+                sfs=np.asarray(spatial_frequencies),
+                tfs=np.asarray(temporal_frequencies),
+                matrix_dimension=matrix_dimension,
+                direction="pooled",
+            )
         )
 
     return fitted_gaussian_matrix

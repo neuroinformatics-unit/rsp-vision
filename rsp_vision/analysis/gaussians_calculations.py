@@ -54,9 +54,7 @@ def elliptical_gaussian_andermann(
     r = (
         peak_response
         * np.exp(-((np.log2(sf) - np.log2(sf_0)) ** 2) / 2 * (sigma_sf**2))
-        * np.exp(
-            -((np.log2(tf) - log_2_tf_pref_sf) ** 2) / 2 * (sigma_tf**2)
-        )
+        * np.exp(-((np.log2(tf) - log_2_tf_pref_sf) ** 2) / 2 * (sigma_tf**2))
     )
 
     return r

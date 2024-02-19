@@ -603,9 +603,9 @@ class PhotonData:
             self.signal.loc[start:end, "direction"] = self.signal.loc[
                 idx, "direction"
             ]
-            self.signal.loc[
-                start:end, "stimulus_repetition"
-            ] = self.signal.loc[idx, "stimulus_repetition"]
+            self.signal.loc[start:end, "stimulus_repetition"] = (
+                self.signal.loc[idx, "stimulus_repetition"]
+            )
 
     def set_post_data_extraction_variables(self) -> None:
         """Sets instance variables for signal and stimuli data extraction.

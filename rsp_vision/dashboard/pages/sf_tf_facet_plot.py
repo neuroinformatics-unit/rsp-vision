@@ -709,9 +709,11 @@ def gaussian_plot(
     #  Add the heatmap for the median subtracted response
     fig.add_trace(
         go.Heatmap(
-            z=median_subtracted_responses[(roi_id, direction)]
-            if not is_pooled_directions(direction_input)
-            else median_subtracted_responses[(roi_id, "pooled")],
+            z=(
+                median_subtracted_responses[(roi_id, direction)]
+                if not is_pooled_directions(direction_input)
+                else median_subtracted_responses[(roi_id, "pooled")]
+            ),
             x=uniform_tfs,
             y=uniform_sfs,
             colorscale="Viridis",
@@ -766,9 +768,11 @@ def gaussian_plot(
     #  Calculate the correlation between the median subtracted response and 𝜻
     fit_corr = fit_correlation(
         low_res_gaussian,
-        median_subtracted_responses[(roi_id, "pooled")]
-        if is_pooled_directions(direction_input)
-        else median_subtracted_responses[(roi_id, direction)],
+        (
+            median_subtracted_responses[(roi_id, "pooled")]
+            if is_pooled_directions(direction_input)
+            else median_subtracted_responses[(roi_id, direction)]
+        ),
     )
     fit_value = (
         fit_outputs[(roi_id, direction)][-1]
