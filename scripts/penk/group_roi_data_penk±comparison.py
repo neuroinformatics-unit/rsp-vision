@@ -8,6 +8,12 @@ from scipy.stats import pearsonr
 from rsp_vision.analysis.gaussians_calculations import (
     get_gaussian_matrix_to_be_plotted,
 )
+from rsp_vision.objects.folder_naming_specs import FolderNamingSpecs
+from rsp_vision.objects.SWC_Blueprint import (
+    SessionFolder,
+    SubjectFolder,
+    SWC_Blueprint_Spec,
+)
 
 local_path = Path("/Users/lauraporta/local_data/rsp_vision/derivatives/")
 
@@ -47,14 +53,56 @@ all_penk = [
     "CX_102_2_hL_RSPd_FOV3_monitor_right",
 ]
 
-for is_penk, group in enumerate([all_non_penk, all_penk]):
-    group_name = "all_non_penk" if is_penk == 0 else "all_penk"
-    for dataset in group:
-        print(f"Processing {dataset}")
-        file_name = dataset + ".pickle"
-        all_penk_one_dataset = local_path / group_name / file_name
 
-        with open(all_penk_one_dataset, "rb") as f:
+remote_path = Path("/Volumes/margrie/laura/")
+
+
+swc_blueprint_spec = SWC_Blueprint_Spec(
+    project_name="rsp_vision",
+    raw_data=False,
+    derivatives=True,
+    local_path=remote_path,
+)
+
+config = {
+    "parser": "Parser2pRSP",
+    "use-allen-dff": True,
+    "paths": {
+        "imaging": "/path/to/",
+        "allen-dff": "/path/to/allen_dff",
+        "serial2p": "/path/to/serial2p",
+        "stimulus-ai-schedule": "/path/to/stimulus_AI_schedule_files",
+        "output": "/path/to/output",
+    },
+}
+
+log_table = pd.read_csv(swc_blueprint_spec.path / "analysis_log.csv")
+
+
+def get_ROIs_paths(data_group):
+    paths = []
+
+    for dataset in data_group:
+        names = FolderNamingSpecs(dataset, config)
+        row = log_table[log_table["folder_name"] == dataset]
+        sub_num = row["sub"].values[0]
+        ses_num = row["ses"].values[0]
+        subject = SubjectFolder(swc_blueprint_spec, names, sub_num)
+        session = SessionFolder(subject, names, ses_num)
+
+        paths.append(session.ses_folder_path)
+
+    return paths
+
+
+for datagroup, group_name in zip(
+    [all_penk, all_non_penk], ["penk", "non_penk"]
+):
+    paths = get_ROIs_paths(datagroup)
+    is_penk = 1 if group_name == "penk" else 0
+    for path, dataset in zip(paths, datagroup):
+        print(f"{dataset}")
+        with open(path / "gaussians_fits_and_roi_info.pickle", "rb") as f:
             data = pickle.load(f)
 
         n_rois = data["n_neurons"]
