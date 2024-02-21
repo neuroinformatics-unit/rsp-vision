@@ -61,10 +61,10 @@ for j, datagroup in enumerate(activity.keys()):
         ax[k, j].scatter(
             np.arange(len(mean_response)), mean_response, label="response"
         )
-        ax[k, j].set_title(dataset)
+        ax[k, j].set_title(f"{dataset}; {datagroup}")
         ax[k, j].legend()
         ax[k, j].set_xlabel("Neuron")
-        ax[k, j].set_ylabel("Mean activity")
+        ax[k, j].set_ylabel("Mean of median ΔF/F response")
 
         #  column title according to datagroup
         # ax[0, j].set_title(datagroup)
@@ -108,8 +108,8 @@ for j, datagroup in enumerate(activity.keys()):
     #  place on top a swarmplot
 
     ax2[j].set_title(datagroup)
-    ax2[j].set_xlabel("Static (B) vs Gray (R)")
-    ax2[j].set_ylabel("Mean activity")
+    ax2[j].set_xlabel("Static (B) vs Drift (R)")
+    ax2[j].set_ylabel("Mean of median ΔF/F response")
     ax2[j].set_xticks([])
 
 # set all y lim
@@ -119,6 +119,42 @@ plt.tight_layout()
 #  no upper and right axis
 sns.despine()
 plt.savefig(local_plots_path / "boxplots.png", dpi=200)
+plt.close()
+
+
+#  just boxplot penk vs non penk response
+fig4, ax4 = plt.subplots(1, 1, figsize=(5, 5))
+df = pd.DataFrame()
+response_2 = {}
+for j, datagroup in enumerate(activity.keys()):
+    mean_response = []
+    for k, dataset in enumerate(activity[datagroup].keys()):
+        for i in range(len(activity[datagroup][dataset]["baseline"])):
+            mean_response.append(
+                np.nanmean(activity[datagroup][dataset]["response"][i])
+            )
+    response_2[datagroup] = mean_response
+
+len_penk = len(response_2["penk"])
+len_non_penk = len(response_2["non_penk"])
+
+df["penk"] = response_2["penk"]
+df["non_penk"] = response_2["non_penk"] + [np.nan] * (len_penk - len_non_penk)
+sns.stripplot(data=df, color="0.25", ax=ax4, marker=".", alpha=0.5)
+
+sns.boxplot(data=df, ax=ax4, showfliers=False)
+
+
+#  place on top a swarmplot
+ax4.set_title("Penk vs Non Penk")
+
+ax4.set_ylabel("Mean of median ΔF/F response")
+ax4.set_xticks([])
+ax4.set_ylim(-10, 50)
+plt.tight_layout()
+#  no upper and right axis
+sns.despine()
+plt.savefig(local_plots_path / "boxplot_penk_vs_non_penk.png", dpi=200)
 plt.close()
 
 
@@ -151,8 +187,8 @@ for j, datagroup in enumerate(activity.keys()):
         data=df, x="baseline", y="response", ax=ax3[j], alpha=0.5, markers="."
     )
     ax3[j].set_title(datagroup)
-    ax3[j].set_xlabel("Mean baseline activity")
-    ax3[j].set_ylabel("Mean response activity")
+    ax3[j].set_xlabel("Mean of median ΔF/F baseline")
+    ax3[j].set_ylabel("Mean of median ΔF/F response")
     ax3[j].set_xlim(-10, 50)
     ax3[j].set_ylim(-10, 50)
 

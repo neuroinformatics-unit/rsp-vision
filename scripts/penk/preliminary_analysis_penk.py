@@ -9,7 +9,7 @@ import seaborn as sns
 warnings.filterwarnings("ignore")
 
 path_derivatives = Path("/Users/lauraporta/local_data/rsp_vision/derivatives/")
-path_figures = path_derivatives / "figures"
+path_figures = path_derivatives / "penk_analysis" / "figures"
 penk_non_penk = pd.read_csv(path_derivatives / "merged_dataset_penk.csv")
 
 min_corr = 0.65
@@ -514,6 +514,24 @@ for ax in u.axes.flat:
 
 u.figure.savefig(
     path_figures / "Fig18_peak_response_not_fitted_distplot.png",
+    dpi=200,
+    bbox_inches="tight",
+)
+
+# =============================================================================
+# Fig 19: peak response not fitted vs correlation
+
+v = sns.jointplot(
+    only_tuned,
+    x="fit_correlation",
+    y="peak_response_not_fitted",
+    hue="penk",
+    alpha=0.5,
+    marginal_kws={"common_norm": not_normalized},
+)
+
+v.figure.savefig(
+    path_figures / "Fig19_peak_response_not_fitted_vs_correlation.png",
     dpi=200,
     bbox_inches="tight",
 )
