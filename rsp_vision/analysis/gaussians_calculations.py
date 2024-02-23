@@ -163,8 +163,14 @@ def fit_2D_gaussian_to_data(
         # Ensure sf_0 and tf_0 remain positive
         perturbed_params[1] = max(perturbed_params[1], 1e-5)
         perturbed_params[2] = max(perturbed_params[2], 1e-5)
+
         lower_bounds = config["fitting"]["lower_bounds"]
         upper_bounds = config["fitting"]["upper_bounds"]
+
+        std_msr = np.std(response_matrix)
+        max_allowed = np.max(response_matrix) + std_msr
+        upper_bounds[0] = max_allowed
+
         perturbed_params = np.clip(
             perturbed_params, lower_bounds, upper_bounds
         )

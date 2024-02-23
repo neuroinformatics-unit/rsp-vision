@@ -618,8 +618,8 @@ class FrequencyResponsiveness:
             peak_response,
             sf_0,
             tf_0,
-            np.std(self.data.spatial_frequencies, ddof=1),
-            np.std(self.data.temporal_frequencies, ddof=1),
+            np.log2(np.std(np.mean(response_matrix, axis=0), ddof=1)),
+            np.log2(np.std(np.mean(response_matrix, axis=0), ddof=1)),
             self.data.config["fitting"]["power_law_exp"],
         ]
 
