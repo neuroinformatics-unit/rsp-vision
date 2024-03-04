@@ -539,7 +539,7 @@ def frequency_tuning_plot(store, show_only_responsive, include_bad_fit):
         fig.add_trace(
             go.Scatter(
                 x=dataset.spatial_frequencies,
-                y=np.mean(dataset.msr[(roi, "pooled")], axis=0),
+                y=np.mean(dataset.msr[(roi, "pooled")], axis=1),
                 mode="lines",
                 marker=dict(
                     color="red"
@@ -555,7 +555,7 @@ def frequency_tuning_plot(store, show_only_responsive, include_bad_fit):
         fig.add_trace(
             go.Scatter(
                 x=dataset.temporal_frequencies,
-                y=np.mean(dataset.msr[(roi, "pooled")], axis=1),
+                y=np.mean(dataset.msr[(roi, "pooled")], axis=0),
                 mode="lines",
                 marker=dict(
                     color="red"
@@ -575,13 +575,14 @@ def frequency_tuning_plot(store, show_only_responsive, include_bad_fit):
 
     fig.update_xaxes(
         type="log",
-        title_text="SF (cycles/deg)            |            TF (Hz)",
+        title_text="SF (cycles/deg)                                  TF (Hz)",
     )
 
     fig.update_yaxes(title_text="Response ΔF/F")
+    values = dataset.spatial_frequencies + dataset.temporal_frequencies
     fig.update_xaxes(
-        tickvals=dataset.spatial_frequencies + dataset.temporal_frequencies,
-        ticktext=[f"{sf:.2f}" for sf in dataset.spatial_frequencies],
+        tickvals=values,
+        ticktext=[f"{v:.2f}" for v in values],
     )
     fig.update_layout(
         plot_bgcolor="white",
