@@ -128,6 +128,7 @@ def get_gaussian_matrix_to_be_plotted_for_all_rois(
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
     matrix_dimension: int,
+    kind: str = "custom",
 ) -> dict:
     """This method is a wrapper for the get_gaussian_matrix_to_be_plotted
     method that iterates over all the ROIs.
@@ -156,7 +157,7 @@ def get_gaussian_matrix_to_be_plotted_for_all_rois(
         fitted_gaussian_matrix[
             (roi_id, "pooled")
         ] = get_gaussian_matrix_to_be_plotted(
-            kind="custom",
+            kind=kind,
             roi_id=roi_id,
             fit_output=fit_outputs,
             sfs=np.asarray(spatial_frequencies),

@@ -95,6 +95,13 @@ layout = html.Div(
                     ),
                     span="auto",
                 ),
+                dmc.Col(
+                    html.Div(
+                        id="frequency-tuning-plot",
+                        className="frequency-tuning-plot",
+                    ),
+                    span="auto",
+                ),
             ],
             className="murakami-container",
         ),
@@ -504,6 +511,114 @@ def speed_tuning_plot(store, show_only_responsive, include_bad_fit):
     return dcc.Graph(figure=fig)
 
 
+@callback(
+    Output("frequency-tuning-plot", "children"),
+    [
+        Input("store", "data"),
+        Input("show-only-responsive", "checked"),
+        Input("include-bad-fit", "checked"),
+    ],
+)
+def frequency_tuning_plot(store, show_only_responsive, include_bad_fit):
+    if store == {}:
+        return "No data to plot"
+
+    dataset = ExtractedData(store, show_only_responsive, include_bad_fit)
+    if dataset.choosen_roi == []:
+        return "No data to plot"
+
+    # make figure with two subplots
+    #  first: spatial frequency mean values vs ΔF/f
+    #  second: temporal frequency mean values vs ΔF/f
+
+    fig = go.Figure()
+
+    relative_max = 0
+    for roi in dataset.choosen_roi:
+        #  spatial frequency
+        fig.add_trace(
+            go.Scatter(
+                x=dataset.spatial_frequencies,
+                y=np.mean(dataset.msr[(roi, "pooled")], axis=0),
+                mode="lines",
+                marker=dict(
+                    color="red"
+                    if roi in dataset.responsive_rois
+                    else "lightblue",
+                    size=1,
+                ),
+                name=f"ROI {roi + 1}",
+            )
+        )
+
+        #  temporal frequency
+        fig.add_trace(
+            go.Scatter(
+                x=dataset.temporal_frequencies,
+                y=np.mean(dataset.msr[(roi, "pooled")], axis=1),
+                mode="lines",
+                marker=dict(
+                    color="red"
+                    if roi in dataset.responsive_rois
+                    else "lightblue",
+                    size=1,
+                ),
+                name=f"ROI {roi + 1}",
+            )
+        )
+
+        if (
+            np.max(np.mean(dataset.msr[(roi, "pooled")], axis=0))
+            > relative_max
+        ):
+            relative_max = np.max(dataset.msr[(roi, "pooled")])
+
+    fig.update_xaxes(
+        type="log",
+        title_text="SF (cycles/deg)            |            TF (Hz)",
+    )
+
+    fig.update_yaxes(title_text="Response ΔF/F")
+    fig.update_xaxes(
+        tickvals=dataset.spatial_frequencies + dataset.temporal_frequencies,
+        ticktext=[f"{sf:.2f}" for sf in dataset.spatial_frequencies],
+    )
+    fig.update_layout(
+        plot_bgcolor="white",
+    )
+
+    # fix fig size
+    fig.update_layout(
+        autosize=False,
+        width=600,
+        height=600,
+        margin=dict(t=50, b=50, l=50, r=50),
+    )
+
+    #  add vertical lines at given frequencies
+    for sf in dataset.spatial_frequencies:
+        fig.add_shape(
+            type="line",
+            x0=sf,
+            y0=0,
+            x1=sf,
+            y1=relative_max,
+            line=dict(color="Grey", width=1),
+        )
+
+    for tf in dataset.temporal_frequencies:
+        fig.add_shape(
+            type="line",
+            x0=tf,
+            y0=0,
+            x1=tf,
+            y1=relative_max,
+            line=dict(color="Grey", width=1),
+        )
+
+    return dcc.Graph(figure=fig)
+
+
 class ExtractedData:
     def __init__(self, store, is_responsive_only=True, include_bad_fit=False):
         self.data = load_data(store)
@@ -534,16 +649,23 @@ class ExtractedData:
 
         self.fitted_gaussian_matrix_small = (
             get_gaussian_matrix_to_be_plotted_for_all_rois(
-                self.neurons_idx,
-                self.fit_outputs,
-                self.spatial_frequencies,
-                self.temporal_frequencies,
-                6,
+                neuron_idxs=self.neurons_idx,
+                fit_outputs=self.fit_outputs,
+                spatial_frequencies=self.spatial_frequencies,
+                temporal_frequencies=self.temporal_frequencies,
+                matrix_dimension=6,
+                kind="6x6 matrix",
             )
         )
 
+        self.choosen_roi = (
+            self.neurons_idx
+            if not is_responsive_only
+            else self.responsive_rois
+        )
+
         self.fit_correlations = {}
-        for roi_id in self.neurons_idx:
+        for roi_id in self.choosen_roi:
             try:
                 corr = fit_correlation(
                     self.fitted_gaussian_matrix_small[(roi_id, "pooled")],
@@ -553,12 +675,6 @@ class ExtractedData:
             except Exception:
                 # array must not contain infs or NaNs
                 self.fit_correlations[roi_id] = 0
-
-        self.choosen_roi = (
-            self.neurons_idx
-            if not is_responsive_only
-            else self.responsive_rois
-        )
 
         self.choosen_roi = [
             roi_id
