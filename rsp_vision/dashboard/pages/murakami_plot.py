@@ -89,15 +89,6 @@ layout = html.Div(
                     span="auto",
                 ),
                 dmc.Col(
-                    dmc.Center(
-                        html.Div(
-                            id="murakami-plot2",
-                            className="murakami-plot",
-                        ),
-                    ),
-                    span="auto",
-                ),
-                dmc.Col(
                     html.Div(
                         id="speed-tuning-plot",
                         className="speed-tuning-plot",
@@ -169,9 +160,14 @@ def update_selected_data_str(store: dict) -> str:
     [
         Input("store", "data"),
         Input("show-only-responsive", "checked"),
+        Input("include-bad-fit", "checked"),
     ],
 )
-def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
+def murakami_plot(
+    store: dict,
+    show_only_responsive: bool = True,
+    include_bad_fit: bool = False,
+) -> dcc.Graph:
     """This callback generates the Murakami plot. It is called Murakami plot
     because it is inspired by the visualization on Murakami et al. (2017).
     Peak responses for each roi are shown as a "scatter plot" in a 2D space,
@@ -196,41 +192,27 @@ def murakami_plot(store: dict, show_only_responsive: bool) -> dcc.Graph:
     if store == {}:
         return "No data to plot"
 
-    data = load_data(store)
-
-    # prepare data
-    responsive_rois = data["responsive_neurons"]
-    data["n_neurons"]
-    neurons_idx = data["idx_neurons"]
-    matrix_dimension = 100
-    spatial_frequencies = store["config"]["spatial_frequencies"]
-    temporal_frequencies = store["config"]["temporal_frequencies"]
-    fit_outputs = data["fit_outputs"]
-    fitted_gaussian_matrix = get_gaussian_matrix_to_be_plotted_for_all_rois(
-        neurons_idx,
-        fit_outputs,
-        spatial_frequencies,
-        temporal_frequencies,
-        matrix_dimension,
+    dataset = ExtractedData(
+        store,
+        is_responsive_only=show_only_responsive,
+        include_bad_fit=include_bad_fit,
     )
+    if dataset.choosen_roi == []:
+        return "No data to plot"
 
-    total_roi = (
-        responsive_rois if show_only_responsive else data["idx_neurons"]
-    )
-
-    # plot
     fig = go.Figure()
     fig = add_data_in_figure(
-        all_roi=total_roi,
+        all_roi=dataset.choosen_roi,
         fig=fig,
-        matrix_dimension=matrix_dimension,
-        responsive_rois=responsive_rois,
-        fitted_gaussian_matrix=fitted_gaussian_matrix,
-        spatial_frequencies=spatial_frequencies,
-        temporal_frequencies=temporal_frequencies,
+        matrix_dimension=dataset.matrix_dimension,
+        responsive_rois=dataset.responsive_rois,
+        fitted_gaussian_matrix=dataset.fitted_gaussian_matrix,
+        spatial_frequencies=dataset.spatial_frequencies,
+        temporal_frequencies=dataset.temporal_frequencies,
+        exponential_coeficient=dataset.xi,
     )
     fig = prettify_murakami_plot(
-        fig, spatial_frequencies, temporal_frequencies
+        fig, dataset.spatial_frequencies, dataset.temporal_frequencies
     )
 
     return dcc.Graph(figure=fig)
@@ -271,58 +253,52 @@ def prettify_murakami_plot(
     )
 
     fig.update_xaxes(
-        range=[-0.05, 17],
+        range=[-0.5, 7.5],
         title_text="Temporal frequency (Hz)",
-        showgrid=False,
-        zeroline=False,
+        side="bottom",
         tickvals=[],
     )
     fig.update_yaxes(
-        range=[0, 0.33],
+        range=[-1, 7.5],
         title_text="Spatial frequency (cycles/deg)",
-        showgrid=False,
-        zeroline=False,
         tickvals=[],
     )
 
-    #  draw horizontal lines
-    for i in spatial_frequencies:
+    for i in range(1, 7):
         fig.add_shape(
             type="line",
-            x0=0.25,
+            x0=0.5,
             y0=i,
-            x1=16.1,
+            x1=6.5,
             y1=i,
-            line=dict(color="Grey", width=1),
+            line=dict(color="Grey", width=1, dash="dot"),
         )
         #  add annotations for horizontal lines
         fig.add_annotation(
-            x=0.05,
+            x=0,
             y=i,
-            text=f"{i}",
+            text=f"{spatial_frequencies[i-1]:.2f}",
             showarrow=False,
             yshift=0,
-            xshift=-10,
+            xshift=-1,
             font=dict(color="Black"),
         )
 
-    #  draw vertical lines
-    for i in temporal_frequencies:
         fig.add_shape(
             type="line",
             x0=i,
-            y0=0.001,
+            y0=0.5,
             x1=i,
-            y1=0.33,
-            line=dict(color="Grey", width=1),
+            y1=6.5,
+            line=dict(color="Grey", width=1, dash="dot"),
         )
         #  add annotations for vertical lines
         fig.add_annotation(
             x=i,
-            y=0.001,
-            text=f"{i}",
+            y=0,
+            text=f"{temporal_frequencies[i-1]:.2f}",
             showarrow=False,
-            yshift=510,
+            yshift=-1,
             xshift=0,
             font=dict(color="Black"),
         )
@@ -336,7 +312,6 @@ def add_data_in_figure(
     fitted_gaussian_matrix: pd.DataFrame,
     spatial_frequencies: np.ndarray,
     temporal_frequencies: np.ndarray,
-    connected_lines: bool = True,
     responsive_rois: list = [],
     marker_style: str = "responsiveness",
     exponential_coeficient: list = [],
@@ -369,6 +344,7 @@ def add_data_in_figure(
     go.Figure
         The figure with the data added.
     """
+
     peaks = {
         roi_id: find_peak_coordinates(
             fitted_gaussian_matrix=fitted_gaussian_matrix[(roi_id, "pooled")],
@@ -389,59 +365,62 @@ def add_data_in_figure(
     )
 
     median_peaks = p.median()
-    if marker_style == "responsiveness":
-        for roi_id in all_roi:
-            row = p[(p.roi_id == roi_id)].iloc[0]
-            tf = row["temporal_frequency"]
-            sf = row["spatial_frequency"]
+    {
+        "temporal_frequency": frequency_to_octaves_for_plotting(
+            median_peaks["temporal_frequency"], temporal_frequencies
+        ),
+        "spatial_frequency": frequency_to_octaves_for_plotting(
+            median_peaks["spatial_frequency"], spatial_frequencies
+        ),
+    }
+    # for roi_id in all_roi:
+    #     row = p[(p.roi_id == roi_id)].iloc[0]
+    #     tf_oct = frequency_to_octaves_for_plotting(
+    #             row["temporal_frequency"], temporal_frequencies
+    #         )
+    #     sf_oct = frequency_to_octaves_for_plotting(
+    #             row["spatial_frequency"], spatial_frequencies
+    #         )
+    #     fig.add_trace(
+    #         go.Scatter(
+    #             x=[tf_oct,
+    #                median_peaks_oct["temporal_frequency"]],
+    #             y=[sf_oct,
+    #                median_peaks_oct["spatial_frequency"]],
+    #             mode="lines",
+    #             line=dict(color="Grey", width=1),
+    #             showlegend=False,
+    #         )
+    #     )
 
-            marker = dict(
-                color="red" if roi_id in responsive_rois else "black",
+    fig.add_trace(
+        go.Scatter(
+            x=[
+                frequency_to_octaves_for_plotting(t, temporal_frequencies)
+                for t in p["temporal_frequency"]
+            ],
+            y=[
+                frequency_to_octaves_for_plotting(s, spatial_frequencies)
+                for s in p["spatial_frequency"]
+            ],
+            mode="markers",
+            text=np.asarray(p["roi_id"]) + 1,
+            # color depending on the exponential coeficient
+            marker=dict(
+                color=exponential_coeficient,
                 size=10,
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=[tf, median_peaks["temporal_frequency"]],
-                    y=[sf, median_peaks["spatial_frequency"]],
-                    mode="markers",
-                    marker=marker,
-                    name=f"ROI {roi_id + 1}",
-                    showlegend=False,
-                )
-            )
-            fig.add_trace(
-                go.Scatter(
-                    x=[tf, median_peaks["temporal_frequency"]],
-                    y=[sf, median_peaks["spatial_frequency"]],
-                    mode="lines",
-                    line=dict(color="Grey", width=1),
-                    showlegend=False,
-                )
-            )
-    elif marker_style == "gaussian_fit":
-        #  just do a scatter plot with the gaussian fit values
-        fig.add_trace(
-            go.Scatter(
-                x=p["temporal_frequency"],
-                y=p["spatial_frequency"],
-                mode="markers",
-                text=p["roi_id"],
-                # color depending on the exponential coeficient
-                marker=dict(
-                    color=exponential_coeficient,
-                    size=10,
-                    colorscale="Viridis",
-                    colorbar=dict(
-                        title="Exponential coeficient",
-                    ),
-                    showscale=True,
-                    #  scale has to be positive
-                    cmin=0,
-                    cmax=4,
+                colorscale="Viridis",
+                colorbar=dict(
+                    title="Exponential coeficient",
                 ),
-                showlegend=False,
-            )
+                showscale=True,
+                #  scale has to be positive
+                cmin=-1,
+                cmax=1,
+            ),
+            showlegend=False,
         )
+    )
 
     return fig
 
@@ -450,54 +429,46 @@ def add_data_in_figure(
     Output("speed-tuning-plot", "children"),
     [
         Input("store", "data"),
+        Input("show-only-responsive", "checked"),
+        Input("include-bad-fit", "checked"),
     ],
 )
-def speed_tuning_plot(store):
+def speed_tuning_plot(store, show_only_responsive, include_bad_fit):
     if store == {}:
         return "No data to plot"
 
-    data = load_data(store)
-    data["n_neurons"]
-    sfs = store["config"]["spatial_frequencies"]
-    tfs = store["config"]["temporal_frequencies"]
-    median_subtracted_response = data["median_subtracted_responses"]
-    responsive_roi = data["responsive_neurons"]
+    dataset = ExtractedData(store, show_only_responsive, include_bad_fit)
+    if dataset.choosen_roi == []:
+        return "No data to plot"
 
-    velocity = np.zeros((6, 6))
-    for i, sf in enumerate(sfs):
-        for j, tf in enumerate(tfs):
-            velocity[i, j] = tf / sf
-
-    flat_velocity = velocity.flatten()
-    flat_velocity = np.round(flat_velocity, 4)
+    flat_velocity = make_velocity_array(
+        dataset.spatial_frequencies, dataset.temporal_frequencies
+    )
 
     fig = go.Figure()
 
-    for roi in data["idx_neurons"]:
-        key = (roi, "pooled")
-        msr = median_subtracted_response[key]
-        flat_msr = msr.flatten()
-        unique_velocity = np.unique(flat_velocity)
+    max_found = 0
+    for roi in dataset.choosen_roi:
+        unique_velocity, max_response_per_velocity = get_mean_velocity(
+            dataset.msr[(roi, "pooled")], flat_velocity
+        )
 
-        max_response_per_velocity = []
-        for vel in unique_velocity:
-            max_response_per_velocity.append(
-                np.max(flat_msr[flat_velocity == vel])
+        fig.add_trace(
+            go.Scatter(
+                x=unique_velocity,
+                y=max_response_per_velocity,
+                mode="lines",
+                marker=dict(
+                    color="red"
+                    if roi in dataset.responsive_rois
+                    else "lightblue",
+                    size=1,
+                ),
+                name=f"ROI {roi + 1}",
             )
-
-        if np.any(np.asarray(max_response_per_velocity, dtype=int) > 15):
-            fig.add_trace(
-                go.Scatter(
-                    x=unique_velocity,
-                    y=max_response_per_velocity,
-                    mode="lines",
-                    marker=dict(
-                        color="red" if roi in responsive_roi else "lightblue",
-                        size=1,
-                    ),
-                    name=f"ROI {roi + 1}",
-                )
-            )
+        )
+        if max(max_response_per_velocity) > max_found:
+            max_found = max(max_response_per_velocity)
 
     fig.update_xaxes(type="log", title_text="Speed deg/s")
     fig.update_yaxes(title_text="Response ΔF/F")
@@ -521,97 +492,118 @@ def speed_tuning_plot(store):
             x0=v,
             y0=0,
             x1=v,
-            y1=100,
+            y1=max_found,
             line=dict(color="Grey", width=1),
         )
-        print(v)
+
+    fig.update_xaxes(
+        tickvals=np.unique(flat_velocity),
+        ticktext=[f"{v}" for v in np.unique(flat_velocity)],
+    )
 
     return dcc.Graph(figure=fig)
 
 
-@callback(
-    Output("murakami-plot2", "children"),
-    [
-        Input("store", "data"),
-        Input("include-bad-fit", "checked"),
-    ],
-)
-def murakami_plot_2(store: dict, include_bad_fit: bool) -> dcc.Graph:
-    if store == {}:
-        return "No data to plot"
+class ExtractedData:
+    def __init__(self, store, is_responsive_only=True, include_bad_fit=False):
+        self.data = load_data(store)
+        self.responsive_rois = self.data["responsive_neurons"]
+        self.n_neurons = self.data["n_neurons"]
+        self.neurons_idx = self.data["idx_neurons"]
+        self.matrix_dimension = 100
+        self.spatial_frequencies = store["config"]["spatial_frequencies"]
+        self.temporal_frequencies = store["config"]["temporal_frequencies"]
 
-    data = load_data(store)
+        self.msr = self.data["median_subtracted_responses"]
 
-    # prepare data
-    n_neurons = data["n_neurons"]
-    matrix_dimension = 100
-    spatial_frequencies = store["config"]["spatial_frequencies"]
-    temporal_frequencies = store["config"]["temporal_frequencies"]
-    median_subtracted_responses = data["median_subtracted_responses"]
-    fit_outputs = data["fit_outputs"]
-
-    neurons = data["idx_neurons"]
-
-    exponential_coef = [
-        fit_outputs[(roi_id, "pooled")][-1] for roi_id in data["idx_neurons"]
-    ]
-
-    fitted_gaussian_matrix = get_gaussian_matrix_to_be_plotted_for_all_rois(
-        neurons,
-        fit_outputs,
-        spatial_frequencies,
-        temporal_frequencies,
-        matrix_dimension,
-    )
-    fitted_gaussian_matrix_small = (
-        get_gaussian_matrix_to_be_plotted_for_all_rois(
-            neurons,
-            fit_outputs,
-            spatial_frequencies,
-            temporal_frequencies,
-            6,
-        )
-    )
-    #  get fit correlations for all rois
-    fit_correlations = []
-    for roi_id in data["idx_neurons"]:
-        try:
-            corr = fit_correlation(
-                fitted_gaussian_matrix_small[(roi_id, "pooled")],
-                median_subtracted_responses[(roi_id, "pooled")],
+        self.fit_outputs = self.data["fit_outputs"]
+        self.fitted_gaussian_matrix = (
+            get_gaussian_matrix_to_be_plotted_for_all_rois(
+                self.neurons_idx,
+                self.fit_outputs,
+                self.spatial_frequencies,
+                self.temporal_frequencies,
+                self.matrix_dimension,
             )
-            fit_correlations.append(corr)
-        except Exception:
-            # array must not contain infs or NaNs
-            fit_correlations.append(0)
+        )
 
-    #  only rois where fit correlationn > 0.75 and fit_values > 0.4
-    total_roi = [
-        roi_id
-        for roi_id in range(n_neurons)
-        if (exponential_coef[roi_id] > 0)
-        & (exponential_coef[roi_id] < 4)
-        & (fit_correlations[roi_id] > 0.60)
-    ]
+        self.xi = [
+            self.fit_outputs[(roi_id, "pooled")][-1]
+            for roi_id in self.neurons_idx
+        ]
 
-    if total_roi == []:
-        return "No data to plot"
+        self.fitted_gaussian_matrix_small = (
+            get_gaussian_matrix_to_be_plotted_for_all_rois(
+                self.neurons_idx,
+                self.fit_outputs,
+                self.spatial_frequencies,
+                self.temporal_frequencies,
+                6,
+            )
+        )
 
-    neurons_idxs = data["idx_neurons"]
+        self.fit_correlations = {}
+        for roi_id in self.neurons_idx:
+            try:
+                corr = fit_correlation(
+                    self.fitted_gaussian_matrix_small[(roi_id, "pooled")],
+                    self.msr[(roi_id, "pooled")],
+                )
+                self.fit_correlations[roi_id] = corr
+            except Exception:
+                # array must not contain infs or NaNs
+                self.fit_correlations[roi_id] = 0
 
-    fig = go.Figure()
-    fig = add_data_in_figure(
-        all_roi=neurons_idxs,
-        fig=fig,
-        matrix_dimension=matrix_dimension,
-        fitted_gaussian_matrix=fitted_gaussian_matrix,
-        spatial_frequencies=spatial_frequencies,
-        temporal_frequencies=temporal_frequencies,
-        marker_style="gaussian_fit",
-        exponential_coeficient=exponential_coef,
-    )
-    fig = prettify_murakami_plot(
-        fig, spatial_frequencies, temporal_frequencies
-    )
+        self.choosen_roi = (
+            self.neurons_idx
+            if not is_responsive_only
+            else self.responsive_rois
+        )
 
-    return dcc.Graph(figure=fig)
+        self.choosen_roi = [
+            roi_id
+            for roi_id in self.choosen_roi
+            if (self.fit_correlations[roi_id] >= 0.80) or (include_bad_fit)
+        ]
+
+
+def make_velocity_array(sfs, tfs):
+    velocity = np.zeros((6, 6))
+    for i, sf in enumerate(sfs):
+        for j, tf in enumerate(tfs):
+            velocity[i, j] = tf / sf
+
+    flat_velocity = velocity.flatten()
+    flat_velocity = np.round(flat_velocity, 4)
+
+    return flat_velocity
+
+
+def get_mean_velocity(msr, flat_velocity):
+    flat_msr = msr.flatten()
+    unique_velocity = np.unique(flat_velocity)
+
+    max_response_per_velocity = []
+    for vel in unique_velocity:
+        max_response_per_velocity.append(
+            np.mean(flat_msr[flat_velocity == vel])
+        )
+
+    return unique_velocity, max_response_per_velocity
+
+
+def frequency_to_octaves_for_plotting(val, frequencies):
+    freq = np.asarray(frequencies)
+    freq = np.concatenate((freq, [freq[-1] * 2]))
+    closest_index = np.argmin(np.abs(freq - val))
+    if val >= freq[closest_index]:
+        low_index = closest_index
+        high_index = low_index + 1
+    else:
+        high_index = closest_index
+        low_index = high_index - 1
+
+    space_decimal = np.linspace(freq[low_index], freq[high_index], 10)
+    log_distance = np.argmin(np.abs(space_decimal - val))
+    idx = 1 + low_index + log_distance / 10
+    return idx
