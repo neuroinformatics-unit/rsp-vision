@@ -680,7 +680,7 @@ class ExtractedData:
         self.choosen_roi = [
             roi_id
             for roi_id in self.choosen_roi
-            if (self.fit_correlations[roi_id] >= 0.80) or (include_bad_fit)
+            if (self.fit_correlations[roi_id] >= 0.70) or (include_bad_fit)
         ]
 
 
