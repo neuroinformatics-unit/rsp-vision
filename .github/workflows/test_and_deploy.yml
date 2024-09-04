@@ -59,4 +59,3 @@ jobs:
     - uses: neuroinformatics-unit/actions/upload_pypi@v2
       with:
         secret-pypi-key: ${{ secrets.TWINE_API_KEY }}
-
