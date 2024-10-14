@@ -66,9 +66,9 @@ class FrequencyResponsiveness:
             ]
         )
 
-        self.data.p_values[
-            "Kruskal-Wallis test"
-        ] = self.nonparam_anova_over_rois()
+        self.data.p_values["Kruskal-Wallis test"] = (
+            self.nonparam_anova_over_rois()
+        )
         (
             self.data.p_values["Sign test"],
             self.data.p_values["Wilcoxon signed rank test"],
@@ -504,9 +504,11 @@ class FrequencyResponsiveness:
 
         median_subtracted_response = (
             responses[
-                (responses.roi_id == roi_id) & (responses.direction == dir)
-                if not pool_directions
-                else (responses.roi_id == roi_id)
+                (
+                    (responses.roi_id == roi_id) & (responses.direction == dir)
+                    if not pool_directions
+                    else (responses.roi_id == roi_id)
+                )
             ]
             .groupby(["sf", "tf"])[["subtracted"]]
             .median()
@@ -520,9 +522,9 @@ class FrequencyResponsiveness:
 
         for i, sf in enumerate(sfs):
             for j, tf in enumerate(tfs):
-                median_subtracted_response_2d_matrix[
-                    i, j
-                ] = median_subtracted_response.loc[(sf, tf)]["subtracted"]
+                median_subtracted_response_2d_matrix[i, j] = (
+                    median_subtracted_response.loc[(sf, tf)]["subtracted"]
+                )
 
         return median_subtracted_response_2d_matrix, sf_0, tf_0, peak_response
 
@@ -701,6 +703,6 @@ class FrequencyResponsiveness:
                         key
                     ][0]
                     self.data.fit_output[(roi_id, key)] = roi_data[key][1]
-                    self.data.median_subtracted_response[
-                        (roi_id, key)
-                    ] = roi_data[key][2]
+                    self.data.median_subtracted_response[(roi_id, key)] = (
+                        roi_data[key][2]
+                    )
