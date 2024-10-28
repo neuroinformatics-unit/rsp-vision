@@ -304,9 +304,11 @@ def save_metadata_about_this_analysis(
     #  save in a file details about the experimental data that was analysed
     metadata = {
         "folder_name": folder_naming_specs.folder_name,
-        "photon_type": "two_photon"
-        if photon_data.photon_type == PhotonType.TWO_PHOTON
-        else "three_photon",
+        "photon_type": (
+            "two_photon"
+            if photon_data.photon_type == PhotonType.TWO_PHOTON
+            else "three_photon"
+        ),
         "date": str(datetime.datetime.now()),
         "rsp_vision_latest_commit_hash": str(
             git.Repo(search_parent_directories=True).head.object.hexsha
@@ -363,9 +365,11 @@ def save_info_in_main_log(
         "commit_hash": str(
             git.Repo(search_parent_directories=True).head.object.hexsha
         ),
-        "microscope": "two_photon"
-        if photon_data.photon_type == PhotonType.TWO_PHOTON
-        else "three_photon",
+        "microscope": (
+            "two_photon"
+            if photon_data.photon_type == PhotonType.TWO_PHOTON
+            else "three_photon"
+        ),
         "n_roi": photon_data.n_roi,
         "n_responsive_roi": len(photon_data.responsive_rois),
         "days_of_the_experiment": photon_data.total_n_days,
